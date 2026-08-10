@@ -68,6 +68,13 @@
  * to reduce ifdefs and referencing all 4 (i.e. UISA,UISD,UDSA,UDSD) within the kernel source.
  * - i.e. in a separate I&D UISA/UISD addresses actually point to UDSA/UDSD addresses respectively.
  */
+/*
+ * TODO:
+ * exec_linker:
+ * - add overlay information
+ * - setup overlay for exec
+ * 		- universally applied (even if initially a.out only)
+ */
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -78,58 +85,7 @@
 
 #include "vm_idspace.h"
 
-/*
- * vm_map_offset: [Internal use only:]
- * Does not search map entries or objects.
- * Searches for map offset within the map's min and max range.
- * variables:
- * map: the map to search
- * offset: the offset within map
- * use_min: if true and offset is 0, returns map's min offset
- * use_max: if true and offset is 0, returns map's max offset
- * Note: setting both use_min and use_max true will return 0.
- * returns the offset if found or 0 if not.
- */
-vm_offset_t
-vm_map_offset(map, offset, use_min, use_max)
-	vm_map_t map;
-	vm_offset_t offset;
-	bool_t use_min, use_max;
-{
-	vm_offset_t addr, i;
-
-	vm_map_lock(map);
-	/* check use_min and use_max */
-	if ((offset == 0) && ((use_min == TRUE) || (use_max == TRUE))) {
-		vm_map_unlock(map);
-		if ((use_min == TRUE) && (use_max != TRUE)) {
-			vm_map_unlock(map);
-			return (vm_map_min(map));
-		}
-		if ((use_min != TRUE) && (use_max == TRUE)) {
-			vm_map_unlock(map);
-			return (vm_map_max(map));
-		}
-		vm_map_unlock(map);
-		return (0);
-	}
-	/* check map min and max */
-	if ((offset == vm_map_min(map)) || (offset == vm_map_max(map))) {
-		vm_map_unlock(map);
-		return (offset);
-	}
-	/* search map range */
-	for (i = trunc_page(map->min_offset); i < round_page(map->max_offset); i += PAGE_SIZE) {
-		addr = (offset + i);
-		if (addr == (offset + i)) {
-			offset = addr;
-			vm_map_unlock(map);
-			return (offset);
-		}
-	}
-	vm_map_unlock(map);
-	return (0);
-}
+#define emask(x, y) (((x) - (y)) << 8)
 
 static int
 estabur_lookup(map, size, addr, desc, val, type, flags)
@@ -158,8 +114,6 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 		data = stoa(num);
 	}
 
-#define emask(x, y) (((x) - (y)) << 8)
-
 	while (size >= data) {
 		if (type == (PSEG_DATA | PSEG_TEXT)) {
 			*desc++ = (emask(data, 1) | flags);
@@ -185,11 +139,8 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 			*--addr = (val - data);
 		}
 	}
-#undef emask
 	return (0);
 }
-
-
 
 /* text */
 static int
@@ -390,6 +341,7 @@ nomem:
 	return (0);
 }
 
+
 int
 vm_estabur(p, tsize, dsize, ssize, sep, flags)
 	struct proc	*p;
@@ -439,8 +391,6 @@ vm_sureg(void)
 #else /* !NONSEPARATE */
 	limudp = &u.u_uisd[8];
 #endif /* !NONSEPARATE */
-	rap = UISA_MIN;//vm_map_min(uisa_map);
-	rdp = UISD_MIN;//vm_map_min(uisd_map);
 #ifdef NONSEPARATE
 	rap = vm_map_offset(uisa_map, 0, TRUE, FALSE);
 	rdp = vm_map_offset(uisd_map, 0, TRUE, FALSE);
@@ -460,51 +410,46 @@ vm_sureg(void)
 	}
 }
 
-void
-vm_choverlay(xrw)
-	int xrw;
-{
+static void
+choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
+	struct proc *p;
+	vm_text_t xp;
 	long ovbase, nseg, curov;
-	u_long ovoffst[NOVL];
+	u_long ovoffset[NOVL];
+	int flags;
+{
 	vm_offset_t *rap, *rdp, *limrdp, addr, tsize, data;
-	int i;
 
-#define emask(x, y) (((x) - (y)) << 8)
-
-	ovbase = u.u_ovdata.uo_ovbase;
-	nseg = u.u_ovdata.uo_nseg;
-	curov = u.u_ovdata.uo_curov;
-	ovoffst = u.u_ovdata.uo_ov_offst;
 #ifdef NONSEPARATE
-	rap = vm_choverlay_offset(uisa_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	rdp = vm_choverlay_offset(uisd_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	limrdp = vm_choverlay_offset(uisd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
+	rap = vm_map_offset(uisa_map, (vm_offset_t)ovbase, FALSE, FALSE);
+	rdp = vm_map_offset(uisd_map, (vm_offset_t)ovbase, FALSE, FALSE);
+	limrdp = vm_map_offset(uisd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
 #else /* !NONSEPARATE */
-	rap = vm_choverlay_offset(udsa_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	rdp = vm_choverlay_offset(udsd_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	limrdp = vm_choverlay_offset(udsd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
+	rap = vm_map_offset(udsa_map, (vm_offset_t) ovbase, FALSE, FALSE);
+	rdp = vm_map_offset(udsd_map, (vm_offset_t) ovbase, FALSE, FALSE);
+	limrdp = vm_map_offset(udsd_map, (vm_offset_t) (ovbase + nseg), FALSE, FALSE);
 #endif /* !NONSEPARATE */
 	if (curov) {
-		addr = ovoffst[curov - 1];
-		tsize = ovoffst[curov] - addr;
-		addr += u.u_procp->p_textp->psx_caddr;
+		addr = ovoffset[curov - 1];
+		tsize = ovoffset[curov] - addr;
+		addr += xp->psx_caddr;
 		data = ptoa(atop(addr));
 		while (tsize >= data) {
 			*rap++ = addr;
-			*rdp++ = (emask(data, 1) | xrw);
+			*rdp++ = (emask(data, 1) | flags);
 			addr += data;
 			tsize -= data;
 		}
 		if (tsize) {
 			*rap++ = addr;
-			*rdp++ = (emask(tsize, 1) | xrw);
+			*rdp++ = (emask(tsize, 1) | flags);
 		}
-#undef emask
 	}
 	while (rdp < limrdp) {
 		*rap++ = 0;
 		*rdp++ = 0;
 	}
+
 #ifndef NONSEPARATE
 	/*
 	 * This section copies the UISA/UISD registers to the
@@ -512,27 +457,15 @@ vm_choverlay(xrw)
 	 * on the overlaid segment, which normally don't happen.
 	 */
 	if (!u.u_sep && sep_id) {
-#ifdef NONSEPARATE
-		rdp = vm_choverlay_offset(uisd_map, (vm_offset_t)ovbase, FALSE, FALSE);
-#else /* !NONSEPARATE */
-		rdp = vm_choverlay_offset(udsd_map, (vm_offset_t)ovbase, FALSE, FALSE);
-#endif /* !NONSEPARATE */
+		rdp = vm_map_offset(udsd_map, (vm_offset_t) ovbase, FALSE, FALSE);
 		rap = rdp + 8;
 		/* limrdp is still correct */
 		while (rdp < limrdp) {
 			*rap++ = *rdp++;
 		}
-#ifdef NONSEPARATE
-		rdp = vm_choverlay_offset(uisa_map, (vm_offset_t)ovbase, FALSE, FALSE);
-#else /* !NONSEPARATE */
-		rdp = vm_choverlay_offset(udsa_map, (vm_offset_t)ovbase, FALSE, FALSE);
-#endif /* !NONSEPARATE */
+		rdp = vm_map_offset(udsa_map, (vm_offset_t)ovbase, FALSE, FALSE);
 		rap = rdp + 8;
-#ifdef NONSEPARATE
-		limrdp = vm_choverlay_offset(uisa_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
-#else /* !NONSEPARATE */
-		limrdp = vm_choverlay_offset(udsa_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
-#endif /* !NONSEPARATE */
+		limrdp = vm_map_offset(udsa_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
 		while (rdp < limrdp) {
 			*rap++ = *rdp++;
 		}
@@ -540,25 +473,29 @@ vm_choverlay(xrw)
 #endif /* !NONSEPARATE */
 }
 
-vm_offset_t *
-vm_choverlay_offset(map, offset, use_min, use_max)
-	vm_map_t map;
-	vm_offset_t offset;
-	bool_t use_min, use_max;
+void
+vm_choverlay(flags)
+	int flags;
 {
-	vm_offset_t addr, *base;
-	addr = vm_map_offset(map, offset, use_min, use_max);
-	if (addr != 0) {
-		*base = addr;
-		return (base);
-	}
-	return (0);
+	struct proc *p;
+	vm_text_t xp;
+	long ovbase, nseg, curov;
+	u_long ovoffst[NOVL];
+
+	p = u.u_procp;
+	xp = p->p_textp;
+	ovbase = u.u_ovdata.uo_ovbase;
+	nseg = u.u_ovdata.uo_nseg;
+	curov = u.u_ovdata.uo_curov;
+	ovoffst = u.u_ovdata.uo_ov_offst;
+	choverlay(p, xp, ovbase, curov, ovoffst, nseg, flags);
 }
 
 void
-overlay_init(ovflag, tsize)
-	int ovflag;
-	vm_size_t tsize;
+overlay_setup(vp, tsize, dsize, ssize, ovflag, overlay, sep)
+	struct vnode *vp;
+	vm_size_t tsize, dsize, ssize;
+	int ovflag, overlay, sep;
 {
 	struct u_ovd sovdata;
 	u_int ovhead[NOVL + 1];
@@ -570,6 +507,7 @@ overlay_init(ovflag, tsize)
 	u.u_ovdata.uo_ovbase = ovbase;
 	u.u_ovdata.uo_curov = curov;
 	if (ovflag) {
+
 
 		/* set beginning of overlay segment */
 		ovbase = ctos(tsize);
@@ -590,7 +528,6 @@ overlay_init(ovflag, tsize)
 		u.u_ovdata.uo_nseg = nseg;
 		u.u_ovdata.uo_dbase = dbase;
 		u.u_ovdata.uo_ov_offst[0] = ovoffset[0];
-
 		{
 			int i, t;
 
@@ -607,77 +544,25 @@ overlay_init(ovflag, tsize)
 			}
 		}
 	}
-}
 
-static int
-vm_idspace_map_check_map_entry(idspacemap, addr, size)
-	vm_idspace_map_t idspacemap;
-	vm_offset_t addr;
-	vm_size_t size;
-{
-	vm_map_t map;
-	vm_map_entry_t entry, next;
-	vm_object_t object;
-	vm_offset_t estart, eend, eoffset, eaddr;
-	vm_size_t esize;
-	bool_t isentry;
-	int error;
-
-	map = idspacemap->map;
-	vm_map_lock_read(map);
-	isentry = vm_map_lookup_entry(map, addr, &entry);
-retry:
-	if (isentry) {
-		estart = entry->start;
-		eend = entry->end;
-		eoffset = entry->offset;
-		esize = round_novl(eend - estart);
-		eaddr = (eoffset + esize);
-		object = entry->object.vm_object;
-
-		if (eoffset != offset) {
-			error = ENOMEM;
-			goto out;
+	if (overlay) {
+		if (((sep == 0) && (ctos(tsize) != ctos(u.u_tsize))) || nargc) {
+			u.u_error = ENOMEM;
+			return;
 		}
-		if (esize != size) {
-			error = ENOMEM;
-			goto out;
-		}
-		if (eaddr != addr) {
-			error = ENOMEM;
-			goto out;
-		}
-		if (object == NULL) {
-			error = ENOMEM;
-			goto out;
-		}
-		kmem_free_wakeup(map, eaddr, esize);
-		error = 0;
-		goto out;
+		tsize = u.u_tsize;
+		dsize = u.u_dsize;
+		ssize = u.u_ssize;
+		sep = u.u_sep;
+		vm_xfree();
+		vm_xalloc(vp, tsize, toff);
 	} else {
-		CIRCLEQ_FOREACH(next, &map->cl_header, cl_entry) {
-			if (next != entry) {
-				estart = next->start;
-				eend = next->end;
-				eoffset = next->offset;
-				esize = round_novl(eend - estart);
-				eaddr = (eoffset + esize);
 
-				if (eaddr <= addr) {
-					isentry = vm_map_lookup_entry(map, addr, &entry);
-					goto retry;
-				} else {
-					error = ENOMEM;
-					goto out;
-				}
-			}  else {
-				error = ENOMEM;
-				goto out;
-			}
-		}
 	}
+	u.u_tsize = tsize;
+	u.u_dsize = dsize;
+	u.u_ssize = ssize;
+	u.u_sep = sep;
+	vm_estabur(p, tsize, dsize, ssize, sep, PSEG_RO);
 
-out:
-	vm_map_unlock_read(map);
-	return (error);
 }

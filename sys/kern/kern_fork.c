@@ -445,7 +445,7 @@ again:
 			rpp->p_flag |= P_SVFDONE;
 			wakeup((caddr_t)rip);
 			/* must do estabur if dsize/ssize are different */
-			(void)vm_estabur(u.u_procp, u.u_dsize, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO);
+			(void)vm_estabur(u.u_procp, u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, SEG_RO);
 			rip->p_flag &= ~P_SVFPRNT;
 		}
 

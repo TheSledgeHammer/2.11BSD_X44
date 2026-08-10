@@ -76,6 +76,7 @@ struct exec_linker {
 	segsz_t				    el_ssize;				/* size of process's stack */
 	u_long				    el_taddr;				/* process's text address */
 	u_long				    el_daddr;				/* process's data(+bss) address */
+	u_long				    el_saddr;				/* process's stack address */
 	caddr_t				    el_maxsaddr;			/* proc's max stack addr ("top") */
 	caddr_t				    el_minsaddr;			/* proc's min stack addr ("bottom") */
 	u_long	 			    el_entry;				/* process's entry point */

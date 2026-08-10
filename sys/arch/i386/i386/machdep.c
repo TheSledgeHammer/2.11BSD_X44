@@ -251,7 +251,7 @@ again:
 	 */
 	if(firstaddr == 0) {
 		size = (vm_size_t)(sz - (int)v);
-		firstaddr = (int) kmem_alloc(kernel_map, round_page(size));
+		firstaddr = (int)kmem_alloc(kernel_map, round_page(size));
 		if (firstaddr == 0) {
 			panic("startup: no room for tables");
 		}

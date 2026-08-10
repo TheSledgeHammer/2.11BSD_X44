@@ -42,9 +42,67 @@
 #define KSPACE_MAX	VM_MAX_KERNEL_ADDRESS
 
  /* kspace */
+static struct vm_kspace kernel_kspace_store;
+vm_kspace_t kernel_kspace;
 vm_object_t kspace_object;
 char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
 char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
+
+static void vm_kspace_alloc(vm_offset_t, vm_offset_t, vm_size_t, vm_kspace_t);
+static void vm_kispace_map_init(vm_kspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+static void vm_kdspace_map_init(vm_kspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+
+void
+vm_kspace_init(void)
+{
+	kernel_kspace = &kernel_kspace_store;
+	vm_kspace_alloc((KSPACE_MAX - KSPACE_MIN), KSPACE_MIN, KSPACE_MAX, kernel_kspace);
+}
+
+vm_kspace_t
+vm_kspace_allocate(size)
+	vm_size_t size;
+{
+	vm_kspace_t result;
+
+	result = (vm_kspace_t)malloc(sizeof(*result), M_VMKSPACE, M_WAITOK);
+	vm_kspace_alloc(result, KSPACE_MIN, KSPACE_MAX, size);
+	return (result);
+}
+
+void
+vm_kspace_deallocate(kspace)
+	vm_kspace_t kspace;
+{
+	if (kspace != NULL) {
+		if (kspace->idspace_i != NULL) {
+			return;
+		}
+		if (kspace->idspace_d != NULL) {
+			return;
+		}
+		free(kspace, M_VMKSPACE);
+	}
+}
+
+static void
+vm_kspace_alloc(min, max, size, kspace)
+	vm_offset_t min, max;
+	vm_size_t size;
+	vm_kspace_t kspace;
+{
+	if (size > (max - min)) {
+		vm_kspace_deallocate(kspace);
+		panic("vm_kspace_allocate: unable to allocate kspace, size is too big");
+		return;
+	}
+
+	/* Init I-Space */
+	vm_kispace_map_init(kspace, M_VMKSPACE, kspace_object, &min, &max, size, TRUE);
+
+	/* Init D-Space */
+	vm_kdspace_map_init(kspace, M_VMKSPACE, kspace_object, &min, &max, size, TRUE);
+}
 
 void
 vm_kispace_map_init(kspace, mtype, object, min, max, size, pageable)
@@ -124,32 +182,6 @@ vm_kdspace_map_init(kspace, mtype, object, min, max, size, pageable)
 	if (error != 0) {
 		return;
 	}
-}
-
-void
-vm_kspace_init(min, max)
-	vm_offset_t min, max;
-{
-	vm_kspace_t kspace;
-	vm_size_t size;
-
-	/* Allocate Kspace */
-	MALLOC(kspace, struct vm_kspace *, sizeof(struct vm_kspace *), M_VMKSPACE, M_WAITOK);
-	if (min < KSPACE_MIN && max > KSPACE_MAX) {
-		FREE(kspace, M_VMKSPACE);
-		return;
-	}
-
-	/* Set Object Size */
-	size = (max - min);
-
-	/* Init I-Space */
-	vm_kispace_map_init(kspace, M_VMKSPACE, kspace_object, min, &min, &max,
-			size, TRUE);
-
-	/* Init D-Space */
-	vm_kdspace_map_init(kspace, M_VMKSPACE, kspace_object, min, &min, &max,
-			size, TRUE);
 }
 
 /* kspace maps */
@@ -328,7 +360,7 @@ vm_kspace_restore(kspace, maptype, flags)
 	return (error);
 }
 
-vm_offset_t
+vm_offset_t *
 vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
 	vm_kspace_t kspace;
 	vm_offset_t offset;
@@ -336,7 +368,7 @@ vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
 	int maptype;
 {
 	vm_idspace_t idspace_i, idspace_d;
-	vm_offset_t val;
+	vm_offset_t *val;
 
 	idspace_i = kspace->idspace_i;
 	if (idspace_i != NULL) {
@@ -348,7 +380,7 @@ vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
 			val = vm_idspace_map_offset(idspace_i, kisd_space, offset, use_min, use_max);
 			break;
 		default:
-			val = 0;
+			*val = 0;
 			break;
 		}
 	}
@@ -363,10 +395,9 @@ vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
 			val = vm_idspace_map_offset(idspace_d, kdsd_space, offset, use_min, use_max);
 			break;
 		default:
-			val = 0;
+			*val = 0;
 			break;
 		}
 	}
 	return (val);
 }
-

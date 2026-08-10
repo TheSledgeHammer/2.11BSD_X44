@@ -178,7 +178,8 @@ exec_aout_prep_magic6(elp, overlay, ovflag, sep)
  * u.u_error set on error
  */
 void
-getxfile(elp, a_magic, overlay, ovflag, sep)
+getxfile(p, elp, a_magic, overlay, ovflag, sep)
+	struct proc *p;
 	struct exec_linker *elp;
 	u_long a_magic;
 	int overlay, ovflag, sep;
@@ -193,6 +194,7 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 	int ovmax;//, resid;
 
 	a_out = elp->el_image_hdr;
+	vp = elp->el_vnodep;
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
 	elp->el_daddr = elp->el_taddr + a_out->a_text;
@@ -212,49 +214,42 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 
 	if (ovflag) {
 	//	u.u_error = rdwri(UIO_READ, ip, ovhead, sizeof(ovhead), (off_t)sizeof(struct exec), UIO_SYSSPACE, IO_UNIT, &resid);
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, ovhead, sizeof(ovhead),
-				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
-				elp->el_vnodep, sizeof(struct exec));
-		/*
-		if (resid != 0) {
-			u->u_error = ENOEXEC;
-		}
-		*/
-		if (u->u_error) {
-			u->u_ovdata = sovdata;
+		u.u_error = exec_read_from(p, vp, sizeof(struct exec), ovhead, sizeof(ovhead));
+		if (u.u_error) {
+			u.u_ovdata = sovdata;
 			return;
 		}
 
 		/* set beginning of overlay segment */
-		u->u_ovdata.uo_ovbase = ctos(elp->el_tsize);
+		u.u_ovdata.uo_ovbase = ctos(elp->el_tsize);
 
 		/* 0th entry is max size of the overlays */
 		ovmax = btoc(ovhead[0]);
+		u.u_ovdata
 
 		/* set max number of segm. registers to be used */
-		u->u_ovdata.uo_nseg = ctos(ovmax);
+		u.u_ovdata.uo_nseg = ctos(ovmax);
 
 		/* set base of data space */
-		u->u_ovdata.uo_dbase = stoc(u->u_ovdata.uo_ovbase + u->u_ovdata.uo_nseg);
+		u.u_ovdata.uo_dbase = stoc(u.u_ovdata.uo_ovbase + u.u_ovdata.uo_nseg);
 
 		/*
 		 * Set up a table of offsets to each of the overlay
 		 * segements. The ith overlay runs from ov_offst[i-1]
 		 * to ov_offst[i].
 		 */
-		u->u_ovdata.uo_ov_offst[0] = elp->el_tsize;
+		u.u_ovdata.uo_ov_offst[0] = elp->el_tsize;
 		{
 			register int t, i;
 
 			/* check if any overlay is larger than ovmax */
 			for (i = 1; i <= NOVL; i++) {
 				if ((t = btoc(ovhead[i])) > ovmax) {
-					u->u_error = ENOEXEC;
-					u->u_ovdata = sovdata;
+					u.u_error = ENOEXEC;
+					u.u_ovdata = sovdata;
 					return;
 				}
-				u->u_ovdata.uo_ov_offst[i] = t + u->u_ovdata.uo_ov_offst[i - 1];
+				u.u_ovdata.uo_ov_offst[i] = t +u.u_ovdata.uo_ov_offst[i - 1];
 			}
 		}
 	}
@@ -270,7 +265,7 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 		vm_xalloc(elp->el_vnodep, elp->el_tsize, sizeof(struct exec_linker));
 		//u.u_ar0[PC] = ep->a_entry & ~01;
 	} else {
-		if (vm_estabur(elp->el_proc, ds, ss, ts, sep, SEG_RO)) {
+		if (vm_estabur(p, ds, ss, ts, sep, SEG_RO)) {
 			u.u_ovdata = sovdata;
 			return;
 		}
@@ -280,12 +275,12 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 		 * to the new image
 		 */
 		u.u_prof.pr_scale = 0;
-		if (elp->el_proc->p_flag & P_SVFORK) {
+		if (p->p_flag & P_SVFORK) {
 			endvfork();
 		} else {
 			vm_xfree();
 		}
-		vm_expand(elp->el_proc, ds, S_DATA);
+		vm_expand(p, ds, S_DATA);
 		{
 			register u_int numc, startc;
 
@@ -294,16 +289,16 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 				startc--;
 			}
 			numc = ds - startc;
-			bzero(elp->el_proc->p_daddr + startc, numc);
+			bzero(p->p_daddr + startc, numc);
 		}
-		vm_expand(elp->el_proc, ss, S_STACK);
-		bzero(elp->el_proc->p_saddr, ss);
+		vm_expand(p, ss, S_STACK);
+		bzero(p->p_saddr, ss);
 		vm_xalloc(elp->el_vnodep, elp->el_tsize, sizeof(struct exec_linker));
 
 		/*
 		 * read in data segment
 		 */
-		vm_estabur(elp->el_proc, ds, 0, 0, 0, SEG_RO);
+		vm_estabur(p, ds, 0, 0, 0, SEG_RO);
 		offset = sizeof(struct exec);
 		if (ovflag) {
 			offset += sizeof(ovhead);
@@ -332,10 +327,9 @@ getxfile(elp, a_magic, overlay, ovflag, sep)
 		u.u_acflag &= ~ASUGID;	/* start fresh setuid/gid priv use */
 #endif
 	}
-	u.u_procp = elp->el_proc;
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
 	u.u_sep = sep;
-	vm_estabur(elp->el_proc, ds, ss, ts, sep, SEG_RO);
+	vm_estabur(p, ts, ds, ss, sep, SEG_RO);
 }

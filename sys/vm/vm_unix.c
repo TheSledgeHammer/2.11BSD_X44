@@ -64,7 +64,7 @@
 
 #include <machine/setjmp.h>
 
-static int 	estabur(vm_data_t, vm_stack_t, vm_text_t, segsz_t, segsz_t, segsz_t, int, int);
+static int 	estabur(vm_text_t, vm_data_t, vm_stack_t, segsz_t, segsz_t, segsz_t, int, int);
 
 /* ARGSUSED */
 int
@@ -121,7 +121,7 @@ nostk()
 
 	p = u.u_procp;
 	vm = p->p_vmspace;
-	if (vm_estabur(p, 0, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO)) {
+	if (vm_estabur(p, u.u_tsize, 0, u.u_ssize, u.u_sep, SEG_RO)) {
 		return (1);
 	}
 	vm_expand(p, 0, PSEG_STACK);
@@ -187,7 +187,7 @@ grow(p, sp)
 		return (0);
 	}
 
-	if (vm_estabur(p, u.u_dsize, u.u_ssize + si, u.u_tsize, u.u_sep, SEG_RO)) {
+	if (vm_estabur(p, u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, SEG_RO)) {
 		return (0);
 	}
 
@@ -334,10 +334,10 @@ vm_expand(p, newsize, type)
  * read-write or read-only.
  */
 int
-vm_estabur(p, dsize, ssize, tsize, sep, flags)
-	struct proc		*p;
-	segsz_t	 		dsize, ssize, tsize;
-	int 	 		sep, flags;
+vm_estabur(p, tsize, dsize, ssize, sep, flags)
+	struct proc	*p;
+	segsz_t	 tsize, dsize, ssize;
+	int	sep, flags;
 {
 	register struct vmspace *vm;
 	vm_pseudo_segment_t	pseg;
@@ -347,19 +347,19 @@ vm_estabur(p, dsize, ssize, tsize, sep, flags)
 	if (pseg == NULL) {
 		return (ENOMEM);
 	}
-	if (estabur(pseg->ps_data, pseg->ps_stack, pseg->ps_text, dsize, ssize, tsize, sep, flags)) {
+	if (estabur(pseg->ps_text, pseg->ps_data, pseg->ps_stack, tsize, dsize, ssize, sep, flags)) {
 		return (0);
 	}
 	return (ENOMEM);
 }
 
 static int
-estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
-	vm_data_t 		data;
-	vm_stack_t 		stack;
-	vm_text_t 		text;
-	segsz_t			dsize, ssize, tsize;
-	int 			sep, flags;
+estabur(text, data, stack, tsize, dsize, ssize, sep, flags)
+	vm_text_t text;
+	vm_data_t data;
+	vm_stack_t stack;
+	segsz_t tsize, dsize, ssize;
+	int sep, flags;
 {
 	if (data == NULL || stack == NULL || text == NULL) {
 		return (ENOMEM);

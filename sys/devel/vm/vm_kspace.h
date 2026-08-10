@@ -32,10 +32,6 @@
 struct vm_kspace;
 typedef struct vm_kspace *vm_kspace_t;
 
-/* virtual kernel I & D space */
-extern char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
-extern char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
-
 struct vm_kspace {
 	/* idspace */
 	vm_idspace_t idspace_i; /* instruction idspace for kspace */
@@ -46,7 +42,12 @@ struct vm_kspace {
 #define kdsd_space idspace_d->dspace /* kdsd space */
 };
 
-extern vm_object_t kspace_object; /* single kspace object */
+/* virtual kernel I & D space */
+extern char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
+extern char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
+
+extern vm_kspace_t kernel_kspace;	/* kernel kspace */
+extern vm_object_t kspace_object; 	/* single kspace object */
 
 /* Should be placed in vm_kern.h and be external */
 extern vm_map_t    kisd_map; /* kernel I-Space descriptor map */
@@ -66,11 +67,14 @@ extern vm_map_t    kdsa_map; /* kernel D-Space address map */
 #define KDSA_MAX	vm_map_max(kdsa_map)
 #define KDSD_MAX	vm_map_max(kdsd_map)
 
+void vm_kspace_init(void);
+vm_kspace_t vm_kspace_allocate(vm_size_t);
+void vm_kspace_deallocate(vm_kspace_t);
 int vm_kspace_map_alloc(vm_kspace_t, int, int);
 int vm_kspace_map_free(vm_kspace_t, int, int);
 int vm_kspace_save(vm_kspace_t, int, int);
 int vm_kspace_restore(vm_kspace_t, int, int);
-vm_offset_t vm_kspace_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
+vm_offset_t *vm_kspace_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
 
 /* macros for 2.11BSD like save and restore maps */
 #ifdef NONSEPERATE
@@ -92,7 +96,6 @@ vm_offset_t vm_kspace_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
 	(void)vm_kspace_restore((kspace), KDSA, (flags)); \
 	(void)vm_kspace_restore((kspace), KDSD, (flags));
 #endif
-
 
 /* Kspace macro's */
 #define KSPACE_OFFSET(kspace, addr, maptype) 	(vm_kspace_offset((kspace), (addr), FALSE, FALSE, (maptype)))

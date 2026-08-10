@@ -115,7 +115,7 @@ sbrk()
 	if (n < 0) {
 		n = 0;
 	}
-	error = vm_estabur(p, n, p->p_ssize, p->p_tsize, sep, SEG_RO);
+	error = vm_estabur(p, p->p_tsize, n, p->p_ssize, sep, SEG_RO);
 	if (error != 0) {
 		return (error);
 	}
@@ -163,7 +163,7 @@ sstk()
 	if (n < 0) {
 		n = 0;
 	}
-	error = vm_estabur(p, p->p_dsize, n, p->p_tsize, sep, SEG_RO);
+	error = vm_estabur(p, p->p_tsize, p->p_dsize, n, sep, SEG_RO);
 	if (error != 0) {
 		return (error);
 	}

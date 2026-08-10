@@ -1332,6 +1332,59 @@ vm_map_submap(map, start, end, submap)
 }
 
 /*
+ * vm_map_offset: [kernel use only:]
+ * Does not search map entries or objects.
+ * Searches for map offset within the map's min and max range.
+ * variables:
+ * map: the map to search
+ * offset: the offset within map
+ * use_min: if true and offset is 0, returns map's min offset
+ * use_max: if true and offset is 0, returns map's max offset
+ * Note: setting both use_min and use_max true will return 0.
+ * returns the offset if found or 0 if not.
+ */
+vm_offset_t *
+vm_map_offset(map, offset, use_min, use_max)
+	vm_map_t map;
+	vm_offset_t offset;
+	bool_t use_min, use_max;
+{
+	vm_offset_t *addr, i;
+
+	vm_map_lock(map);
+	/* check use_min and use_max */
+	if ((offset == 0) && ((use_min == TRUE) || (use_max == TRUE))) {
+		vm_map_unlock(map);
+		if ((use_min == TRUE) && (use_max != TRUE)) {
+			vm_map_unlock(map);
+			return (vm_map_min(map));
+		}
+		if ((use_min != TRUE) && (use_max == TRUE)) {
+			vm_map_unlock(map);
+			return (vm_map_max(map));
+		}
+		vm_map_unlock(map);
+		return (0);
+	}
+	/* check map min and max */
+	if ((offset == vm_map_min(map)) || (offset == vm_map_max(map))) {
+		vm_map_unlock(map);
+		return (offset);
+	}
+	/* search map range */
+	for (i = trunc_page(map->min_offset); i < round_page(map->max_offset); i += PAGE_SIZE) {
+		*addr = (offset + i);
+		if (*addr == (offset + i)) {
+			offset = *addr;
+			vm_map_unlock(map);
+			return (addr);
+		}
+	}
+	vm_map_unlock(map);
+	return (0);
+}
+
+/*
  *	vm_map_protect:
  *
  *	Sets the protection of the specified address

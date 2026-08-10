@@ -187,7 +187,7 @@ vm_object_t
 vm_object_allocate(size)
 	vm_size_t	size;
 {
-	register vm_object_t	result;
+	register vm_object_t result;
 
 	result = (vm_object_t)malloc((u_long)sizeof(*result), M_VMOBJ, M_WAITOK);
 

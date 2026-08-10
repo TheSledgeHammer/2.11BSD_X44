@@ -32,10 +32,6 @@
 struct vm_uspace;
 typedef struct vm_uspace *vm_uspace_t;
 
-/* virtual user I & D space */
-extern char *uispace_min, *uispace_max; /* user i-space vm_map range */
-extern char *udspace_min, *udspace_max; /* user d-space vm_map range */
-
 struct vm_uspace {
 	/* idspace */
 	vm_idspace_t idspace_i; /* instruction idspace for uspace */
@@ -46,7 +42,12 @@ struct vm_uspace {
 #define udsd_space idspace_d->dspace /* udsd space */
 };
 
-extern vm_object_t uspace_object; /* single uspace object */
+/* virtual user I & D space */
+extern char *uispace_min, *uispace_max; /* user i-space vm_map range */
+extern char *udspace_min, *udspace_max; /* user d-space vm_map range */
+
+extern vm_uspace_t kernel_uspace;	/* kernel uspace */
+extern vm_object_t uspace_object; 	/* single uspace object */
 
 /* Should be placed in vm_kern.h and be external */
 extern vm_map_t    uisd_map; /* user I-Space descriptor map */
@@ -66,11 +67,14 @@ extern vm_map_t    udsa_map; /* user D-Space address map */
 #define UDSA_MAX	vm_map_max(udsa_map)
 #define UDSD_MAX	vm_map_max(udsd_map)
 
+void vm_uspace_init(void);
+vm_uspace_t vm_uspace_allocate(vm_size_t);
+void vm_uspace_deallocate(vm_uspace_t);
 int vm_uspace_map_alloc(vm_uspace_t, int, int);
 int vm_uspace_map_free(vm_uspace_t, int, int);
 int vm_uspace_write(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
 int vm_uspace_read(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
-vm_offset_t vm_uspace_offset(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
+vm_offset_t *vm_uspace_offset(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
 
 /* Uspace macro's */
 

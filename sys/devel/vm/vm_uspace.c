@@ -42,11 +42,69 @@
 #define USPACE_MAX	VM_MAXUSER_ADDRESS
 
 /* uspace */
+static struct vm_uspace kernel_uspace_store;
+vm_uspace_t kernel_uspace;
 vm_object_t uspace_object;
 char *uispace_min, *uispace_max; /* user i-space vm_map range */
 char *udspace_min, *udspace_max; /* user d-space vm_map range */
 
+static void vm_uspace_alloc(vm_offset_t, vm_offset_t, vm_size_t, vm_uspace_t);
+static void vm_uispace_map_init(vm_uspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+static void vm_udspace_map_init(vm_uspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+
 void
+vm_uspace_init(void)
+{
+	kernel_uspace = &kernel_uspace_store;
+	vm_uspace_alloc((USPACE_MAX - USPACE_MIN), USPACE_MIN, USPACE_MAX, kernel_uspace);
+}
+
+vm_uspace_t
+vm_uspace_allocate(size)
+	vm_size_t size;
+{
+	vm_uspace_t result;
+
+	result = (vm_uspace_t)malloc(sizeof(*result), M_VMUSPACE, M_WAITOK);
+	vm_uspace_alloc(result, USPACE_MIN, USPACE_MAX, size);
+	return (result);
+}
+
+void
+vm_uspace_deallocate(uspace)
+	vm_uspace_t uspace;
+{
+	if (uspace != NULL) {
+		if (uspace->idspace_i != NULL) {
+			return;
+		}
+		if (uspace->idspace_d != NULL) {
+			return;
+		}
+		free(uspace, M_VMUSPACE);
+	}
+}
+
+static void
+vm_uspace_alloc(min, max, size, uspace)
+	vm_offset_t min, max;
+	vm_size_t size;
+	vm_uspace_t uspace;
+{
+	if (size > (max - min)) {
+		vm_uspace_deallocate(uspace);
+		panic("vm_uspace_allocate: unable to allocate uspace, size is too big");
+		return;
+	}
+
+	/* Init I-Space */
+	vm_uispace_map_init(uspace, M_VMUSPACE, uspace_object, &min, &max, size, TRUE);
+
+	/* Init D-Space */
+	vm_udspace_map_init(uspace, M_VMUSPACE, uspace_object, &min, &max, size, TRUE);
+}
+
+static void
 vm_uispace_map_init(uspace, mtype, object, min, max, size, pageable)
 	vm_uspace_t uspace;
 	int mtype;
@@ -86,7 +144,7 @@ vm_uispace_map_init(uspace, mtype, object, min, max, size, pageable)
 	}
 }
 
-void
+static void
 vm_udspace_map_init(uspace, mtype, object, min, max, size, pageable)
 	vm_uspace_t uspace;
 	int mtype;
@@ -124,67 +182,6 @@ vm_udspace_map_init(uspace, mtype, object, min, max, size, pageable)
 	if (error != 0) {
 		return;
 	}
-}
-
-vm_uspace_t
-vm_uspace_allocate(min, max, size)
-	vm_offset_t min, max;
-	vm_size_t size;
-{
-	vm_uspace_t uspace;
-
-	if (min < USPACE_MIN && max > USPACE_MAX) {
-		return (NULL);
-	}
-	uspace = (vm_uspace_t)malloc(sizeof(*uspace), M_VMUSPACE, M_WAITOK);
-	//MALLOC(uspace, struct vm_uspace *, sizeof(struct vm_uspace *), M_VMUSPACE, M_WAITOK);
-	if (uspace == NULL) {
-		return (NULL);
-	}
-	vm_uspace_init(uspace, min, max, size);
-	return (uspace);
-}
-
-vm_uspace_deallocate(uspace)
-	vm_uspace_t uspace;
-{
-	if (uspace != NULL) {
-		if (uspace->idspace_i != NULL) {
-			return;
-		}
-		if (uspace->idspace_d != NULL) {
-			return;
-		}
-		free(uspace, M_VMUSPACE);
-	}
-}
-
-void
-vm_uspace_init(uspace, min, max, size)
-	vm_uspace_t uspace;
-	vm_offset_t min, max;
-	vm_size_t size;
-{
-	//vm_uspace_t uspace;
-	//vm_size_t size;
-
-	/* Allocate Uspace */
-	MALLOC(uspace, struct vm_uspace *, sizeof(struct vm_uspace *), M_VMUSPACE, M_WAITOK);
-	if (min < USPACE_MIN && max > USPACE_MAX) {
-		FREE(uspace, M_VMUSPACE);
-		return;
-	}
-
-	/* Set Object Size */
-	size = (max - min);
-
-	/* Init I-Space */
-	vm_uispace_map_init(uspace, M_VMUSPACE, uspace_object, min, &min, &max,
-			size, TRUE);
-
-	/* Init D-Space */
-	vm_udspace_map_init(uspace, M_VMUSPACE, uspace_object, min, &min, &max,
-			size, TRUE);
 }
 
 /* uspace maps */
@@ -366,7 +363,7 @@ vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
 	return (error);
 }
 
-vm_offset_t
+vm_offset_t *
 vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 	vm_uspace_t uspace;
 	vm_offset_t offset;
@@ -374,7 +371,7 @@ vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 	int maptype;
 {
 	vm_idspace_t idspace_i, idspace_d;
-	vm_offset_t val;
+	vm_offset_t *val;
 
 	idspace_i = uspace->idspace_i;
 	if (idspace_i != NULL) {
@@ -386,7 +383,7 @@ vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 			val = vm_idspace_map_offset(idspace_i, uisd_space, offset, use_min, use_max);
 			break;
 		default:
-			val = 0;
+			*val = 0;
 			break;
 		}
 	}
@@ -401,7 +398,7 @@ vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 			val = vm_idspace_map_offset(idspace_d, udsd_space, offset, use_min, use_max);
 			break;
 		default:
-			val = 0;
+			*val = 0;
 			break;
 		}
 	}
