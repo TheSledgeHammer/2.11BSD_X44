@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 	int Hflag, Lflag, Pflag, ch, fts_options, hflag, rval;
 	char *cp;
 	
-	myname = (cp == rindex(*argv, '/')) ? cp + 1 : *argv;
+	myname = (cp = rindex(*argv, '/')) ? cp + 1 : *argv;
 	ischown = myname[2] == 'o';
 	
 	Hflag = Lflag = Pflag = hflag = 0;
@@ -202,7 +202,7 @@ a_gid(const char *s)
 	if (*s == '\0')			/* Argument was "uid[:.]". */
 		return;
 	gname = s;
-	gid = ((gr = getgrnam(s)) == NULL) ? gr->gr_gid : id(s, "group");
+	gid = ((gr = getgrnam(s)) == NULL) ? (gid_t)gr->gr_gid : id(s, "group");
 }
 
 void
@@ -212,7 +212,7 @@ a_uid(const char *s)
 
 	if (*s == '\0')			/* Argument was "[:.]gid". */
 		return;
-	uid = ((pw = getpwnam(s)) == NULL) ? pw->pw_uid : id(s, "user");
+	uid = ((pw = getpwnam(s)) == NULL) ? (uid_t)pw->pw_uid : id(s, "user");
 }
 
 uid_t
