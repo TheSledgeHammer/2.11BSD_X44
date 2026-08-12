@@ -134,7 +134,7 @@ vm_allocate(map, addr, size, anywhere)
 		*addr = trunc_page(*addr);
 	size = round_page(size);
 
-	result = vm_map_find(map, NULL, (vm_offset_t) 0, addr, size, anywhere);
+	result = vm_map_find(map, NULL, (vm_offset_t)0, addr, size, anywhere);
 
 	return (result);
 }

@@ -27,7 +27,7 @@
  *
  */
 /*
- * Fletcher Algorithms:
+ * Fletcher Checksum:
  * Based on the following paper:
  * "Efficient Implementation of the
  * OSI Transport-Protocol
@@ -41,37 +41,32 @@
 #include <sys/param.h>
 #include <sys/types.h>
 
+#include <machine/endian.h>
+
 #include <lib/libkern/libkern.h>
 
-/*
- * Notes:
- * - Fletcher32 and Fletcher64 are not implemented correctly.
- * They will not output a valid checksum.
- */
-
 uint16_t
-fletcher16(uint8_t *data, int count)
+fletcher16(const uint8_t *buf, size_t len)
 {
     uint16_t c0, c1;
-    int first, last;
-    int i, duration;
+    size_t first, last;
+    size_t i;
+    const size_t duration = 256;
 
     c0 = 0;
     c1 = 0;
     last = 0;
     i = 0;
-    duration = 256;
 
-    while (i < count) {
+    while (i < len) {
         first = last;
-        last = MIN(first + duration, count);
+        last = MIN(first + duration, len);
         for (i = first; i < last; i++) {
-            c0 = (c0 + data[i]);
+            c0 = (c0 + buf[i]);
             c1 = (c1 + c0);
         }
         c0 = (c0 % 255);
         c1 = (c1 % 255);
-        count -= last;
     }
     if (c0 == 255) {
         c0 = 0;
@@ -79,73 +74,92 @@ fletcher16(uint8_t *data, int count)
     if (c1 == 255) {
         c1 = 0;
     }
-    return ((c1 << 8) | c0);
+    return ((uint16_t)(c1 << 8) | c0);
+}
+
+uint32_t
+fletcher32(const uint8_t *buf, size_t len)
+{
+    uint32_t c0, c1;
+    size_t first, last;
+    size_t i;
+    const size_t duration = 65536;
+
+    c0 = 0;
+    c1 = 0;
+    last = 0;
+    i = 0;
+
+    while (i < len) {
+        first = last;
+        last = MIN(first + duration, len);
+        for (i = first; i < last; i += 2) {
+        	unit16_t word;
+        	if ((i + 1) < last) {
+#if BYTE_ORDER == LITTLE_ENDIAN
+        		word = (uint16_t)buf[i] | ((uint16_t)buf[i + 1] << 8);
+#else
+        		word = ((uint16_t)buf[i + 1] << 8 | (uint16_t)buf[i]);
+#endif
+        	} else {
+        		word = (uint16_t)buf[i];
+        	}
+
+            c0 = (c0 + word);
+            c1 = (c1 + c0);
+        }
+        c0 = (c0 % 65535);
+        c1 = (c1 % 65535);
+    }
+    if (c0 == 65535) {
+        c0 = 0;
+    }
+    if (c1 == 65535) {
+        c1 = 0;
+    }
+    return ((uint32_t)(c1 << 16) | c0);
 }
 
 #ifdef notyet
-uint32_t
-fletcher32(uint16_t *data, int count)
-{
-    uint32_t c0, c1;
-    int first, last;
-    int i, duration;
-
-    c0 = 0;
-    c1 = 0;
-    last = 0;
-    i = 0;
-    duration = 256;
-
-    while (i < count) {
-        first = last;
-        last = MIN(first + duration, count);
-        for (i = first; i < last; i++) {
-            c0 = (c0 + data[i]);
-            c1 = (c1 + c0);
-        }
-        c0 = (c0 % 255);
-        c1 = (c1 % 255);
-        count -= last;
-    }
-    if (c0 == 255) {
-        c0 = 0;
-    }
-    if (c1 == 255) {
-        c1 = 0;
-    }
-    return ((c1 << 16) | c0);
-}
-
 uint64_t
-fletcher64(uint32_t *data, int count)
+fletcher64(const uint8_t *buf, size_t len)
 {
     uint64_t c0, c1;
-    int first, last;
-    int i, duration;
+    size_t first, last;
+    size_t i;
+    const size_t duration = 4294967296;
 
     c0 = 0;
     c1 = 0;
     last = 0;
     i = 0;
-    duration = 256;
 
-    while (i < count) {
+    while (i < len) {
         first = last;
-        last = MIN(first + duration, count);
-        for (i = first; i < last; i++) {
-            c0 = (c0 + data[i]);
+        last = MIN(first + duration, len);
+        for (i = first; i < last; i += 2) {
+        	uint32_t word;
+        	if ((i + 1) < last) {
+#if BYTE_ORDER == LITTLE_ENDIAN
+        		word = (uint32_t)buf[i] | ((uint32_t)buf[i + 1] << 16);
+#else
+        		word = ((uint32_t)buf[i + 1] << 16 | (uint32_t)buf[i]);
+#endif
+        	} else {
+        		word = (uint32_t)buf[i];
+        	}
+            c0 = (c0 + word);
             c1 = (c1 + c0);
         }
-        c0 = (c0 % 255);
-        c1 = (c1 % 255);
-        count -= last;
+        c0 = (c0 % 4294967295);
+        c1 = (c1 % 4294967295);
     }
-    if (c0 == 255) {
+    if (c0 == 4294967295) {
         c0 = 0;
     }
-    if (c1 == 255) {
+    if (c1 == 4294967295) {
         c1 = 0;
     }
-    return ((c1 << 32) | c0);
+    return ((uint64_t)(c1 << 32) | c0);
 }
 #endif

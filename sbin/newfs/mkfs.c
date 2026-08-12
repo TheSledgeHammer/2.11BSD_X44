@@ -34,13 +34,16 @@
 #include <sys/cdefs.h>
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)mkfs.c	8.11 (Berkeley) 5/3/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
@@ -101,15 +104,16 @@ union {
 
 int	fsi, fso;
 
-void 	fsinit(const struct timeval *, mode_t, uid_t, gid_t);
-void 	iput(union dinode *, ino_t);
-daddr_t	alloc(int, int);
-void 	rdfs(daddr_t, int, char *);
-void 	wtfs(daddr_t, int, char *);
-long	calcipg(long, long, off_t);
-int 	isblock(struct fs *, unsigned char *, int);
-void	clrblock(struct fs *, unsigned char *, int);
-void 	setblock(struct fs *, unsigned char *, int);
+static void fsinit(const struct timeval *, mode_t, uid_t, gid_t);
+static void started(int);
+static void iput(union dinode *, ino_t);
+static daddr_t alloc(int, int);
+static void rdfs(daddr_t, int, char *);
+static void wtfs(daddr_t, int, char *);
+static long calcipg(long, long, off_t);
+static int isblock(struct fs *, unsigned char *, int);
+static void clrblock(struct fs *, unsigned char *, int);
+static void	setblock(struct fs *, unsigned char *, int);
 
 void
 mkfs(struct partition *pp, char *fsys, int fi, int fo, mode_t mfsmode, uid_t mfsuid, gid_t mfsgid)
@@ -129,7 +133,7 @@ mkfs(struct partition *pp, char *fsys, int fi, int fo, mode_t mfsmode, uid_t mfs
 #endif
 	if (mfs) {
 		ppid = getpid();
-		(void) signal(SIGUSR1, started);
+		(void)signal(SIGUSR1, started);
 		if (i == fork()) {
 			if (i == -1) {
 				perror("mfs");
@@ -256,7 +260,7 @@ mkfs(struct partition *pp, char *fsys, int fi, int fo, mode_t mfsmode, uid_t mfs
 	}
 	sblock.fs_size = dbtofsb(&sblock, fssize);
 	if (Oflag <= 1) {
-		if ((uint64_t) sblock.fs_size >= 1ull << 31) {
+		if ((uint64_t)sblock.fs_size >= 1ull << 31) {
 			printf("Too many fragments (0x%" PRIx64
 					") for a FFSv1 filesystem\n", sblock.fs_size);
 			exit(22);
@@ -697,7 +701,7 @@ next:
 /*
  * Initialize a cylinder group.
  */
-void
+static void
 initcg(uint32_t cylno, const struct timeval *utime)
 {
 	daddr_t cbase, dmax;
@@ -889,7 +893,7 @@ struct odirect olost_found_dir[] = {
 union dinode node;
 char buf[MAXBSIZE];
 
-void
+static void
 fsinit(const struct timeval *utime, mode_t mfsmode, uid_t mfsuid, gid_t mfsgid)
 {
 	int i;
@@ -1016,7 +1020,7 @@ fsinit(const struct timeval *utime, mode_t mfsmode, uid_t mfsuid, gid_t mfsgid)
  * construct a set of directory entries in "buf".
  * return size of directory.
  */
-int
+static int
 makedir(struct direct *protodir, int entries)
 {
 	char *cp;
@@ -1037,7 +1041,7 @@ makedir(struct direct *protodir, int entries)
 /*
  * allocate a block or frag
  */
-daddr_t
+static daddr_t
 alloc(int size, int mode)
 {
 	int i, frag;
@@ -1090,7 +1094,7 @@ goth:
 /*
  * Calculate number of inodes per group.
  */
-long
+static long
 calcipg(long cpg, long bpcg, off_t *usedbp)
 {
 	int i;
@@ -1124,7 +1128,7 @@ calcipg(long cpg, long bpcg, off_t *usedbp)
 /*
  * Allocate an inode on the disk
  */
-void
+static void
 iput(union dinode *ip, ino_t ino)
 {
 	struct ufs1_dinode dp1[UFS1_MAXINOPB];
@@ -1168,17 +1172,17 @@ iput(union dinode *ip, ino_t ino)
 /*
  * Notify parent process that the filesystem has created itself successfully.
  */
-void
-started(void)
+static void
+started(int status)
 {
-
+	status = 0;
 	exit(0);
 }
 
 /*
  * Replace libc function with one suited to our needs.
  */
-caddr_t
+static caddr_t
 malloc(u_long size)
 {
 	char *base, *i;
@@ -1205,49 +1209,11 @@ malloc(u_long size)
 		return (0);
 	return ((caddr_t)sbrk(size));
 }
-#ifdef notyet
-/*
- * Replace libc function with one suited to our needs.
- */
-caddr_t
-realloc(char *ptr, u_long size)
-{
-	void *p;
 
-	if ((p = malloc(size)) == NULL)
-		return (NULL);
-	memmove(p, ptr, size);
-	free(ptr);
-	return (p);
-}
-
-/*
- * Replace libc function with one suited to our needs.
- */
-char *
-calloc(u_long size, u_long numelm)
-{
-	caddr_t base;
-
-	size *= numelm;
-	base = malloc(size);
-	memset(base, 0, size);
-	return (base);
-}
-
-/*
- * Replace libc function with one suited to our needs.
- */
-free(char *ptr)
-{
-	
-	/* do not worry about it for now */
-}
-#endif
 /*
  * read a block from the file system
  */
-void
+static void
 rdfs(daddr_t bno, int size, char *bf)
 {
 	int n;
@@ -1272,7 +1238,7 @@ rdfs(daddr_t bno, int size, char *bf)
 /*
  * write a block to the file system
  */
-void
+static void
 wtfs(daddr_t bno, int size, char *bf)
 {
 	int n;
@@ -1299,7 +1265,7 @@ wtfs(daddr_t bno, int size, char *bf)
 /*
  * check if a block is available
  */
-int
+static int
 isblock(struct fs *fs, unsigned char *cp, int h)
 {
 	unsigned char mask;
@@ -1329,7 +1295,7 @@ isblock(struct fs *fs, unsigned char *cp, int h)
 /*
  * take a block out of the map
  */
-void
+static void
 clrblock(struct fs *fs, unsigned char *cp, int h)
 {
 	switch ((fs)->fs_frag) {
@@ -1358,7 +1324,7 @@ clrblock(struct fs *fs, unsigned char *cp, int h)
 /*
  * put a block into the map
  */
-void
+static void
 setblock(struct fs *fs, unsigned char *cp, int h)
 {
 	switch (fs->fs_frag) {

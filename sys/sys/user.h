@@ -99,8 +99,10 @@ struct user {
 
 /* 1.1 - processes and protection */
 	struct pcred		*u_pcred;				/* Process owner's identity. */
-	struct ucred		*u_ucred;				/* Credentials */
+#define u_svuid			u_pcred->p_svuid		/* Saved effective user id. */
+#define	u_svgid 		u_pcred->p_svgid		/* Saved effective group id. */
 
+	struct ucred		*u_ucred;				/* Credentials */
 #define u_groups		u_ucred->cr_groups		/* groups */
 #define u_uid			u_ucred->cr_uid			/* effective user id */
 

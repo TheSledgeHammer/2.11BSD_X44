@@ -59,18 +59,6 @@ lowbias32(uint32_t x)
     return (x);
 }
 
-/* lowbias32 inverse */
-uint32_t
-lowbias32_r(uint32_t x)
-{
-    x ^= x >> 15;
-    x *= UINT32_C(0x37132227);
-    x ^= x >> 15 ^ x >> 30;
-    x *= UINT32_C(0x333c4925);
-    x ^= x >> 16;
-    return (x);
-}
-
 /*
  * triple32
  * exact bias: 0.020888578919738908
@@ -85,19 +73,5 @@ triple32(uint32_t x)
     x ^= x >> 15;
     x *= UINT32_C(0x31848bab);
     x ^= x >> 14;
-    return (x);
-}
-
-/* triple32 inverse */
-uint32_t
-triple32_r(uint32_t x)
-{
-    x ^= x >> 14 ^ x >> 28;
-    x *= UINT32_C(0x32b21703);
-    x ^= x >> 15 ^ x >> 30;
-    x *= UINT32_C(0x469e0db1);
-    x ^= x >> 11 ^ x >> 22;
-    x *= UINT32_C(0x79a85073);
-    x ^= x >> 17;
     return (x);
 }

@@ -62,16 +62,21 @@ static char copyright[] =
 #include <ufs/ufs/ufsmount.h>
 
 #include <ctype.h>
+#include <err.h>
 #include <errno.h>
+#include <grp.h>
+#include <limits.h>
 #include <paths.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <util.h>
 
-#include <stdarg.h>
-
+#include "dkcksum.h"
 #include "extern.h"
 #include "mntopts.h"
 
@@ -81,10 +86,12 @@ struct mntopt mopts[] = {
 	{ NULL },
 };
 
-struct disklabel *getdisklabel(char *, int);
+static struct disklabel *getdisklabel(char *, int);
+static void rewritelabel(char *, int, struct disklabel *);
 static gid_t mfs_group(const char *);
 static uid_t mfs_user(const char *);
-void	fatal(const char *fmt, ...);
+static void fatal(const char *, ...);
+static void usage(void);
 
 #define	COMPAT			/* allow non-labeled disks */
 
@@ -181,13 +188,10 @@ int	 unlabeled;
 #endif
 
 char	device[MAXPATHLEN];
-char	*progname;
 
 int
 main(int argc, char *argv[])
 {
-	//extern char *optarg;
-	//extern int optind;
 	register int ch;
 	register struct partition *pp;
 	register struct disklabel *lp;
@@ -195,18 +199,19 @@ main(int argc, char *argv[])
 	struct stat st;
 	struct statfs *mp;
 	int fsi, fso, len, n;
-	char *cp, *s1, *s2, *special, *opstring, buf[BUFSIZ];
+	char *cp, *s1, *s2, *special, buf[BUFSIZ];
+	const char *opstring;
 
 	mode_t mfsmode = 01777;	/* default mode for a /tmp-type directory */
 	uid_t mfsuid = 0;	/* user root */
 	gid_t mfsgid = 0;	/* group wheel */
-
+/*
 	if (progname == strrchr(*argv, '/'))
 		++progname;
 	else
 		progname = *argv;
-
-	if (strstr(progname, "mfs")) {
+*/
+	if (strstr(getprogname(), "mfs")) {
 		mfs = 1;
 		Nflag++;
 	}
@@ -422,7 +427,7 @@ main(int argc, char *argv[])
 	}
 	if (fssize == 0)
 		fssize = pp->p_size;
-	if (fssize > pp->p_size && !mfs)
+	if ((u_int32_t)fssize > pp->p_size && !mfs)
 	       fatal("%s: maximum file system size on the `%c' partition is %d",
 			argv[0], *cp, pp->p_size);
 	if (rpm == 0) {
@@ -492,8 +497,8 @@ main(int argc, char *argv[])
 			cylspares = 0;
 	}
 	secpercyl = nsectors * ntracks - cylspares;
-	if (secpercyl != lp->d_secpercyl)
-		fprintf(stderr, "%s (%d) %s (%lu)\n",
+	if ((u_int32_t)secpercyl != lp->d_secpercyl)
+		fprintf(stderr, "%s (%d) %s (%u)\n",
 			"Warning: calculated sectors per cylinder", secpercyl,
 			"disagrees with disk label", lp->d_secpercyl);
 	if (maxbpg == 0) {
@@ -561,7 +566,7 @@ char lmsg[] = "%s: can't read disk label";
 #endif
 
 
-struct disklabel *
+static struct disklabel *
 getdisklabel(char *s, int fd)
 {
 	static struct disklabel lab;
@@ -584,7 +589,7 @@ getdisklabel(char *s, int fd)
 	return (&lab);
 }
 
-void
+static void
 rewritelabel(char *s, int fd, struct disklabel *lp)
 {
 #ifdef COMPAT
@@ -654,7 +659,7 @@ mfs_user(const char *uname)
 }
 
 /*VARARGS*/
-void
+static void
 fatal(const char *fmt, ...)
 {
 	va_list ap;
@@ -672,7 +677,7 @@ fatal(const char *fmt, ...)
 	/*NOTREACHED*/
 }
 
-void
+static void
 usage(void)
 {
 	if (mfs) {

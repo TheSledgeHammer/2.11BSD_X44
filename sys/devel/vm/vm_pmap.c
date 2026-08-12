@@ -492,7 +492,8 @@ vm_choverlay(flags)
 }
 
 void
-overlay_setup(vp, tsize, dsize, ssize, ovflag, overlay, sep)
+overlay_setup(p, vp, tsize, dsize, ssize, ovflag, overlay, sep)
+	struct proc *p;
 	struct vnode *vp;
 	vm_size_t tsize, dsize, ssize;
 	int ovflag, overlay, sep;
@@ -564,5 +565,4 @@ overlay_setup(vp, tsize, dsize, ssize, ovflag, overlay, sep)
 	u.u_ssize = ssize;
 	u.u_sep = sep;
 	vm_estabur(p, tsize, dsize, ssize, sep, PSEG_RO);
-
 }

@@ -98,6 +98,12 @@ struct exec_linker {
 	//int 				    el_stringspace;			/* space left in tmp string storage area */
 	long 				    el_argc;				/* count of environment strings */
 	long					el_envc;				/* count of argument strings */
+#ifdef notyet
+	/* overlays and I and D */
+	int						el_ovflag;
+	int 					el_overlay;				/* flag for overlays */
+	char 					el_sep;					/* flag for I and D separation */
+#endif
 };
 
 #define	EXEC_DEFAULT_VMCMD_SETSIZE	9	/* # of cmds in set to start */
@@ -109,6 +115,12 @@ struct exec_linker {
 #define	EXEC_DESTR		0x0010		/* destructive ops performed */
 #define	EXEC_32			0x0020		/* 32-bit binary emulation */
 #define	EXEC_HASES		0x0040		/* don't update exec switch pointer */
+
+#ifdef notyet
+#define EXEC_OVFLAG		0x0080		/* has overlays and/or I and D separation */
+#define EXEC_OVERLAY	0x0100		/* flags for overlays */
+#define EXEC_IDSEP		0x0120		/* flags for I and D separation */
+#endif
 
 struct exec_vmcmd {
 	int					(*ev_proc)(struct proc *, struct exec_vmcmd *);
@@ -138,6 +150,7 @@ extern int exec_maxhdrsz;
 
 void 	vmcmd_extend(struct exec_vmcmd_set *);
 void 	kill_vmcmds(struct exec_vmcmd_set *);
+int		vmcmds_proc_error(struct proc *, struct exec_vmcmd_set *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);

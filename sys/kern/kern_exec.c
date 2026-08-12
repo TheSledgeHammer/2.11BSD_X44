@@ -639,11 +639,14 @@ exec_create_vmspace(p, elp, base_vcp)
 	/*  Now map address space */
 	vmspace->vm_tsize = btoc(elp->el_tsize);
 	vmspace->vm_dsize = btoc(elp->el_dsize);
-	vmspace->vm_taddr = (caddr_t) elp->el_taddr;
-	vmspace->vm_daddr = (caddr_t) elp->el_daddr;
+	vmspace->vm_taddr = (caddr_t)elp->el_taddr;
+	vmspace->vm_daddr = (caddr_t)elp->el_daddr;
 	vmspace->vm_ssize = btoc(elp->el_ssize);
-	vmspace->vm_minsaddr = (caddr_t) elp->el_minsaddr;
-	vmspace->vm_maxsaddr = (caddr_t) elp->el_maxsaddr;
+	vmspace->vm_minsaddr = (caddr_t)elp->el_minsaddr;
+	vmspace->vm_maxsaddr = (caddr_t)elp->el_maxsaddr;
+	u.u_tsize = btoc(elp->el_tsize);
+	u.u_dsize = btoc(elp->el_dsize);
+	u.u_ssize = btoc(elp->el_ssize);
 
 	/* create the new process's VM space by running the vmcmds */
 #ifdef DIAGNOSTIC

@@ -121,6 +121,24 @@ kill_vmcmds(evsp)
 }
 
 int
+vmcmds_proc_error(p, evsp)
+	struct proc *p;
+	struct exec_vmcmd_set *evsp;
+{
+	struct exec_vmcmd *vcp;
+	int i, error;
+
+	for (i = 0; i < evsp->evs_used; i++) {
+		vcp = &evsp->evs_cmds[i];
+		error = (vcp->ev_proc)(p, vcp);
+		if (error != 0) {
+			return (error);
+		}
+	}
+	return (0);
+}
+
+int
 vmcmd_map_pagedvn(p, cmd)
 	struct proc *p;
 	struct exec_vmcmd *cmd;
@@ -201,7 +219,7 @@ vmcmd_readvn(p, cmd)
 	vm_prot_t prot, maxprot;
 
 	vmspace = p->p_vmspace;
-	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
+	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t)cmd->ev_addr,
 			cmd->ev_size, cmd->ev_offset, UIO_USERSPACE, IO_UNIT, p->p_ucred,
 			NULL, p);
 	if (error) {
@@ -263,7 +281,7 @@ exec_read_from(p, vp, off, bf, size)
 	int error;
 	size_t resid;
 
-	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, NULL)) != 0) {
+	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, p)) != 0) {
 		return (error);
 	}
 	/*

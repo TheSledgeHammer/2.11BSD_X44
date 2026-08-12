@@ -22,8 +22,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-void mkfs(struct partition *, char *, int, int, mode_t, uid_t, gid_t);
-
 /*
  * variables set up by front end.
  */
@@ -58,3 +56,4 @@ extern int		sbsize;			/* superblock size */
 extern u_long	memleft;		/* virtual memory available */
 extern caddr_t	membase;		/* start address of memory based filesystem */
 
+void mkfs(struct partition *, char *, int, int, mode_t, uid_t, gid_t);
