@@ -94,7 +94,7 @@ fletcher32(const uint8_t *buf, size_t len)
         first = last;
         last = MIN(first + duration, len);
         for (i = first; i < last; i += 2) {
-        	unit16_t word;
+        	uint16_t word;
         	if ((i + 1) < last) {
 #if BYTE_ORDER == LITTLE_ENDIAN
         		word = (uint16_t)buf[i] | ((uint16_t)buf[i + 1] << 8);
