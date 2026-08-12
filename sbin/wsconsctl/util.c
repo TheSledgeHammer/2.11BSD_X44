@@ -34,9 +34,9 @@
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsksymdef.h>
 
-#include <dev/video/videomode/videomode.h>
-#include <dev/video/videomode/edidreg.h>
-#include <dev/video/videomode/edidvar.h>
+//#include <dev/video/videomode/videomode.h>
+//#include <dev/video/videomode/edidreg.h>
+//#include <dev/video/videomode/edidvar.h>
 
 #include <err.h>
 #include <errno.h>
