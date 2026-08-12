@@ -1356,18 +1356,21 @@ vm_map_offset(map, offset, use_min, use_max)
 	if ((offset == 0) && ((use_min == TRUE) || (use_max == TRUE))) {
 		vm_map_unlock(map);
 		if ((use_min == TRUE) && (use_max != TRUE)) {
+			*addr = vm_map_min(map);
 			vm_map_unlock(map);
-			return (vm_map_min(map));
+			return (addr);
 		}
 		if ((use_min != TRUE) && (use_max == TRUE)) {
+			*addr = vm_map_max(map);
 			vm_map_unlock(map);
-			return (vm_map_max(map));
+			return (addr);
 		}
 		vm_map_unlock(map);
 		return (0);
 	}
 	/* check map min and max */
 	if ((offset == vm_map_min(map)) || (offset == vm_map_max(map))) {
+		*addr = offset;
 		vm_map_unlock(map);
 		return (offset);
 	}
