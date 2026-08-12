@@ -22,4 +22,6 @@ CPPFLAGS+=-I${IDIST}/include -I${IDIST}/sntp/libopts
 
 CLEANFILES+=${MAN}
 
+COPTS.ntp-keygen.c+= -Wno-restrict
+
 .include <bsd.prog.mk>
