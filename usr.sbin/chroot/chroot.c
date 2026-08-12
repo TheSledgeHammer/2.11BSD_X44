@@ -35,13 +35,17 @@
 #include <sys/cdefs.h>
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)chroot.c	8.1 (Berkeley) 6/9/93";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -58,7 +62,7 @@ static char sccsid[] = "@(#)chroot.c	8.1 (Berkeley) 6/9/93";
 #include <string.h>
 #include <unistd.h>
 
-void usage(void);
+static void usage(void);
 
 static int
 getnum(const char *str, uintmax_t *num)
@@ -79,7 +83,6 @@ getnum(const char *str, uintmax_t *num)
 	return 0;
 }
 
-
 static gid_t
 getgroup(const char *group)
 {
@@ -98,7 +101,7 @@ getgroup(const char *group)
 static uid_t
 getuser(const char *user)
 {
-	uintmax_t	num;
+	uintmax_t num;
 	struct passwd	*pw;
 
 	if ((pw = getpwnam(user)) != NULL)
@@ -118,10 +121,10 @@ main(int argc, char *argv[])
 	char *grouplist; /* group list to switch to ... */
 	char *p;
 	int ch;
-	char *shell;
-	gid_t	gid, gidlist[NGROUPS_MAX];
-	uid_t	uid;
-	int		gids;
+	const char *shell;
+	gid_t gid, gidlist[NGROUPS_MAX];
+	uid_t uid;
+	int	gids;
 
 	user = NULL;
 	group = NULL;
@@ -192,15 +195,15 @@ main(int argc, char *argv[])
 
 	if (!(shell = getenv("SHELL")))
 		shell = _PATH_BSHELL;
-	execlp(shell, shell, "-i", NULL);
+	execlp(shell, shell, "-i", (char *)NULL);
 	err(1, "%s", shell);
 	/* NOTREACHED */
 }
 
-void
+static void
 usage(void)
 {
-	(void)fprintf(stderr, "usage: %s [-G group,group,...] [-g group] "
-	    "[-u user]chroot newroot [command]\n");
+	(void)fprintf(stderr, "usage: chroot [-g group] [-G group,group,...] "
+	    "[-u user] newroot [command]\n");
 	exit(1);
 }
