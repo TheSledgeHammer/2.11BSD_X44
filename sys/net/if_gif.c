@@ -537,8 +537,8 @@ gif_ioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	struct proc *p = curproc;	/* XXX */
-	struct gif_softc *sc  = (struct gif_softc*)ifp->if_softc;
-	struct ifreq     *ifr = (struct ifreq*)data;
+	struct gif_softc *sc = (struct gif_softc *)ifp->if_softc;
+	struct ifreq *ifr = (struct ifreq *)data;
 	int error = 0, size;
 	struct sockaddr *dst, *src;
 #ifdef SIOCSIFMTU
@@ -575,7 +575,7 @@ gif_ioctl(ifp, cmd, data)
 		break;
 
 	case SIOCSIFMTU:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			break;
 		mtu = ifr->ifr_mtu;
 		if (mtu < GIF_MTU_MIN || mtu > GIF_MTU_MAX)
@@ -591,7 +591,7 @@ gif_ioctl(ifp, cmd, data)
 	case SIOCSIFPHYADDR_IN6:
 #endif /* INET6 */
 	case SIOCSLIFPHYADDR:
-		if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+		if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 			break;
 		switch (cmd) {
 #ifdef INET

@@ -58,23 +58,23 @@ fletcher16(const uint8_t *buf, size_t len)
     last = 0;
     i = 0;
 
-    while (i < len) {
-        first = last;
-        last = MIN(first + duration, len);
-        for (i = first; i < last; i++) {
-            c0 = (c0 + buf[i]);
-            c1 = (c1 + c0);
-        }
-        c0 = (c0 % 255);
-        c1 = (c1 % 255);
-    }
-    if (c0 == 255) {
-        c0 = 0;
-    }
-    if (c1 == 255) {
-        c1 = 0;
-    }
-    return ((uint16_t)(c1 << 8) | c0);
+	while (i < len) {
+		first = last;
+		last = MIN(first + duration, len);
+		for (i = first; i < last; i++) {
+			c0 = (c0 + buf[i]);
+			c1 = (c1 + c0);
+		}
+		c0 = (c0 % 255);
+		c1 = (c1 % 255);
+	}
+	if (c0 == 255) {
+		c0 = 0;
+	}
+	if (c1 == 255) {
+		c1 = 0;
+	}
+	return ((uint16_t)(c1 << 8) | c0);
 }
 
 uint32_t
@@ -90,34 +90,34 @@ fletcher32(const uint8_t *buf, size_t len)
     last = 0;
     i = 0;
 
-    while (i < len) {
-        first = last;
-        last = MIN(first + duration, len);
-        for (i = first; i < last; i += 2) {
-        	uint16_t word;
-        	if ((i + 1) < last) {
+	while (i < len) {
+		first = last;
+		last = MIN(first + duration, len);
+		for (i = first; i < last; i += 2) {
+			uint16_t word;
+			if ((i + 1) < last) {
 #if BYTE_ORDER == LITTLE_ENDIAN
-        		word = (uint16_t)buf[i] | ((uint16_t)buf[i + 1] << 8);
+				word = (uint16_t)buf[i] | ((uint16_t)buf[i + 1] << 8);
 #else
-        		word = ((uint16_t)buf[i + 1] << 8 | (uint16_t)buf[i]);
+				word = ((uint16_t)buf[i + 1] << 8 | (uint16_t)buf[i]);
 #endif
-        	} else {
-        		word = (uint16_t)buf[i];
-        	}
+			} else {
+				word = (uint16_t)buf[i];
+			}
 
-            c0 = (c0 + word);
-            c1 = (c1 + c0);
-        }
-        c0 = (c0 % 65535);
-        c1 = (c1 % 65535);
-    }
-    if (c0 == 65535) {
-        c0 = 0;
-    }
-    if (c1 == 65535) {
-        c1 = 0;
-    }
-    return ((uint32_t)(c1 << 16) | c0);
+			c0 = (c0 + word);
+			c1 = (c1 + c0);
+		}
+		c0 = (c0 % 65535);
+		c1 = (c1 % 65535);
+	}
+	if (c0 == 65535) {
+		c0 = 0;
+	}
+	if (c1 == 65535) {
+		c1 = 0;
+	}
+	return ((uint32_t)(c1 << 16) | c0);
 }
 
 #ifdef notyet
@@ -134,32 +134,32 @@ fletcher64(const uint8_t *buf, size_t len)
     last = 0;
     i = 0;
 
-    while (i < len) {
-        first = last;
-        last = MIN(first + duration, len);
-        for (i = first; i < last; i += 2) {
-        	uint32_t word;
-        	if ((i + 1) < last) {
+	while (i < len) {
+		first = last;
+		last = MIN(first + duration, len);
+		for (i = first; i < last; i += 2) {
+			uint32_t word;
+			if ((i + 1) < last) {
 #if BYTE_ORDER == LITTLE_ENDIAN
-        		word = (uint32_t)buf[i] | ((uint32_t)buf[i + 1] << 16);
+				word = (uint32_t)buf[i] | ((uint32_t)buf[i + 1] << 16);
 #else
-        		word = ((uint32_t)buf[i + 1] << 16 | (uint32_t)buf[i]);
+				word = ((uint32_t)buf[i + 1] << 16 | (uint32_t)buf[i]);
 #endif
-        	} else {
-        		word = (uint32_t)buf[i];
-        	}
-            c0 = (c0 + word);
-            c1 = (c1 + c0);
-        }
-        c0 = (c0 % 4294967295);
-        c1 = (c1 % 4294967295);
-    }
-    if (c0 == 4294967295) {
-        c0 = 0;
-    }
-    if (c1 == 4294967295) {
-        c1 = 0;
-    }
-    return ((uint64_t)(c1 << 32) | c0);
+			} else {
+				word = (uint32_t)buf[i];
+			}
+			c0 = (c0 + word);
+			c1 = (c1 + c0);
+		}
+		c0 = (c0 % 4294967295);
+		c1 = (c1 % 4294967295);
+	}
+	if (c0 == 4294967295) {
+		c0 = 0;
+	}
+	if (c1 == 4294967295) {
+		c1 = 0;
+	}
+	return ((uint64_t)(c1 << 32) | c0);
 }
 #endif

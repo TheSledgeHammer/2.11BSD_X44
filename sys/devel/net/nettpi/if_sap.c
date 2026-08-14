@@ -36,13 +36,13 @@
 
 #include "if_sap.h"
 
-struct sap_tree sap_radix_tree;
+static struct sap_tree sap_radix_tree;
 static uint32_t sap_hashids[SAP_TABLE_MAX];
 
-struct sap_select sap_table[] = {
+static struct sap_select sap_table[] = {
 		/* 0 - AF_UNSPEC */
 		{
-				.ss_sid = 0,
+				.ss_sid = SAP_SID_UNKNOWN,
 				.ss_af = AF_UNSPEC,
 				.ss_type =  { SAP_TYPE_UNKNOWN },
 				.ss_subnet = { SAP_SUBNET_UNKNOWN },
@@ -51,7 +51,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 1 - AF_INET */
 		{
-				.ss_sid = 1,
+				.ss_sid = SAP_SID_INET4,
 				.ss_af = AF_INET,
 				.ss_type =  { SAP_TYPE_SIN4 },
 				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
@@ -60,7 +60,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 2 - AF_INET6 */
 		{
-				.ss_sid = 2,
+				.ss_sid = SAP_SID_INET6,
 				.ss_af = AF_INET6,
 				.ss_type =  { SAP_TYPE_SIN6 },
 				.ss_subnet = { SAP_SUBNET_IPV4, SAP_SUBNET_IPV6 },
@@ -69,7 +69,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 3 - AF_NS */
 		{
-				.ss_sid = 3,
+				.ss_sid = SAP_SID_NS,
 				.ss_af = AF_NS,
 				.ss_type =  { SAP_TYPE_SNS },
 				.ss_subnet = { SAP_SUBNET_IDP },
@@ -78,7 +78,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 4 - AF_ISO */
 		{
-				.ss_sid = 4,
+				.ss_sid = SAP_SID_ISO,
 				.ss_af = AF_ISO,
 				.ss_type =  { SAP_TYPE_SISO },
 				.ss_subnet = { SAP_SUBNET_CONS, SAP_SUBNET_CLNS, SAP_SUBNET_CLNP, SAP_SUBNET_ISIS, SAP_SUBNET_ESIS },
@@ -87,7 +87,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 5 - AF_CCITT */
 		{
-				.ss_sid = 5,
+				.ss_sid = SAP_SID_X25,
 				.ss_af = AF_CCITT,
 				.ss_type =  { SAP_TYPE_SX25 },
 				.ss_subnet = { SAP_SUBNET_X25 },
@@ -96,7 +96,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 6 - AF_NATM */
 		{
-				.ss_sid = 6,
+				.ss_sid = SAP_SID_ATM,
 				.ss_af = AF_NATM,
 				.ss_type =  { SAP_TYPE_SATM },
 				.ss_subnet = { SAP_SUBNET_ATM },
@@ -105,7 +105,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 7 - AF_IPX */
 		{
-				.ss_sid = 7,
+				.ss_sid = SAP_SID_IPX,
 				.ss_af = AF_IPX,
 				.ss_type =  { SAP_TYPE_SIPX },
 				.ss_subnet = { SAP_SUBNET_IPX },
@@ -114,7 +114,7 @@ struct sap_select sap_table[] = {
 		},
 		/* 8 - AF_SNA */
 		{
-				.ss_sid = 8,
+				.ss_sid = SAP_SID_SNA,
 				.ss_af = AF_SNA,
 				.ss_type =  { SAP_TYPE_SSNA },
 				.ss_subnet = { SAP_SUBNET_SNA },
@@ -129,6 +129,7 @@ struct sap_select sap_table[] = {
 void
 sap_init(struct sap_tree *tree)
 {
+	tree = &sap_radix_tree;
 	tree->st_hashtbl = hashinit(SAPLEN, M_IFSAP, &tree->st_hash);
 }
 
@@ -328,13 +329,6 @@ sap_class(struct sockaddr_sap *sasap, int clazz)
 		return;
 	}
 	sasap->sasap_class = sap_class_select(clazz);
-}
-
-void
-sap_addr_init(struct sap_addr *sapa, char *addr, u_char addrlen)
-{
-	bcopy(addr, sapa->saa_addr, sizeof(sapa->saa_addr));
-	sapa->saa_addrlen = addrlen;
 }
 
 int
@@ -882,6 +876,18 @@ sap_id_check(struct sap_node *sap, long type, long subnet, long subtran, int cla
 /*
  * sockaddr_sap functions
  */
+void
+sockaddr_sap_init(struct sockaddr_sap *sasap, long type, long subnet, long subtran, int clazz)
+{
+	if (sasap == NULL) {
+		return;
+	}
+	sap_type(sasap, type);
+	sap_subnet(sasap, subnet);
+	sap_subtran(sasap, subtran);
+	sap_class(sasap, clazz);
+}
+
 static int
 sockaddr_sap_compare_type(struct sockaddr_sap *a, struct sockaddr_sap *b)
 {
@@ -972,6 +978,16 @@ sockaddr_sap_compare(struct sockaddr_sap *a, struct sockaddr_sap *b)
 /*
  * sap_addr functions
  */
+void
+sap_addr_init(struct sap_addr *sapa, char *addr, u_char addrlen)
+{
+	if (sapa == NULL) {
+		return;
+	}
+	bcopy(addr, sapa->saa_addr, sizeof(sapa->saa_addr));
+	sapa->saa_addrlen = addrlen;
+}
+
 static int
 sap_addr_compare_addr(struct sap_addr *a, struct sap_addr *b)
 {

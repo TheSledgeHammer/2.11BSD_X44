@@ -348,9 +348,9 @@ pk_input(struct mbuf *m, ...)
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("pkintr");
 
-	if ((pkp = (struct pkcb*) m->m_pkthdr.rcvif) == 0)
+	if ((pkp = (struct pkcb *)m->m_pkthdr.rcvif) == 0)
 		return;
-	xp = mtod(m, struct x25_packet*);
+	xp = mtod(m, struct x25_packet *);
 	ptype = pk_decode(xp);
 	lcn = LCN(xp);
 	lcp = pkp->pk_chan[lcn];

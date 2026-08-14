@@ -281,7 +281,8 @@ exec_read_from(p, vp, off, bf, size)
 	int error;
 	size_t resid;
 
-	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, p)) != 0) {
+	error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_ucred, &resid, p);
+	if (error != 0) {
 		return (error);
 	}
 	/*

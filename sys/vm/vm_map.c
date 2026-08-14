@@ -1372,7 +1372,7 @@ vm_map_offset(map, offset, use_min, use_max)
 	if ((offset == vm_map_min(map)) || (offset == vm_map_max(map))) {
 		*addr = offset;
 		vm_map_unlock(map);
-		return (offset);
+		return (addr);
 	}
 	/* search map range */
 	for (i = trunc_page(map->min_offset); i < round_page(map->max_offset); i += PAGE_SIZE) {

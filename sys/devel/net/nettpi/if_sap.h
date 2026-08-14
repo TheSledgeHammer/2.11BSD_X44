@@ -54,10 +54,10 @@ struct sap_addr {
 };
 
 struct sockaddr_sap {
-	long sasap_type;				/* stack type (address family) */
+	long sasap_type;			/* stack type (address family) */
 	long sasap_subnet;			/* subnet type (network layer protocols) */
 	long sasap_subtran;			/* subtran type (transport layer protocols) */
-	int sasap_class;				/* class type (connection or connection-less) */
+	int sasap_class;			/* class type (connection or connection-less) */
 	struct sap_addr sasap_addr;
 };
 
@@ -84,17 +84,22 @@ struct sap_node {
 };
 
 /* sap select id's */
+/* Note: Remember to update the corresponding sap_table
+ * in if_sap.c, when adding or changing the order of
+ * sap_sids. The sap_table is vital to if_sap.c working
+ * correctly.
+ */
 enum sap_sids {
-	SAP_SID_UNKNOWN,
-	SAP_SID_INET4,
-	SAP_SID_INET6,
-	SAP_SID_NS,
-	SAP_SID_ISO,
-	SAP_SID_X25,
-	SAP_SID_ATM,
-	SAP_SID_IPX,
-	SAP_SID_SNA,
-	SAP_SID_MAX
+	SAP_SID_UNKNOWN,/* 0 - AF_UNSPEC */
+	SAP_SID_INET4,	/* 1 - AF_INET */
+	SAP_SID_INET6,	/* 2 - AF_INET6 */
+	SAP_SID_NS,		/* 3 - AF_NS */
+	SAP_SID_ISO,	/* 4 - AF_ISO */
+	SAP_SID_X25, 	/* 5 - AF_CCITT */
+	SAP_SID_ATM,	/* 6 - AF_NATM */
+	SAP_SID_IPX,	/* 7 - AF_IPX */
+	SAP_SID_SNA,	/* 8 - AF_SNA */
+	SAP_SID_MAX		/* 9 */
 };
 
 /* sockaddr_sap radix masks */
@@ -199,11 +204,9 @@ enum sap_subtran {
 	SAP_SUBTRAN_MAX
 };
 
-extern struct sap_tree sap_radix_tree;
-extern struct sap_select sap_table[SAP_TABLE_MAX];
-
 void sap_init(struct sap_tree *);
 
+void sockaddr_sap_init(struct sockaddr_sap *, long, long, long, int);
 int sockaddr_sap_compare(struct sockaddr_sap *, struct sockaddr_sap *);
 void sap_addr_init(struct sap_addr *, char *, u_char);
 int sap_addr_compare(struct sap_addr *, struct sap_addr *);

@@ -46,15 +46,8 @@
 #include "if_sap.h"
 #include "iso_nsap.h"
 
-static void
-nsap_init(struct nsap_iso *nsap, struct sap_tree *tree)
-{
-	sap_init(tree);
-	nsap->nsi_tree = tree;
-}
-
 static struct nsap_iso *
-nsap_create(struct sap_tree *tree)
+nsap_create(void)
 {
 	struct nsap_iso *nsap;
 
@@ -63,7 +56,7 @@ nsap_create(struct sap_tree *tree)
 		return (NULL);
 	}
 	bzero((caddr_t)nsap, sizeof(*nsap));
-	nsap_init(nsap, tree);
+	sap_init(nsap->nsi_tree);
 	return (nsap);
 }
 
@@ -80,10 +73,12 @@ nsap_attach(struct nsap_iso *nsap, int sid, int af)
 {
 	struct nsap_iso *nsiiso;
 	struct nsapisohead *head;
+	struct sap_tree *tree;
 
-	nsiiso = nsap_create(&sap_radix_tree);
+	nsiiso = nsap_create();
 	if (nsiiso != NULL) {
-		sap_insert_af(&sap_radix_tree, nsiiso, sid, af);
+		tree = nsiiso->nsi_tree;
+		sap_insert_af(tree, nsiiso, sid, af);
 		nsap = nsiiso;
 	} else {
 		nsap = NULL;
@@ -93,9 +88,12 @@ nsap_attach(struct nsap_iso *nsap, int sid, int af)
 void
 nsap_detach(struct nsap_iso *nsap, int sid, int af)
 {
+	struct sap_tree *tree;
+
 	if (nsap != NULL) {
-		if (!LIST_EMPTY(nsap->nsi_tree->st_hashtbl)) {
-			sap_remove_af(&sap_radix_tree, nsap, sid, af);
+		tree = nsap->nsi_tree;
+		if (!LIST_EMPTY(tree->st_hashtbl)) {
+			sap_remove_af(tree, nsap, sid, af);
 		} else {
 			nsap_destroy(nsap);
 		}

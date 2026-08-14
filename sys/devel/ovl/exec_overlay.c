@@ -32,7 +32,7 @@ int exec_aout_prep_magic3(struct proc *, struct exec_linker *, int, int, int); /
 int exec_aout_prep_magic4(struct proc *, struct exec_linker *, int, int, int); /* Overlay */
 int exec_aout_prep_magic5(struct proc *, struct exec_linker *, int, int, int); /* Auto-Overlay (Non-Separate) */
 int exec_aout_prep_magic6(struct proc *, struct exec_linker *, int, int, int); /* Auto-Overlay (Separate) */
-int exec_aout_prep_common(struct proc *, struct exec_linker *, int, int, int);  /* Common function used for MAGIC3 through to MAGIC6 */
+int exec_aout_prep_common(struct proc *, struct exec_linker *, struct exec *, int, int, int);  /* Common function used for MAGIC3 through to MAGIC6 */
 
 int
 exec_aout_prep_overlay(p, elp)
@@ -107,7 +107,6 @@ exec_aout_prep_zmagic(p, elp, overlay, ovflag, sep)
 {
 	struct exec *a_out = (struct exec *)elp->el_image_hdr;
 
-	a_out->a_magic = ZMAGIC;
 	u.u_error = exec_aout_prep_zmagic(p, elp);
 	return (u.u_error);
 }
@@ -120,7 +119,6 @@ exec_aout_prep_magic1(p, elp, overlay, ovflag, sep)
 {
 	struct exec *a_out = (struct exec *)elp->el_image_hdr;
 
-	a_out->a_magic = OMAGIC;
 	u.u_error = exec_aout_prep_omagic(p, elp);
 	return (u.u_error);
 }
@@ -133,7 +131,6 @@ exec_aout_prep_magic2(p, elp, overlay, ovflag, sep)
 {
 	struct exec *a_out = (struct exec *)elp->el_image_hdr;
 
-	a_out->a_magic = NMAGIC;
 	u.u_error = exec_aout_prep_nmagic(p, elp);
 	return (u.u_error);
 }
@@ -144,8 +141,15 @@ exec_aout_prep_magic3(p, elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
+	struct exec *a_out = (struct exec*) elp->el_image_hdr;
+
+	elp->el_taddr = USRTEXT;
+	elp->el_tsize = a_out->a_text;
+	elp->el_daddr = elp->el_taddr + a_out->a_text;
+	elp->el_dsize = a_out->a_data + a_out->a_bss;
+	elp->el_entry = a_out->a_entry;
 	sep++;
-	u.u_error = exec_aout_prep_common(p, elp, ovflag, overlay, sep);
+	u.u_error = exec_aout_prep_common(p, elp, a_out, ovflag, overlay, sep);
 	return (u.u_error);
 }
 
@@ -155,8 +159,15 @@ exec_aout_prep_magic4(p, elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
+	struct exec *a_out = (struct exec*) elp->el_image_hdr;
+
+	elp->el_taddr = USRTEXT;
+	elp->el_tsize = a_out->a_text;
+	elp->el_daddr = elp->el_taddr + a_out->a_text;
+	elp->el_dsize = a_out->a_data + a_out->a_bss;
+	elp->el_entry = a_out->a_entry;
 	overlay++;
-	u.u_error = exec_aout_prep_common(p, elp, ovflag, overlay, sep);
+	u.u_error = exec_aout_prep_common(p, elp, a_out, ovflag, overlay, sep);
 	return (u.u_error);
 }
 
@@ -166,8 +177,15 @@ exec_aout_prep_magic5(p, elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
+	struct exec *a_out = (struct exec*) elp->el_image_hdr;
+
+	elp->el_taddr = USRTEXT;
+	elp->el_tsize = a_out->a_text;
+	elp->el_daddr = elp->el_taddr + a_out->a_text;
+	elp->el_dsize = a_out->a_data + a_out->a_bss;
+	elp->el_entry = a_out->a_entry;
 	ovflag++;
-	u.u_error = exec_aout_prep_common(p, elp, ovflag, overlay, sep);
+	u.u_error = exec_aout_prep_common(p, elp, a_out, ovflag, overlay, sep);
 	return (u.u_error);
 }
 
@@ -177,10 +195,28 @@ exec_aout_prep_magic6(p, elp, overlay, ovflag, sep)
 	struct exec_linker *elp;
 	int overlay, ovflag, sep;
 {
+	struct exec *a_out = (struct exec*) elp->el_image_hdr;
+
+	elp->el_taddr = USRTEXT;
+	elp->el_tsize = a_out->a_text;
+	elp->el_daddr = elp->el_taddr + a_out->a_text;
+	elp->el_dsize = a_out->a_data + a_out->a_bss;
+	elp->el_entry = a_out->a_entry;
 	sep++;
 	ovflag++;
-	u.u_error = exec_aout_prep_common(p, elp, ovflag, overlay, sep);
+	u.u_error = exec_aout_prep_common(p, elp, a_out, ovflag, overlay, sep);
 	return (u.u_error);
+}
+
+int
+exec_coff_prep_common(p, elp, ap, ovflag, overlay, sep)
+	struct proc *p;
+	struct exec_linker *elp;
+	struct coff_aouthdr *ap;
+	int ovflag, overlay, sep;
+{
+
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 /*
@@ -188,22 +224,16 @@ exec_aout_prep_magic6(p, elp, overlay, ovflag, sep)
  * u.u_error set on error
  */
 int
-exec_aout_prep_common(p, elp, ovflag, overlay, sep)
+exec_aout_prep_common(p, elp, a_out, ovflag, overlay, sep)
 	struct proc *p;
 	struct exec_linker *elp;
+	struct exec *a_out;
 	int ovflag, overlay, sep;
 {
-	struct exec *a_out = (struct exec *)elp->el_image_hdr;
 	struct u_ovd sovdata;
 	u_long ovhead[NOVL], ovoffset[NOVL];
 	u_long ovbase, ovmax, curov, dbase, offset;
 	long num;
-
-	elp->el_taddr = USRTEXT;
-	elp->el_tsize = a_out->a_text;
-	elp->el_daddr = elp->el_taddr + a_out->a_text;
-	elp->el_dsize = a_out->a_data + a_out->a_bss;
-	elp->el_entry = a_out->a_entry;
 
 	/*
 	 * if auto overlay get second header
@@ -327,7 +357,7 @@ exec_aout_prep_common(p, elp, ovflag, overlay, sep)
 	(void)vm_estabur(p, elp->el_tsize, elp->el_dsize, elp->el_ssize, sep, SEG_RO);
 
 out:
-	return (*elp->el_esch->ex_setup_stack)(elp);
+	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
 
@@ -338,9 +368,113 @@ struct exec_ovdata {
 	u_long eo_ov_offset[NOVL];
 	u_long eo_ovmax;
 	long eo_nseg;
-
 	u_long eo_ovhead[NOVL];
 };
+
+int
+exec_setup_ovdata(p, vp, ovhead, ovbase, curov, ovdbase, ovmax, ovoffset, nseg, tsize, off, ovflag)
+	struct proc *p;
+	struct vnode *vp;
+	u_long *ovhead[NOVL], *ovbase, *curov, *ovdbase, *ovmax, *ovoffset[NOVL], tsize, off;
+	long *nseg;
+	int ovflag;
+{
+	struct exec_ovdata sovdata;
+	int error;
+	size_t resid;
+
+	*ovbase = 0;
+	*curov = 0;
+	if (ovflag) {
+		error = vn_rdwr(UIO_READ, vp, *ovhead, sizeof(*ovhead), off, UIO_SYSSPACE, IO_UNIT, p->p_ucred, &resid, p);
+		if (error != 0) {
+			return (error);
+		}
+		if (resid != 0) {
+			return (ENOEXEC);
+		}
+		*ovbase = ctos(tsize);
+		*ovmax = btoc(*ovhead[0]);
+		*nseg = ctos(*ovmax);
+		*ovdbase = stoc(*ovbase + nseg);
+		*ovoffset[0] = tsize;
+		{
+			int i;
+			u_long t;
+
+			/* check if any overlay is larger than ovmax */
+			for (i = 1; i <= NOVL; i++) {
+				t = btoc(*ovhead[i]);
+				if (t > *ovmax) {
+					return (ENOEXEC);
+				}
+				ovoffset[i] = t + ovoffset[i - 1];
+			}
+		}
+	}
+	return (0);
+}
+
+vmcmd_map_ovdata(p, cmd)
+	struct proc *p;
+	struct exec_vmcmd *cmd;
+{
+	struct vmspace *vmspace;
+	struct vnode *vp;
+	int error;
+
+	vmspace = p->p_vmspace;
+	vp = cmd->ev_vnodep;
+	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+
+
+	error = exec_setup_ovdata(p, c);
+}
+
+vmcmds_setup_ovdata(p, vp, eovd)
+	struct proc *p;
+	struct vnode *vp;
+	struct exec_ovdata *eovd;
+{
+	struct exec_ovdata sovdata;
+	u_long ovhead[NOVL];
+	int error;
+	size_t resid;
+
+	sovdata = *eovd;
+	eovd->eo_ovbase = 0;
+	eovd->eo_curov = 0;
+
+	error = vn_rdwr(UIO_READ, vp, ovhead, sizeof(ovhead), off, UIO_SYSSPACE, IO_UNIT, p->p_ucred, &resid, p);
+	if (error != 0) {
+		*eovd = sovdata;
+		return (error);
+	}
+	if (resid != 0) {
+		return (ENOEXEC);
+	}
+	eovd->eo_ovbase = ctos(tsize);
+	eovd->eo_ovmax = btoc(ovhead[0]);
+	eovd->eo_nseg = ctos(eovd->eo_ovmax);
+	eovd->eo_dbase = stoc(eovd->eo_ovbase + eovd->eo_nseg);
+	eovd->eo_ov_offset[0] = tsize;
+	{
+		int i;
+		u_long t;
+
+		/* check if any overlay is larger than ovmax */
+		for (i = 1; i <= NOVL; i++) {
+			t = btoc(ovhead[i]);
+			if (t > eovd->eo_ovmax) {
+				*eovd = sovdata;
+				return (ENOEXEC);
+			}
+			eovd->eo_ov_offset[i] = t + eovd->eo_ov_offset[i - 1];
+		}
+	}
+
+	return (0);
+}
 
 int
 exec_setup_ovdata(elp, ovflag)
@@ -352,6 +486,10 @@ exec_setup_ovdata(elp, ovflag)
 	u_long ovbase, ovmax, curov, dbase;
 	long num;
 	int error;
+
+	struct exec_ovdata eovd;
+
+
 
 	sovdata = u.u_ovdata;
 	ovbase = 0;
