@@ -58,6 +58,17 @@ struct exec_vmcmd_set {
 	struct exec_vmcmd     	*evs_cmds;
 };
 
+#ifdef notyet
+/* automatic overlay data */
+struct exec_ovdata {
+	u_long eo_curov;			/* current overlay */
+	u_long eo_ovbase;			/* base of overlay area, seg. */
+	u_long eo_dbase;			/* start of data, clicks */
+	u_long eo_ov_offset[NOVL];	/* overlay offsets in text */
+	long eo_nseg;				/* number of overlay seg. regs. */
+};
+#endif
+
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
 
@@ -98,7 +109,9 @@ struct exec_linker {
 	//int 				    el_stringspace;			/* space left in tmp string storage area */
 	long 				    el_argc;				/* count of environment strings */
 	long					el_envc;				/* count of argument strings */
+
 #ifdef notyet
+	struct exec_ovdata 		el_ovdata;				/* automatic overlay data */
 	/* overlays and I and D */
 	int						el_ovflag;
 	int 					el_overlay;				/* flag for overlays */
@@ -131,7 +144,6 @@ struct exec_vmcmd {
     int                 ev_flags;
     struct vnode        *ev_vnodep;
     u_long 				ev_offset;
-    int 				ev_resid;
 
 #define	VMCMD_RELATIVE	0x0001	/* ev_addr is relative to base entry */
 #define	VMCMD_BASE		0x0002	/* marks a base entry */
@@ -154,6 +166,7 @@ int		vmcmds_proc_error(struct proc *, struct exec_vmcmd_set *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);
+int		vmcmd_readvn1(struct proc *, struct exec_vmcmd *);
 int		vmcmd_map_zero(struct proc *, struct exec_vmcmd *);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 int 	exec_setup_stack(struct proc *, struct exec_linker *);

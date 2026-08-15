@@ -64,7 +64,7 @@ extern void syscall();
 extern char	sigcode[], esigcode[];
 
 static int 	doexecve(struct execa_args *);
-static int 	execve_load(struct proc *, struct execa_args *, register_t *);
+static int 	execve_run(struct proc *, struct execa_args *, register_t *);
 
 static int exec_szsigcode(struct exec_linker *);
 static void exec_permissions(struct proc *, struct vattr *);
@@ -153,7 +153,7 @@ execve()
 
 	p = u.u_procp;
 	uap = (struct execa_args *)u.u_ap;
-	return (execve_load(p, uap, retval));
+	return (execve_run(p, uap, retval));
 }
 
 /*
@@ -171,7 +171,7 @@ fexecve()
 */
 
 static int
-execve_load(p, uap, retval)
+execve_run(p, uap, retval)
 	struct proc *p;
 	struct execa_args *uap;
 	register_t *retval;
@@ -647,6 +647,7 @@ exec_create_vmspace(p, elp, base_vcp)
 	u.u_tsize = btoc(elp->el_tsize);
 	u.u_dsize = btoc(elp->el_dsize);
 	u.u_ssize = btoc(elp->el_ssize);
+	//bcopy(elp->el_ovdata, u.u_ovdata, sizeof(struct exec_ovdata));
 
 	/* create the new process's VM space by running the vmcmds */
 #ifdef DIAGNOSTIC
