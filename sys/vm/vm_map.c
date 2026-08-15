@@ -2912,7 +2912,7 @@ RetryLookup: ;
 	 */
 
 	if (entry->is_sub_map) {
-		vm_map_t	old_map = map;
+		vm_map_t old_map = map;
 
 		*var_map = map = entry->object.sub_map;
 		vm_map_unlock_read(old_map);

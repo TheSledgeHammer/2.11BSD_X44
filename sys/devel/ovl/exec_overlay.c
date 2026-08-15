@@ -233,11 +233,14 @@ exec_aout_prep_common(p, elp, eovd, a_out)
 	u_long *ovhead, ovmax;
 	int error, sep = 0;
 
-	if ((elp->el_flags & EXEC_IDSEP) == 0) {
+	if ((elp->el_flags & EXEC_IDSEP) != 0) {
 		sep++;
 	}
 
-	MALLOC(eovd, struct exec_ovdata *, sizeof(struct exec_ovdata), M_EXEC, M_WAITOK);
+	error = exec_alloc_ovdata(eovd);
+	if (error != 0) {
+		goto bad;
+	}
 	sovdata = *eovd;
 	eovd->eo_ovbase = 0;
     eovd->eo_curov = 0;

@@ -295,6 +295,30 @@ exec_read_from(p, vp, off, bf, size)
 }
 
 int
+exec_alloc_ovdata(eovd)
+	struct exec_ovdata *eovd;
+{
+	MALLOC(eovd, struct exec_ovdata *, sizeof(struct exec_ovdata), M_EXEC, M_WAITOK);
+	if (eovd == NULL) {
+		bcopy(u.u_ovdata, eovd, sizeof(struct u_ovd));
+		if (eovd != NULL) {
+			return (0);
+		}
+		return (ENOMEM);
+	}
+	return (0);
+}
+
+void
+exec_free_ovdata(eovd)
+	struct exec_ovdata *eovd;
+{
+	if (eovd != NULL) {
+		FREE(eovd, M_EXEC);
+	}
+}
+
+int
 exec_setup_stack(p, elp)
 	struct proc *p;
 	struct exec_linker *elp;

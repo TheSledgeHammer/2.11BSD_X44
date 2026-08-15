@@ -58,7 +58,7 @@ struct exec_vmcmd_set {
 	struct exec_vmcmd     	*evs_cmds;
 };
 
-#ifdef notyet
+
 /* automatic overlay data */
 struct exec_ovdata {
 	u_long eo_curov;			/* current overlay */
@@ -67,7 +67,6 @@ struct exec_ovdata {
 	u_long eo_ov_offset[NOVL];	/* overlay offsets in text */
 	long eo_nseg;				/* number of overlay seg. regs. */
 };
-#endif
 
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
@@ -110,8 +109,8 @@ struct exec_linker {
 	long 				    el_argc;				/* count of environment strings */
 	long					el_envc;				/* count of argument strings */
 
-#ifdef notyet
 	struct exec_ovdata 		el_ovdata;				/* automatic overlay data */
+#ifdef notyet
 	/* overlays and I and D */
 	int						el_ovflag;
 	int 					el_overlay;				/* flag for overlays */
@@ -129,11 +128,9 @@ struct exec_linker {
 #define	EXEC_32			0x0020		/* 32-bit binary emulation */
 #define	EXEC_HASES		0x0040		/* don't update exec switch pointer */
 
-#ifdef notyet
 #define EXEC_OVFLAG		0x0080		/* has overlays and/or I and D separation */
 #define EXEC_OVERLAY	0x0100		/* flags for overlays */
 #define EXEC_IDSEP		0x0120		/* flags for I and D separation */
-#endif
 
 struct exec_vmcmd {
 	int					(*ev_proc)(struct proc *, struct exec_vmcmd *);
@@ -168,6 +165,8 @@ int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);
 int		vmcmd_map_zero(struct proc *, struct exec_vmcmd *);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
+int 	exec_alloc_ovdata(struct exec_ovdata *);
+void 	exec_free_ovdata(struct exec_ovdata *);
 int 	exec_setup_stack(struct proc *, struct exec_linker *);
 
 int 	copyargs(struct exec_linker *, struct ps_strings *, void *, void *);

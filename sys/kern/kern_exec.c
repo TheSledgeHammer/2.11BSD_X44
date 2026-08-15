@@ -70,6 +70,7 @@ static int exec_szsigcode(struct exec_linker *);
 static void exec_permissions(struct proc *, struct vattr *);
 static size_t exec_stacklen(struct exec_linker *, char *, int, int *);
 static int 	exec_create_vmspace(struct proc *, struct exec_linker *, struct exec_vmcmd *);
+static void exec_init_uarea(struct exec_linker *, struct exec_ovdata *);
 static char	*exec_extract_strings(struct exec_linker *, char **, char **, int, int *);
 static char *exec_copyout_strings(struct exec_linker *, struct ps_strings *, struct vmspace *, int, int, int *);
 
@@ -644,10 +645,7 @@ exec_create_vmspace(p, elp, base_vcp)
 	vmspace->vm_ssize = btoc(elp->el_ssize);
 	vmspace->vm_minsaddr = (caddr_t)elp->el_minsaddr;
 	vmspace->vm_maxsaddr = (caddr_t)elp->el_maxsaddr;
-	u.u_tsize = btoc(elp->el_tsize);
-	u.u_dsize = btoc(elp->el_dsize);
-	u.u_ssize = btoc(elp->el_ssize);
-	//bcopy(elp->el_ovdata, u.u_ovdata, sizeof(struct exec_ovdata));
+	exec_init_uarea(elp, &elp->el_ovdata);
 
 	/* create the new process's VM space by running the vmcmds */
 #ifdef DIAGNOSTIC
@@ -692,6 +690,33 @@ exec_create_vmspace(p, elp, base_vcp)
 		return (error);
 	} else {
 		return (0);
+	}
+}
+
+/*
+ * Initialize u area and auto overlay data.
+ * NOTE: Auto-overlay data will be zero,
+ * unless the "EXEC_OVFLAG" has been set.
+ */
+static void
+exec_init_uarea(elp, eovd)
+	struct exec_linker *elp;
+	struct exec_ovdata *eovd;
+{
+	int i;
+
+	/* Now map u.area */
+	u.u_tsize = btoc(elp->el_tsize);
+	u.u_dsize = btoc(elp->el_dsize);
+	u.u_ssize = btoc(elp->el_ssize);
+
+	/* Initialize auto-overlay data */
+	bcopy(eovd, u.u_ovdata, sizeof(struct exec_ovdata));
+	u.u_ovdata.uo_ovbase = eovd->eo_ovbase;
+	u.u_ovdata.uo_nseg = eovd->eo_nseg;
+	u.u_ovdata.uo_dbase = eovd->eo_dbase;
+	for (i = 0; i <= NOVL; i++) {
+		u.u_ovdata.uo_ov_offst[i] = eovd->eo_ov_offset[i];
 	}
 }
 

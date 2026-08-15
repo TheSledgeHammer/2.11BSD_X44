@@ -811,7 +811,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	if (flags & MAP_ANON)
 		type = PG_DFLT;
 	else {
-		vp = (struct vnode*) handle;
+		vp = (struct vnode *)handle;
 		if (vp->v_type == VCHR) {
 			type = PG_DEVICE;
 			handle = (caddr_t) vp->v_rdev;
@@ -868,7 +868,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 		 * the deallocate call below will terminate the
 		 * object which is fine.
 		 */
-		(void) pager_cache(object, FALSE);
+		(void)pager_cache(object, FALSE);
 		if (rv != KERN_SUCCESS)
 			goto out;
 	}
@@ -915,7 +915,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 			vm_offset_t off;
 
 			/* locate and allocate the target address space */
-			rv = vm_map_find(map, NULL, (vm_offset_t) 0, addr, size, fitit);
+			rv = vm_map_find(map, NULL, (vm_offset_t)0, addr, size, fitit);
 			if (rv != KERN_SUCCESS) {
 				vm_object_deallocate(object);
 				goto out;
