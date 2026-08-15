@@ -166,7 +166,6 @@ int		vmcmds_proc_error(struct proc *, struct exec_vmcmd_set *);
 int 	vmcmd_map_pagedvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_map_readvn(struct proc *, struct exec_vmcmd *);
 int 	vmcmd_readvn(struct proc *, struct exec_vmcmd *);
-int		vmcmd_readvn1(struct proc *, struct exec_vmcmd *);
 int		vmcmd_map_zero(struct proc *, struct exec_vmcmd *);
 int		exec_read_from(struct proc *, struct vnode *, u_long, void *, size_t);
 int 	exec_setup_stack(struct proc *, struct exec_linker *);
