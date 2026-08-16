@@ -300,7 +300,7 @@ exec_alloc_ovdata(eovd)
 {
 	MALLOC(eovd, struct exec_ovdata *, sizeof(struct exec_ovdata), M_EXEC, M_WAITOK);
 	if (eovd == NULL) {
-		bcopy(u.u_ovdata, eovd, sizeof(struct u_ovd));
+		bcopy(&u.u_ovdata, eovd, sizeof(struct u_ovd));
 		if (eovd != NULL) {
 			return (0);
 		}

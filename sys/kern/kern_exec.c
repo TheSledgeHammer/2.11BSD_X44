@@ -716,12 +716,13 @@ exec_init_uarea(elp, eovd)
     	u.u_ovdata.uo_curov = 0;
 		return;
 	}
-	bcopy(eovd, u.u_ovdata, sizeof(struct exec_ovdata));
+	bcopy(eovd, &u.u_ovdata, sizeof(struct exec_ovdata));
 	u.u_ovdata.uo_ovbase = eovd->eo_ovbase;
 	u.u_ovdata.uo_curov = eovd->eo_curov;
 	u.u_ovdata.uo_nseg = eovd->eo_nseg;
 	u.u_ovdata.uo_dbase = eovd->eo_dbase;
-	for (i = 0; i <= NOVL; i++) {
+    u.u_ovdata.uo_ov_offst[0] = eovd->eo_ov_offset[0];
+	for (i = 0; i < NOVL; i++) {
 		u.u_ovdata.uo_ov_offst[i] = eovd->eo_ov_offset[i];
 	}
 }
