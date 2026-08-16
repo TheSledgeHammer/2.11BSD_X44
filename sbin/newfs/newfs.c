@@ -403,7 +403,7 @@ main(int argc, char *argv[])
 			fatal("%s: %s", special, strerror(errno));
 		if ((st.st_mode & S_IFMT) != S_IFCHR && !mfs)
 			printf("%s: %s: not a character-special device\n",
-			    progname, special);
+			    getprogname(), special);
 		cp = strchr(argv[0], '\0') - 1;
 		if (cp == (char *)-1 ||
 		    ((*cp < 'a' || *cp > 'h') && !isdigit(*cp)))
@@ -645,7 +645,7 @@ mfs_group(const char *gname)
 
 	if (!(gp = getgrnam(gname)) && !isdigit((unsigned char)*gname))
 		errx(1, "unknown gname %s", gname);
-	return gp ? gp->gr_gid : (gid_t)atoi(gname);
+	return gp ? (gid_t)gp->gr_gid : (gid_t)atoi(gname);
 }
 
 static uid_t
@@ -655,7 +655,7 @@ mfs_user(const char *uname)
 
 	if (!(pp = getpwnam(uname)) && !isdigit((unsigned char)*uname))
 		errx(1, "unknown user %s", uname);
-	return pp ? pp->pw_uid : (uid_t)atoi(uname);
+	return pp ? (uid_t)pp->pw_uid : (uid_t)atoi(uname);
 }
 
 /*VARARGS*/
@@ -666,7 +666,7 @@ fatal(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	if (fcntl(STDERR_FILENO, F_GETFL) < 0) {
-		openlog(progname, LOG_CONS, LOG_DAEMON);
+		openlog(getprogname(), LOG_CONS, LOG_DAEMON);
 		vsyslog(LOG_ERR, fmt, ap);
 		closelog();
 	} else {
@@ -683,11 +683,11 @@ usage(void)
 	if (mfs) {
 		fprintf(stderr,
 		    "usage: %s [ -fsoptions ] special-device mount-point\n",
-			progname);
+			getprogname());
 	} else
 		fprintf(stderr,
 		    "usage: %s [ -fsoptions ] special-device%s\n",
-		    progname,
+		    getprogname(),
 #ifdef COMPAT
 		    " [device-type]");
 #else
