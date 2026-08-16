@@ -51,8 +51,8 @@ static struct wsdisplay_param contrast;
 static struct wsdisplay_scroll_data scroll_l;
 //static struct wsdisplayio_edid_info edid_info;
 //static uint8_t edid_buf[256];
-//static int msg_default_attrs, msg_default_bg, msg_default_fg;
-//static int msg_kernel_attrs, msg_kernel_bg, msg_kernel_fg;
+static int msg_default_attrs, msg_default_bg, msg_default_fg;
+static int msg_kernel_attrs, msg_kernel_bg, msg_kernel_fg;
 static int splash_enable, splash_progress;
 
 struct field display_field_tab[] = {
@@ -66,13 +66,13 @@ struct field display_field_tab[] = {
     { "scroll.slowlines",	&scroll_l.slowlines, FMT_UINT,	FLG_MODIFY },
 #ifdef notyet
     { "edid",			&edid_info, FMT_EDID,		FLG_RDONLY|FLG_NOAUTO },
+#endif
     { "msg.default.attrs",	&msg_default_attrs, FMT_ATTRS,	0 },
     { "msg.default.bg",		&msg_default_bg, FMT_COLOR,	0 },
     { "msg.default.fg",		&msg_default_fg, FMT_COLOR,	0 },
     { "msg.kernel.attrs",	&msg_kernel_attrs, FMT_ATTRS,	0 },
     { "msg.kernel.bg",		&msg_kernel_bg, FMT_COLOR,	0 },
     { "msg.kernel.fg",		&msg_kernel_fg, FMT_COLOR,	0 },
-#endif
     { "splash.enable",		&splash_enable, FMT_UINT,	FLG_WRONLY },
     { "splash.progress",	&splash_progress, FMT_UINT,	FLG_WRONLY },
 };
@@ -109,7 +109,6 @@ display_get_values(int fd)
 		if (ioctl(fd, WSDISPLAYIO_GETPARAM, &contrast))
 			field_disable_by_value(&contrast.curval);
 	}
-#ifdef notyet
 	if ((field_by_value(&msg_default_attrs)->flags & FLG_GET) ||
 	    (field_by_value(&msg_default_bg)->flags & FLG_GET) ||
 	    (field_by_value(&msg_default_fg)->flags & FLG_GET) ||
@@ -141,7 +140,6 @@ display_get_values(int fd)
 				msg_kernel_bg = msg_kernel_fg = -1;
 		}
 	}
-#endif
 	if ((field_by_value(&scroll_l.fastlines)->flags & FLG_GET) ||
 	    (field_by_value(&scroll_l.slowlines)->flags & FLG_GET)) {
 		if (ioctl(fd, WSDISPLAYIO_DGSCROLL, &scroll_l) < 0) {
@@ -207,7 +205,6 @@ display_put_values(int fd)
 			err(EXIT_FAILURE, "WSDISPLAYIO_SPROGRESS");
 		pr_field(field_by_value(&splash_progress), " -> ");
 	}
-#ifdef notyet
 	if ((field_by_value(&msg_default_attrs)->flags & FLG_SET) ||
 	    (field_by_value(&msg_default_bg)->flags & FLG_SET) ||
 	    (field_by_value(&msg_default_fg)->flags & FLG_SET) ||
@@ -257,7 +254,6 @@ display_put_values(int fd)
 		if (ioctl(fd, WSDISPLAYIO_SMSGATTRS, &ma) < 0)
 			err(EXIT_FAILURE, "WSDISPLAYIO_SMSGATTRS");
 	}
-#endif
 	scroll_l.which = 0;
 	if (field_by_value(&scroll_l.fastlines)->flags & FLG_SET)
 		scroll_l.which |= WSDISPLAY_SCROLL_DOFASTLINES;
