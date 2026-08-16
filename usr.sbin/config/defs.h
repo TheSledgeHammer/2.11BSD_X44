@@ -457,7 +457,7 @@ int		mkswap(void);
 void	pack(void);
 
 /* scan.l */
-int		currentline(void);
+u_short	currentline(void);
 int		firstfile(const char *);
 void	package(const char *);
 int		include(const char *, int, int, int);

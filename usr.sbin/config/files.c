@@ -113,7 +113,7 @@ addfile(const char *path, struct nvlist *optx, int flags, const char *rule)
 		tail++;
 	dotp = strrchr(tail, '.');
 	if (dotp == NULL || dotp[1] == 0 ||
-	    (baselen = dotp - tail) >= sizeof(base)) {
+	    (baselen = (size_t)(dotp - tail)) >= sizeof(base)) {
 		error("invalid pathname `%s'", path);
 		goto bad;
 	}
@@ -150,7 +150,7 @@ addfile(const char *path, struct nvlist *optx, int flags, const char *rule)
 	base[baselen] = 0;
 	fi->fi_srcfile = yyfile;
 	fi->fi_srcline = currentline();
-	fi->fi_flags = flags;
+	fi->fi_flags = (u_char)flags;
 	fi->fi_path = path;
 	fi->fi_tail = tail;
 	fi->fi_base = intern(base);
@@ -184,7 +184,7 @@ addobject(const char *path, struct nvlist *optx, int flags)
 	} 
 	oi->oi_srcfile = yyfile;
 	oi->oi_srcline = currentline();
-	oi->oi_flags = flags;
+	oi->oi_flags = (u_char)flags;
 	oi->oi_path = path;
 	oi->oi_prefix = SLIST_EMPTY(&prefixes) ? NULL : SLIST_FIRST(&prefixes)->pf_prefix;
 	oi->oi_optx = optx;
@@ -276,7 +276,7 @@ fixfiles(void)
 				if (ht_replace(basetab, fi->fi_base, fi) != 1)
 					panic("fixfiles ht_replace(%s)",
 					    fi->fi_base);
-				ofi->fi_flags &= ~FI_SEL;
+				ofi->fi_flags &= (u_char)~FI_SEL;
 				ofi->fi_flags |= FI_HIDDEN;
 			} else {
 				xerror(fi->fi_srcfile, fi->fi_srcline,

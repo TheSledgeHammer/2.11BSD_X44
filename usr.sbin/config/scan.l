@@ -385,10 +385,10 @@ endinclude(void)
  * us to consume a newline, we have to subtract one.  yychar is yacc's
  * token lookahead, so we can tell.
  */
-int
+u_short
 currentline(void)
 {
 	extern int yychar;
 
-	return (yyline - (yychar == '\n'));
+	return ((u_short)(yyline - (yychar == '\n')));
 }
