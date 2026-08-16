@@ -346,9 +346,9 @@ void _rtld_tls_offset_free(Obj_Entry *);
 extern size_t _rtld_tls_dtv_generation;
 extern size_t _rtld_tls_max_index;
 
-extern void *__tls_get_addr(void *);
+__dso_public extern void *__tls_get_addr(void *);
 #ifdef __i386__
-extern void *___tls_get_addr(void *)__attribute__((__regparm__(1)));
+__dso_public extern void *___tls_get_addr(void *)__attribute__((__regparm__(1)));
 #endif
 #endif
 
