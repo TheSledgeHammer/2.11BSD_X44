@@ -123,6 +123,8 @@ struct wsdisplay_accessops {
 	int		(*getwschar)(void *, struct wsdisplay_char *);
 	int		(*putwschar)(void *, struct wsdisplay_char *);
 	void	(*scroll)(void *, void *, int);
+	u_int	(*getborder)(void *);
+	int	    (*setborder)(void *, u_int);
 };
 
 /*

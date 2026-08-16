@@ -1250,6 +1250,50 @@ wsdisplay_internal_ioctl(sc, scr, cmd, data, flag, p)
 		return ENODEV;
 #endif /* WSDISPLAY_CHARFUNCS */
 
+
+#ifdef WSDISPLAY_CUSTOM_OUTPUT
+	case WSDISPLAYIO_GMSGATTRS:
+#define d ((struct wsdisplay_msgattrs *)data)
+		(*scr->scr_dconf->wsemul->getmsgattrs)
+		    (scr->scr_dconf->wsemulcookie, d);
+		return 0;
+#undef d
+
+	case WSDISPLAYIO_SMSGATTRS: {
+#define d ((struct wsdisplay_msgattrs *)data)
+		int i;
+		for (i = 0; i < WSDISPLAY_MAXSCREEN; i++)
+			if (sc->sc_scr[i] != NULL)
+				(*sc->sc_scr[i]->scr_dconf->wsemul->setmsgattrs)
+				    (sc->sc_scr[i]->scr_dconf->wsemulcookie,
+				     sc->sc_scr[i]->scr_dconf->scrdata,
+				     d);
+		}
+		return 0;
+#undef d
+#else
+	case WSDISPLAYIO_GMSGATTRS:
+	case WSDISPLAYIO_SMSGATTRS:
+		return ENODEV;
+#endif
+
+#ifdef WSDISPLAY_CUSTOM_BORDER
+	case WSDISPLAYIO_GBORDER:
+		if (!sc->sc_accessops->getborder)
+			return (EINVAL);
+		*(u_int *)data = (*sc->sc_accessops->getborder)
+			       (scr->scr_dconf->emulcookie);
+		return (0);
+	case WSDISPLAYIO_SBORDER:
+		if (!sc->sc_accessops->setborder)
+			return (EINVAL);
+		return (*sc->sc_accessops->setborder)
+		    (scr->scr_dconf->emulcookie, (*(u_int *)data));
+#else /* WSDISPLAY_CUSTOM_BORDER */
+	case WSDISPLAYIO_GBORDER:
+	case WSDISPLAYIO_SBORDER:
+		return (ENODEV);
+#endif /* WSDISPLAY_CUSTOM_BORDER */
 	}
 
 	/* check ioctls for display */

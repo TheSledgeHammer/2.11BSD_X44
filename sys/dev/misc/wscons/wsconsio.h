@@ -479,6 +479,14 @@ struct wsdisplay_scroll_data {
 #define	WSDISPLAYIO_DGSCROLL		_IOR('W', 87, struct wsdisplay_scroll_data)
 #define	WSDISPLAYIO_DSSCROLL		_IOW('W', 88, struct wsdisplay_scroll_data)
 
+struct wsdisplay_msgattrs {
+	int default_attrs, default_bg, default_fg;
+	int kernel_attrs, kernel_bg, kernel_fg;
+};
+
+#define	WSDISPLAYIO_GMSGATTRS	    _IOR('W', 89, struct wsdisplay_msgattrs)
+#define	WSDISPLAYIO_SMSGATTRS	    _IOW('W', 90, struct wsdisplay_msgattrs)
+
 #define	WSDISPLAYIO_GBORDER			_IOR('W', 91, int)
 #define	WSDISPLAYIO_SBORDER			_IOW('W', 92, int)
 
