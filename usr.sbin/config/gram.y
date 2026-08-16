@@ -52,8 +52,13 @@
 #include "defs.h"
 #include "sem.h"
 
+/*
 #define	FORMAT(n) (((n).fmt == 8 && (n).val != 0) ? "0%llo" : \
     ((n).fmt == 16) ? "0x%llx" : "%lld")
+*/
+
+#define	FORMAT(n) (((n).fmt == 8 && (n).val != 0) ? "0%o" : \
+    ((n).fmt == 16) ? "0x%x" : "%d")
 
 #define	stop(s)	error(s), exit(1)
 
