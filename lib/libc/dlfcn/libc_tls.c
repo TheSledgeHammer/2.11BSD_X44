@@ -54,12 +54,19 @@ void * __libc_tls_get_addr(void);
 static int __static_tls_setup_cb(struct dl_phdr_info *, size_t, void *);
 void __static_tls_setup(void) __dso_hidden;
 
+__weak_alias(__tls_get_addr, __libc_tls_get_addr)
+#ifdef __i386__
+__weak_alias(___tls_get_addr, __libc_tls_get_addr)
+#endif
+
 void *
 __libc_tls_get_addr(void)
 {
 	abort();
 	/* NOTREACHED */
 }
+
+__weak_alias(_rtld_tls_allocate, __libc_rtld_tls_allocate)
 
 struct tls_tcb *
 _rtld_tls_allocate(void)
@@ -101,6 +108,8 @@ _rtld_tls_allocate(void)
 
 	return (tcb);
 }
+
+__weak_alias(_rtld_tls_free, __libc_rtld_tls_free)
 
 void
 _rtld_tls_free(struct tls_tcb *tcb)
