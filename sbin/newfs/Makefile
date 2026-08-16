@@ -7,8 +7,9 @@ SRCS=	dkcksum.c getmntopts.c newfs.c mkfs.c
 MAN=	newfs.8
 
 MOUNT=	${NETBSDSRCDIR}/sbin/mount
-CFLAGS+=-DMFS -I${MOUNT}
-.PATH:	${MOUNT} ${NETBSDSRCDIR}/sbin/disklabel
+DISKLABEL= ${NETBSDSRCDIR}/sbin/disklabel
+CPPFLAGS+=-DMFS -I${MOUNT} -I${DISKLABEL}
+.PATH:	${MOUNT} ${DISKLABEL}
 
 LINKS=	${BINDIR}/newfs ${BINDIR}/mount_mfs
 MLINKS=	newfs.8 mount_mfs.8 newfs.8 mfs.8
