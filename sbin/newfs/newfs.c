@@ -205,6 +205,8 @@ main(int argc, char *argv[])
 	mode_t mfsmode = 01777;	/* default mode for a /tmp-type directory */
 	uid_t mfsuid = 0;	/* user root */
 	gid_t mfsgid = 0;	/* group wheel */
+
+	fsi = fso = -1;
 /*
 	if (progname == strrchr(*argv, '/'))
 		++progname;
