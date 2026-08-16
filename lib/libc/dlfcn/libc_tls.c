@@ -32,12 +32,17 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: tls.c,v 1.6 2011/04/07 02:19:28 matt Exp $");
 
-#include <sys/param.h>
-#include <sys/mman.h>
+#include "namespace.h"
+
+#define	_rtld_tls_allocate	__libc_rtld_tls_allocate
+#define	_rtld_tls_free		__libc_rtld_tls_free
+
 #include <sys/tls.h>
 
 #if defined(__HAVE_TLS_VARIANT_I) || defined(__HAVE_TLS_VARIANT_II)
 
+#include <sys/param.h>
+#include <sys/mman.h>
 #include <link_elf.h>
 #include <stddef.h>
 #include <stdlib.h>
