@@ -52,7 +52,6 @@ simple_lock_data_t vm_segment_region_lock;
 
 //static bool_t uses_allocator = FALSE;
 
-#ifdef NONSEPARATE
 static int vm_pmap_init_phys(vm_idspace_entry_t);
 static void vm_idspace_entry_alloc(vm_idspace_entry_t, vm_map_t, vm_offset_t,
 		vm_offset_t, vm_size_t);
