@@ -90,6 +90,9 @@
 #define	round_novl(x)    ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) & ~NOVL_MASK))
 #define num_novl(x)      ((vm_offset_t)((((vm_offset_t)(x)) + NOVL_MASK) >> NOVL_SHIFT))
 
+/* descriptor mask */
+#define novl_dmask(x, y)  (((x) - (y)) << 8)
+
 struct vm_segment_register;
 typedef struct vm_segment_register *vm_segment_register_t;
 

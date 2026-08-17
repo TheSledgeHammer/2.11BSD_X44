@@ -216,7 +216,6 @@ exec_coff_prep_zmagic(p, elp, fp, ap)
 	return (*elp->el_esch->ex_setup_stack)(p, elp);
 }
 
-
 /*
  * exec_coff_prep_nmagic(): Prepare a 'native' NMAGIC COFF binary's exec
  *                          package.

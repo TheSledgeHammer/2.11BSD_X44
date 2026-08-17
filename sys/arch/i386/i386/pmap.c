@@ -1601,8 +1601,8 @@ pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
 	}
 
 out:
-	pmap_lock(src_pmap);
-	pmap_lock(dst_pmap);
+	pmap_unlock(src_pmap);
+	pmap_unlock(dst_pmap);
 }
 
 /*
@@ -1878,6 +1878,51 @@ pmap_phys_address(ppn)
 	int ppn;
 {
 	return (i386_ptob(ppn));
+}
+
+/*
+ * pmap_lookup:
+ * returns virtual, physical and number of pages as variables.
+ * Optional variables:
+ * Setting the below:
+ * - size = 0: will loop through entire address range (start to end)
+ * - size > 0: will find a matching address of that size.
+ * returns 0 if successful or 1 if unsuccessful.
+ */
+int
+pmap_lookup(pmap, virt, phys, num, size, start, end)
+	pmap_t pmap;
+	vm_offset_t *virt, *phys, *num;
+	vm_size_t size;
+	vm_offset_t start, end;
+{
+	vm_offset_t addr;
+
+	if (pmap == NULL) {
+		return (1);
+	}
+	if (size != 0) {
+		size = round_page(size);
+		if ((end - start) < size) {
+			return (1);
+		}
+		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+			if (addr == size) {
+				*num = atop(addr);
+				*virt = addr;
+				*phys = pmap_extract(pmap, addr);
+				return (0);
+			}
+		}
+	} else {
+		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+			*num = atop(addr);
+			*virt = addr;
+			*phys = pmap_extract(pmap, addr);
+		}
+		return (0);
+	}
+	return (1);
 }
 
 /*

@@ -53,10 +53,6 @@ simple_lock_data_t vm_segment_region_lock;
 //static bool_t uses_allocator = FALSE;
 
 #ifdef NONSEPARATE
-static int vm_pmap_phys_nonseperate(vm_size_t, int, vm_offset_t, vm_offset_t);
-#else
-static int vm_pmap_phys_seperate(vm_size_t, int, vm_offset_t, vm_offset_t);
-#endif
 static int vm_pmap_init_phys(vm_idspace_entry_t);
 static void vm_idspace_entry_alloc(vm_idspace_entry_t, vm_map_t, vm_offset_t,
 		vm_offset_t, vm_size_t);
@@ -80,76 +76,29 @@ static void vm_savemap_put(int, vm_offset_t *, vm_offset_t *);
 /*
  * Based around 2.11BSD's phys system call
  * Setup u.uisa and u.uisd from pmap.
- *
- * TODO: vm_pmap
- * - resolve phys and virt when segno is greater than NOVL (16).
  */
 
-/*
- * vm_pmap_lookup_phys:
- * returns virtual, physical and number of segments as variables.
- * Optional variables:
- * Setting the below:
- * - size = 0: will loop through entire address range (start to end)
- * - size > 0: will find a matching address of that size.
- * returns 0 if successful or 1 if unsuccessful.
- */
 int
-vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end)
+vm_pmap_find_phys(map, virt, phys, num, size, start, end)
 	vm_map_t map;
-	vm_offset_t *virt, *phys, *nsegs;
+	vm_offset_t *virt, *phys, *num;
 	vm_size_t size;
 	vm_offset_t start, end;
 {
 	pmap_t pmap;
-	vm_offset_t addr;
-
-	pmap = vm_map_pmap(map);
-	if (pmap == NULL) {
-		return (1);
-	}
-	if (size != 0) {
-		size = round_page(size);
-		if ((end - start) < size) {
-			return (1);
-		}
-		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
-			if (addr == size) {
-				*nsegs = atos(addr);
-				*virt = addr;
-				*phys = pmap_extract(pmap, addr);
-				return (0);
-			}
-		}
-	} else {
-		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
-			*nsegs = atos(addr);
-			*virt = addr;
-			*phys = pmap_extract(pmap, addr);
-		}
-		return (0);
-	}
-	return (1);
-}
-
-int
-vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
-	vm_map_t map;
-	vm_offset_t *virt, *phys, *nsegs;
-	vm_size_t size;
-	vm_offset_t start, end;
-{
-	vm_offset_t stoso, stosa, num, ovlrem;
+	vm_offset_t stoso, stosa, nsegs, ovlrem;
 	int i, j, error;
 
-	error = vm_pmap_lookup_phys(map, virt, phys, nsegs, size, start, end);
+	pmap = vm_map_pmap(map);
+	error = pmap_lookup(pmap, virt, phys, num, size, start, end);
 	if (error != 0) {
 		return (error);
 	}
 
-	num = *nsegs;
-	if (num > NOVL) {
-		ovlrem = (num - NOVL);
+	/* convert npages to nsegments */
+	nsegs = atos(ptoa(*num));
+	if (nsegs > NOVL) {
+		ovlrem = (nsegs - NOVL);
 	}
 
 	/* sanity check */
@@ -158,7 +107,7 @@ vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
 		if (ovlrem > 0) {
 			for (j = 0; j < ovlrem; j++) {
 				stoso = segno_to_segment_offset(j);
-				stosa = (stoso * num);
+				stosa = (stoso * nsegs);
 				if (stosa == *virt) {
 					return (0);
 				}
@@ -173,82 +122,6 @@ vm_pmap_validate_phys(map, virt, phys, nsegs, size, start, end)
 	return (1);
 }
 
-#ifdef NONSEPARATE
-
-static int
-vm_pmap_phys_nonseperate(size, segno, virt, phys)
-	vm_size_t size;
-	int segno;
-	vm_offset_t virt, phys;
-{
-	vm_offset_t data;
-	int segnomax;
-
-	segnomax = (NOVL/2); /* max of 8 */
-	if ((segno < 0) || (segno > segnomax)) {
-		return (EINVAL);
-	}
-
-	data = u.u_uisd[segno];
-
-	if ((data != 0) && ((data & SEGM_ABS) == 0)) {
-		return (EINVAL);
-	}
-
-	u.u_uisd[segno] = 0;
-	u.u_uisa[segno] = 0;
-	if (size) {
-		u.u_uisd[segno] = (virt | SEGM_RW | SEGM_ABS);
-		u.u_uisa[segno] = phys;
-	}
-
-	vm_sureg();
-	return (0);
-}
-
-#else /* !NONSEPARATE */
-
-static int
-vm_pmap_phys_seperate(size, segno, virt, phys)
-	vm_size_t size;
-	int segno;
-	vm_offset_t virt, phys;
-{
-	vm_offset_t data;
-	int segnomax;
-
-	segnomax = (NOVL/2); /* max of 8 */
-	if ((segno < 0) || (segno > segnomax)) {
-		return (EINVAL);
-	}
-
-	data = u.u_uisd[segno + segnomax];
-
-	if ((data != 0) && ((data & SEGM_ABS) == 0)) {
-		return (EINVAL);
-	}
-
-	u.u_uisd[segno + segnomax] = 0;
-	u.u_uisa[segno + segnomax] = 0;
-	if (!u.u_sep) {
-		u.u_uisd[segno] = 0;
-		u.u_uisa[segno] = 0;
-	}
-	if (size) {
-		u.u_uisd[segno + segnomax] = (virt | SEGM_RW | SEGM_ABS);
-		u.u_uisa[segno + segnomax] = phys;
-		if (!u.u_sep) {
-			u.u_uisa[segno] = u.u_uisa[segno + segnomax];
-			u.u_uisd[segno] = u.u_uisd[segno + segnomax];
-		}
-	}
-
-	vm_sureg();
-	return (0);
-}
-
-#endif /* !NONSEPARATE */
-
 int
 vm_pmap_phys(map, size, segno, start, end)
 	vm_map_t map;
@@ -256,19 +129,63 @@ vm_pmap_phys(map, size, segno, start, end)
 	int segno;
 	vm_offset_t start, end;
 {
-	vm_offset_t virt, phys, num;
-	int error;
+	vm_offset_t virt, phys, num, data;
+	int error, segnomax;
 
-	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, start, end);
+	error = vm_pmap_find_phys(map, &virt, &phys, &num, size, start, end);
 	if (error != 0) {
 		return (error);
 	}
 
+	segnomax = (NOVL/2); /* max of 8 */
+	if ((segno < 0) || (segno > segnomax)) {
+		error = EINVAL;
+		goto bad;
+	}
+
+	if ((size < 0) || (size > (end - start)) || (virt > size)) {
+		error = EINVAL;
+		goto bad;
+	}
+
 #ifdef NONSEPARATE
-	error = vm_pmap_phys_nonseperate(size, segno, virt, phys);
-#else
-	error = vm_pmap_phys_seperate(size, segno, virt, phys);
-#endif
+	data = u.u_uisd[segno];
+#else /* !NONSEPARATE */
+	data = u.u_uisd[segno + segnomax];
+#endif /* !NONSEPARATE */
+	if ((data != 0) && ((data & SEGM_ABS) == 0)) {
+		error = EINVAL;
+		goto bad;
+	}
+#ifdef NONSEPARATE
+	u.u_uisd[segno] = 0;
+	u.u_uisa[segno] = 0;
+#else /* !NONSEPARATE */
+	u.u_uisd[segno + segnomax] = 0;
+	u.u_uisa[segno + segnomax] = 0;
+	if (!u.u_sep) {
+		u.u_uisd[segno] = 0;
+		u.u_uisa[segno] = 0;
+	}
+#endif /* !NONSEPARATE */
+	if (size) {
+#ifdef NONSEPARATE
+		u.u_uisd[segno] = (novl_dmask(size, 1) | SEGM_RW | SEGM_ABS);
+		u.u_uisa[segno] = phys;
+#else /* !NONSEPARATE */
+		u.u_uisd[segno + segnomax] = (novl_dmask(size, 1) | SEGM_RW | SEGM_ABS);
+		u.u_uisa[segno + segnomax] = phys;
+		if (!u.u_sep) {
+			u.u_uisa[segno] = u.u_uisa[segno + segnomax];
+			u.u_uisd[segno] = u.u_uisd[segno + segnomax];
+		}
+#endif /* !NONSEPARATE */
+	}
+
+	vm_sureg();
+	return (0);
+
+bad:
 	return (error);
 }
 
@@ -280,7 +197,7 @@ vm_pmap_init_phys(entry)
 	vm_offset_t virt, phys, num;
 	int error;
 
-	error = vm_pmap_validate_phys(entry->map, &virt, &phys, &num, 0, entry->start, entry->end);
+	error = vm_pmap_find_phys(entry->map, &virt, &phys, &num, 0, entry->start, entry->end);
 	if (error != 0) {
 		return (error);
 	}

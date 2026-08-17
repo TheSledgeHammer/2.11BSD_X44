@@ -85,7 +85,6 @@
 
 #include "vm_idspace.h"
 
-#define emask(x, y) (((x) - (y)) << 8)
 
 static int
 estabur_lookup(map, size, addr, desc, val, type, flags)
@@ -102,7 +101,7 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 		return (ENOMEM);
 	}
 
-	error = vm_pmap_validate_phys(map, &virt, &phys, &num, size, vm_map_min(map), vm_map_max(map));
+	error = vm_pmap_find_phys(map, &virt, &phys, &num, size, vm_map_min(map), vm_map_max(map));
 	if (error != 0) {
 		return (error);
 	}
@@ -116,26 +115,26 @@ estabur_lookup(map, size, addr, desc, val, type, flags)
 
 	while (size >= data) {
 		if (type == (PSEG_DATA | PSEG_TEXT)) {
-			*desc++ = (emask(data, 1) | flags);
+			*desc++ = (novl_dmask(data, 1) | flags);
 			*addr++ = val;
 			val += data;
 			size -= data;
 		} else {
 			val -= data;
 			size -= data;
-			*--desc = (emask(0, 0) | flags);
+			*--desc = (novl_dmask(0, 0) | flags);
 			*--addr = val;
 		}
 	}
 	if (size) {
 		if (type == (PSEG_DATA | PSEG_TEXT)) {
-			*desc++ = (emask(size, 1) | flags);
+			*desc++ = (novl_dmask(size, 1) | flags);
 			*addr++ = val;
 			if (type == PSEG_DATA) {
 				val += data;
 			}
 		} else {
-			*--desc = (emask(data, size) | flags);
+			*--desc = (novl_dmask(data, size) | flags);
 			*--addr = (val - data);
 		}
 	}
@@ -425,9 +424,9 @@ choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
 	rdp = vm_map_offset(uisd_map, (vm_offset_t)ovbase, FALSE, FALSE);
 	limrdp = vm_map_offset(uisd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
 #else /* !NONSEPARATE */
-	rap = vm_map_offset(udsa_map, (vm_offset_t) ovbase, FALSE, FALSE);
-	rdp = vm_map_offset(udsd_map, (vm_offset_t) ovbase, FALSE, FALSE);
-	limrdp = vm_map_offset(udsd_map, (vm_offset_t) (ovbase + nseg), FALSE, FALSE);
+	rap = vm_map_offset(udsa_map, (vm_offset_t)ovbase, FALSE, FALSE);
+	rdp = vm_map_offset(udsd_map, (vm_offset_t)ovbase, FALSE, FALSE);
+	limrdp = vm_map_offset(udsd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
 #endif /* !NONSEPARATE */
 	if (curov) {
 		addr = ovoffset[curov - 1];
@@ -436,13 +435,13 @@ choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
 		data = ptoa(atop(addr));
 		while (tsize >= data) {
 			*rap++ = addr;
-			*rdp++ = (emask(data, 1) | flags);
+			*rdp++ = (novl_dmask(data, 1) | flags);
 			addr += data;
 			tsize -= data;
 		}
 		if (tsize) {
 			*rap++ = addr;
-			*rdp++ = (emask(tsize, 1) | flags);
+			*rdp++ = (novl_dmask(tsize, 1) | flags);
 		}
 	}
 	while (rdp < limrdp) {
@@ -457,7 +456,7 @@ choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
 	 * on the overlaid segment, which normally don't happen.
 	 */
 	if (!u.u_sep && sep_id) {
-		rdp = vm_map_offset(udsd_map, (vm_offset_t) ovbase, FALSE, FALSE);
+		rdp = vm_map_offset(udsd_map, (vm_offset_t)ovbase, FALSE, FALSE);
 		rap = rdp + 8;
 		/* limrdp is still correct */
 		while (rdp < limrdp) {
@@ -489,4 +488,66 @@ vm_choverlay(flags)
 	curov = u.u_ovdata.uo_curov;
 	ovoffst = u.u_ovdata.uo_ov_offst;
 	choverlay(p, xp, ovbase, curov, ovoffst, nseg, flags);
+}
+
+
+void
+vm_xalloc(vp, tsize, toff)
+	register struct vnode *vp;
+	u_long 	tsize;
+	off_t 	toff;
+{
+	register vm_text_t xp;
+	u_int count;
+
+	if (u.u_ovdata.uo_ovbase) {
+		xp->psx_size = u.u_ovdata.uo_ov_offst[NOVL];
+	} else {
+		xp->psx_size = tsize;
+	}
+
+	if (u.u_ovdata.uo_ovbase) {
+		toff += (NOVL) * sizeof(off_t);
+	}
+
+	if (u.u_ovdata.uo_ovbase) {	/* read in overlays if necessary */
+		register int i;
+
+		toff += (off_t)(tsize & ~1);
+		for (i = 1; i <= NOVL; i++) {
+			u.u_ovdata.uo_curov = i;
+			count = ctob(u.u_ovdata.uo_ov_offst[i] - u.u_ovdata.uo_ov_offst[i - 1]);
+			if (count) {
+				vm_choverlay(SEGM_RW);
+				u.u_error = vn_rdwr(UIO_READ, vp, (caddr_t)(ctob(stoc(u.u_ovdata.uo_ovbase))), count, toff, UIO_USERISPACE, IO_UNIT, (int *)0, p);
+				toff += (off_t)count;
+			}
+		}
+	}
+	u.u_ovdata.uo_curov = 0;
+}
+
+#include "vm_kspace.h"
+
+void
+vm_xswapout(p, addr, size, freecore, odata, ostack)
+	struct proc *p;
+	vm_offset_t addr;
+	vm_size_t size;
+	int freecore;
+	register u_int odata, ostack;
+{
+	{
+		static u_long savekdsa6;
+		vm_kspace_t kspace;
+		int s;
+
+		s = splclock();
+		vm_kspace_save(kspace, KDSA, SEGM_SEG6);
+		savekdsa6 = kspace->kdsa_space->kisa;
+		u.u_ru.ru_nswap++;
+		kspace->kdsa_space->kisa = (vm_offset_t)p->p_addr;
+		vm_kspace_restore(kspace, KDSA, SEGM_SEG6);
+		splx(s);
+	}
 }

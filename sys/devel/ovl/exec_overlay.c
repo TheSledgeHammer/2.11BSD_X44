@@ -6,10 +6,6 @@
  *	@(#)kern_exec.c	1.8 (2.11BSD) 1999/9/6
  */
 
-/* overlay exec testing */
-
-
-
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -21,8 +17,10 @@
 #include <sys/resourcevar.h>
 
 /*
- * TODO:
- * - setup vmcmds for overlay space access
+ * Notes:
+ * To try and maintain some stability and consistency from 2.11BSD, whose
+ * a.out format is most similar to OMAGIC. Hence a.out MAGIC3 through to MAGIC6
+ * are also setup based around OMAGIC.
  */
 
 int exec_aout_prep_zmagic(struct proc *, struct exec_linker *); /* ZMAGIC */
@@ -143,8 +141,7 @@ exec_aout_prep_magic3(p, elp)
 	elp->el_daddr = elp->el_taddr + a_out->a_text;
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
-	elp->el_flags = EXEC_IDSEP;
-	//sep++;
+	elp->el_flags |= EXEC_IDSEP;
 	u.u_error = exec_aout_prep_common(p, elp, &elp->el_ovdata, a_out);
 	elp->el_flags &= ~EXEC_IDSEP;
 	return (u.u_error);
@@ -162,10 +159,9 @@ exec_aout_prep_magic4(p, elp)
 	elp->el_daddr = elp->el_taddr + a_out->a_text;
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
-	elp->el_flags = EXEC_OVERLAY;
-	//overlay++;
+	elp->el_flags |= EXEC_OVERLAY;
 	u.u_error = exec_aout_prep_common(p, elp, &elp->el_ovdata, a_out);
-	elp->el_flags &= ~EXEC_OVFLAG;
+	elp->el_flags &= ~EXEC_OVERLAY;
 	return (u.u_error);
 }
 
@@ -181,8 +177,7 @@ exec_aout_prep_magic5(p, elp)
 	elp->el_daddr = elp->el_taddr + a_out->a_text;
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
-	elp->el_flags = EXEC_OVFLAG;
-	//ovflag++;
+	elp->el_flags |= EXEC_OVFLAG;
 	u.u_error = exec_aout_prep_common(p, elp, &elp->el_ovdata, a_out);
 	elp->el_flags &= ~EXEC_OVFLAG;
 	return (u.u_error);
@@ -200,22 +195,28 @@ exec_aout_prep_magic6(p, elp)
 	elp->el_daddr = elp->el_taddr + a_out->a_text;
 	elp->el_dsize = a_out->a_data + a_out->a_bss;
 	elp->el_entry = a_out->a_entry;
-	elp->el_flags = (EXEC_OVFLAG | EXEC_IDSEP);
-	//sep++;
-	//ovflag++;
+	elp->el_flags |= (EXEC_OVFLAG | EXEC_IDSEP);
 	u.u_error = exec_aout_prep_common(p, elp, &elp->el_ovdata, a_out);
 	elp->el_flags &= ~(EXEC_OVFLAG & EXEC_IDSEP);
 	return (u.u_error);
 }
 
-int
-exec_coff_prep_common(p, elp, ap, ovflag, overlay, sep)
-	struct proc *p;
+void
+exec_check_ovflags(elp, ovflag, overlay, sep)
 	struct exec_linker *elp;
-	struct coff_aouthdr *ap;
-	int ovflag, overlay, sep;
+	int *ovflag, *overlay, *sep;
 {
-	return (*elp->el_esch->ex_setup_stack)(p, elp);
+	ovflag = overlay = sep = 0;
+
+	if ((elp->el_flags & EXEC_OVFLAG) != 0) {
+		ovflag++;
+	}
+	if ((elp->el_flags & EXEC_OVERLAY) != 0) {
+		overlay++;
+	}
+	if ((elp->el_flags & EXEC_IDSEP) != 0) {
+		sep++;
+	}
 }
 
 /*
@@ -231,11 +232,10 @@ exec_aout_prep_common(p, elp, eovd, a_out)
 {
 	struct exec_ovdata sovdata;
 	u_long *ovhead, ovmax;
-	int error, sep = 0;
+	int error;
+	int ovflag, overlay, sep;
 
-	if ((elp->el_flags & EXEC_IDSEP) != 0) {
-		sep++;
-	}
+	exec_check_ovflags(&ovflag, &overlay, &sep);
 
 	error = exec_alloc_ovdata(eovd);
 	if (error != 0) {
@@ -245,7 +245,8 @@ exec_aout_prep_common(p, elp, eovd, a_out)
 	eovd->eo_ovbase = 0;
     eovd->eo_curov = 0;
 	if ((elp->el_flags & EXEC_OVFLAG) == 0) {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_ovdata, sizeof(ovhead),
+		/* set up for text segment */
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, sizeof(ovhead),
 				ovhead, (VM_PROT_READ | VM_PROT_EXECUTE),
 				(VM_PROT_READ | VM_PROT_EXECUTE), elp->el_vnodep, sizeof(struct exec));
 		if (vmcmds_proc_error(p, &elp->el_vmcmds) != 0) {
@@ -275,7 +276,7 @@ exec_aout_prep_common(p, elp, eovd, a_out)
 	}
 
 	if ((elp->el_flags & EXEC_OVERLAY) == 0) {
-		if ((((elp->el_flags & EXEC_IDSEP) == 0) && ctos(elp->el_tsize) != ctos(u.u_tsize)) || elp->el_argc) {
+		if ((((elp->el_flags & EXEC_IDSEP) == 0) && ctos(elp->el_tsize) != ctos(a_out->a_text)) || elp->el_argc) {
 			error = ENOMEM;
 			goto bad;
 		}
@@ -380,7 +381,9 @@ vmcmd_ovdata(p, cmd)
 	size_t resid;
 
 	vmspace = p->p_vmspace;
-	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t)cmd->ev_addr, cmd->ev_size, cmd->ev_offset, UIO_SYSSPACE, IO_UNIT, p->p_ucred, &resid, p);
+	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
+			cmd->ev_size, cmd->ev_offset, UIO_SYSSPACE, IO_UNIT, p->p_ucred,
+			&resid, p);
 	if (error != 0) {
 		return (error);
 	}

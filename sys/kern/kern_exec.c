@@ -712,6 +712,10 @@ exec_init_uarea(elp, eovd)
 
 	/* Initialize auto-overlay data */
 	if (eovd == NULL) {
+		/*
+		 * if no overlay or I and D separation.
+		 * Set ovbase and curov to 0.
+		 */
 		u.u_ovdata.uo_ovbase = 0;
     	u.u_ovdata.uo_curov = 0;
 		return;

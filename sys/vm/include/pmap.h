@@ -113,7 +113,8 @@ void        pmap_clear_reference(vm_offset_t);
 bool_t   	pmap_is_referenced(vm_offset_t);
 bool_t   	pmap_is_modified(vm_offset_t);
 vm_offset_t pmap_phys_address(int);
-
+int 		pmap_lookup(pmap_t, vm_offset_t *, vm_offset_t *, vm_offset_t *,
+				vm_size_t, vm_offset_t, vm_offset_t);
 __END_DECLS
 #endif
 #endif /* _PMAP_VM_H_ */

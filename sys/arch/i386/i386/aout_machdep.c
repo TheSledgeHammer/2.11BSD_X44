@@ -96,7 +96,7 @@ exec_nomid(p, elp)
 	mid = (midmag >> 16) & 0xffff;
 	magic = midmag & 0xffff;
 
-	if(magic == 0) {
+	if (magic == 0) {
 		magic = (execp->a_midmag & 0xffff);
 		mid = MID_ZERO;
 	}
@@ -119,7 +119,7 @@ cpu_exec_aout_linker(p, elp)
 	struct exec_linker *elp;
 {
 	int error = ENOEXEC;
-	if((error == exec_nomid(p, elp)) == 0) {
+	if ((error == exec_nomid(p, elp)) == 0) {
 		return error;
 	}
 	return error;
