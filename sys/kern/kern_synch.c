@@ -196,7 +196,7 @@ updatepri(p)
 	if (a > 255)
 		a = 255;
 	p->p_cpu = a;
-	(void) setpri(p);
+	(void)setpri(p);
 }
 
 /*

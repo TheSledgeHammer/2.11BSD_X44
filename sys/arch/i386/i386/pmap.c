@@ -1890,11 +1890,11 @@ pmap_phys_address(ppn)
  * returns 0 if successful or 1 if unsuccessful.
  */
 int
-pmap_lookup(pmap, virt, phys, num, size, start, end)
+pmap_lookup(pmap, va, pa, num, size, sva, eva)
 	pmap_t pmap;
-	vm_offset_t *virt, *phys, *num;
+	vm_offset_t *va, *pa, *num;
 	vm_size_t size;
-	vm_offset_t start, end;
+	vm_offset_t sva, eva;
 {
 	vm_offset_t addr;
 
@@ -1903,22 +1903,22 @@ pmap_lookup(pmap, virt, phys, num, size, start, end)
 	}
 	if (size != 0) {
 		size = round_page(size);
-		if ((end - start) < size) {
+		if ((eva - sva) < size) {
 			return (1);
 		}
-		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+		for (addr = trunc_page(sva); addr < round_page(eva); addr += PAGE_SIZE) {
 			if (addr == size) {
 				*num = atop(addr);
-				*virt = addr;
-				*phys = pmap_extract(pmap, addr);
+				*va = addr;
+				*pa = pmap_extract(pmap, addr);
 				return (0);
 			}
 		}
 	} else {
-		for (addr = trunc_page(start); addr < round_page(end); addr += PAGE_SIZE) {
+		for (addr = trunc_page(sva); addr < round_page(eva); addr += PAGE_SIZE) {
 			*num = atop(addr);
-			*virt = addr;
-			*phys = pmap_extract(pmap, addr);
+			*va = addr;
+			*pa = pmap_extract(pmap, addr);
 		}
 		return (0);
 	}
