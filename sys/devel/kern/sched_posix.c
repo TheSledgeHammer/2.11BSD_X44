@@ -32,10 +32,12 @@
  * $FreeBSD$
  */
 
-/* ksched: Soft real time scheduling based on "rtprio".
+/*
+ * ksched: Soft real time scheduling based on "rtprio".
  */
 
 #include <devel/sys/posix4.h>
+#include <devel/sys/sched_posix.h>
 
 #define M_P31B 106
 
@@ -116,7 +118,7 @@ do_ksched_getparam(pid, policy, ksched, params)
 	pid_t pid;
 	int *policy;
 	struct sched_posix *ksched;
-	const struct sched_param *params;
+	struct sched_param *params;
 {
 	struct proc *p;
 	int error = 0;
@@ -190,7 +192,7 @@ ksched_setscheduler(pid, policy, ksched, param)
 	pid_t pid;
 	int policy;
 	struct sched_posix *ksched;
-	struct sched_param *param;
+	const struct sched_param *param;
 {
 	return (do_ksched_setparam(pid, policy, ksched, param));
 }
@@ -228,7 +230,7 @@ ksched_get_priority_max(p, policy, ksched)
 		error = PRIO_MAX;
 		break;
 	case SCHED_RR:
-		error = SCHED_PRI_MAX;
+		error = SCHED_PRIO_MAX;
 		break;
 	default:
 		error = EINVAL;

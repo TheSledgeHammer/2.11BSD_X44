@@ -26,27 +26,47 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_POSIX4_H_
-#define _SYS_POSIX4_H_
+#ifndef _SYS_SCHED_POSIX_H_
+#define _SYS_SCHED_POSIX_H_
 
-#ifdef _KERNEL
-struct sched_posix {
-	struct timespec rr_interval;
+#include <sys/cdefs.h>
+
+#define SCHED_NONE  	-1
+#define SCHED_FIFO  	1
+#define SCHED_OTHER 	2
+#define SCHED_RR    	3
+
+struct sched_param {
+	int sched_priority;
 };
 
-#define SCHED_PRIO_MIN 	0
-#define SCHED_PRIO_MAX 	31
+#define M_P31B 106
 
-int ksched_attach(struct sched_posix **);
-int ksched_detach(struct sched_posix *);
-int ksched_setparam(pid_t, int, struct sched_posix *, const struct sched_param *);
-int ksched_getparam(pid_t, int, struct sched_posix *, struct sched_param *);
-int ksched_setscheduler(pid_t, int, struct sched_posix *, const struct sched_param *);
-int ksched_getscheduler(pid_t, int, struct sched_posix *, struct sched_param *);
-int ksched_yield(struct proc *, struct sched_posix *);
-int ksched_get_priority_max(struct proc *, int, struct sched_posix *);
-int ksched_get_priority_min(struct proc *, int, struct sched_posix *);
-int ksched_rr_get_interval(struct proc *, struct sched_posix *, struct timespec *);
-#endif
+/*
+ * cmd options for posix syscalls
+ * - setparam, getparam
+ * - setscheduler, getscheduler, yield
+ * - get_priority_min, get_priority_max
+ * - get_rr_interval
+ */
+enum posix_cmdops {
+	SETPARAM,
+	GETPARAM,
+	SETSCHED,
+	GETSCHED,
+	YIELD,
+	GETPRIOMAX,
+	GETPRIOMIN,
+	GETRRINTRVAL
+};
 
-#endif /* _SYS_POSIX4_H_ */
+#ifdef _KERNEL
+void sched_posix_init(void);
+
+#else /* !_KERNEL */
+__BEGIN_DECLS
+int posix_schedule(int, pid_t, int, struct sched_param *, struct timespec *);
+__END_DECLS
+#endif /* !_KERNEL */
+
+#endif /* _SYS_SCHED_POSIX_H_ */
