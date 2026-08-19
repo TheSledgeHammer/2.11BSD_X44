@@ -57,8 +57,8 @@ static PLAN *yankexpr(PLAN **);
  *	destructively removes the top from the plan
  */
 static PLAN *
-yanknode(planp)    
-	PLAN **planp;		/* pointer to top of plan (modified) */
+yanknode(
+		PLAN **planp /* pointer to top of plan (modified) */)
 {
 	PLAN *node;		/* top node removed from the plan */
     
@@ -76,8 +76,8 @@ yanknode(planp)
  *	simple node or a N_EXPR node containing a list of simple nodes.
  */
 static PLAN *
-yankexpr(planp)    
-	PLAN **planp;		/* pointer to top of plan (modified) */
+yankexpr(
+	PLAN **planp		/* pointer to top of plan (modified) */)
 {
 	PLAN *next;		/* temp node holding subexpression results */
 	PLAN *node;		/* pointer to returned node or expression */
@@ -130,8 +130,8 @@ yankexpr(planp)
  *	replaces "parentheisized" plans in our search plan with "expr" nodes.
  */
 PLAN *
-paren_squish(plan)
-	PLAN *plan;		/* plan with ( ) nodes */
+paren_squish(
+		PLAN *plan		/* plan with ( ) nodes */)
 {
 	PLAN *expr;		/* pointer to next expression */
 	PLAN *tail;		/* pointer to tail of result plan */
@@ -168,8 +168,8 @@ paren_squish(plan)
  *	compresses "!" expressions in our search plan.
  */
 PLAN *
-not_squish(plan)
-	PLAN *plan;		/* plan to process */
+not_squish(
+		PLAN *plan		/* plan to process */)
 {
 	PLAN *next;		/* next node being processed */
 	PLAN *node;		/* temporary node used in N_NOT processing */
@@ -228,8 +228,8 @@ not_squish(plan)
  *	compresses -o expressions in our search plan.
  */
 PLAN *
-or_squish(plan)
-	PLAN *plan;		/* plan with ors to be squished */
+or_squish(
+		PLAN *plan		/* plan with ors to be squished */)
 {
 	PLAN *next;		/* next node being processed */
 	PLAN *tail;		/* pointer to tail of result plan */

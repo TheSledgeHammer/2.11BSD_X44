@@ -61,10 +61,10 @@ static void printlink(char *);
 static void printtime(time_t);
 
 void
-printlong(name, accpath, sb)
-	char *name;			/* filename to print */
-	char *accpath;			/* current valid path to filename */
-	struct stat *sb;		/* stat buffer */
+printlong(
+		char *name /* filename to print */,
+		char *accpath /* current valid path to filename */,
+		struct stat *sb /* stat buffer */)
 {
 	char modep[15];
 
@@ -88,8 +88,7 @@ printlong(name, accpath, sb)
 }
 
 static void
-printtime(ftime)
-	time_t ftime;
+printtime(time_t ftime)
 {
 	int i;
 	char *longstring;
@@ -111,8 +110,7 @@ printtime(ftime)
 }
 
 static void
-printlink(name)
-	char *name;
+printlink(char *name)
 {
 	int lnklen;
 	char path[MAXPATHLEN + 1];

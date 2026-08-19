@@ -65,8 +65,7 @@ static void sig_unlock(const sigset_t *);
  *	command arguments.
  */
 PLAN *
-find_formplan(argv)
-	char **argv;
+find_formplan(char **argv)
 {
 	PLAN *plan, *tail, *new;
 
@@ -149,16 +148,14 @@ find_formplan(argv)
 }
 
 static int
-ftscompare(e1, e2)
-	const FTSENT **e1, **e2;
+ftscompare(const FTSENT **e1, const FTSENT **e2)
 {
 
 	return (strcoll((*e1)->fts_name, (*e2)->fts_name));
 }
 
 static void
-sig_lock(s)
-	sigset_t *s;
+sig_lock(sigset_t *s)
 {
 	sigset_t new;
 
@@ -168,10 +165,8 @@ sig_lock(s)
 }
 
 static void
-sig_unlock(s)
-	const sigset_t *s;
+sig_unlock(const sigset_t *s)
 {
-
 	sigprocmask(SIG_SETMASK, s, NULL);
 }
 
@@ -184,9 +179,7 @@ FTSENT *g_entry;		/* shared with SIGINFO handler */
  *	over all FTSENT's returned for the given search paths.
  */
 int
-find_execute(plan, paths)
-	PLAN *plan;		/* search plan */
-	char **paths;		/* array of pathnames to traverse */
+find_execute(PLAN *plan /* search plan */, char **paths /* array of pathnames to traverse */)
 {
 	PLAN *p;
 	int rval;

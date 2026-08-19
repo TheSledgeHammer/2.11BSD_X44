@@ -60,9 +60,7 @@ __RCSID("$NetBSD: misc.c,v 1.12 2003/08/07 11:13:42 agc Exp $");
  *      area of memory set in store.
  */
 void
-brace_subst(orig, store, path, len)
-	char *orig, **store, *path;
-	int *len;
+brace_subst(char *orig, char **store, char *path, int *len)
 {
 	int nlen, plen, rest;
 	char ch, *p, *ostore;
@@ -98,8 +96,7 @@ brace_subst(orig, store, path, len)
  *	input. If the input is 'y' then 1 is returned.
  */
 int
-queryuser(argv)
-	char **argv;
+queryuser(char **argv)
 {
 	int ch, first, nl;
 
@@ -132,8 +129,7 @@ queryuser(argv)
  *	malloc with error checking.
  */
 void *
-emalloc(len)
-	u_int len;
+emalloc(u_int len)
 {
 	void *p;
 
@@ -148,8 +144,7 @@ emalloc(len)
  */
 /* ARGSUSED */
 void
-show_path(sig)
-	int sig;
+show_path(int sig)
 {
 	extern FTSENT *g_entry;
 	int errno_bak;

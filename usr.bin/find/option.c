@@ -114,8 +114,7 @@ static OPTION const options[] = {
  *	this switch stuff.
  */
 PLAN *
-find_create(argvp)
-	char ***argvp;
+find_create(char ***argvp)
 {
 	OPTION *p;
 	PLAN *new;
@@ -136,8 +135,7 @@ find_create(argvp)
 }
 
 static OPTION *
-option(name)
-	char *name;
+option(char *name)
 {
 	OPTION tmp;
 
@@ -147,8 +145,7 @@ option(name)
 }
 
 int
-typecompare(a, b)
-	const void *a, *b;
+typecompare(const void *a, const void *b)
 {
 
 	return (strcmp(((OPTION *)a)->name, ((OPTION *)b)->name));
