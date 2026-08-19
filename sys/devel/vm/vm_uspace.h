@@ -74,28 +74,27 @@ int vm_uspace_map_alloc(vm_uspace_t, int, int);
 int vm_uspace_map_free(vm_uspace_t, int, int);
 int vm_uspace_write(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
 int vm_uspace_read(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
-vm_offset_t *vm_uspace_offset(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
+
+vm_offset_t *vm_uspace_offset(vm_uspace_t, vm_offset_t, int);
+vm_offset_t *vm_uspace_min(vm_uspace_t, int);
+vm_offset_t *vm_uspace_max(vm_uspace_t, int);
 
 /* Uspace macro's */
 
-#define USPACE_OFFSET(uspace, addr, maptype) 	(vm_uspace_offset((uspace), (addr), FALSE, FALSE, (maptype)))
-#define USPACE_MIN(uspace, maptype) 			(vm_uspace_offset((uspace), 0, TRUE, FALSE, (maptype)))
-#define USPACE_MAX(uspace, maptype) 			(vm_uspace_offset((uspace), 0, FALSE, TRUE, (maptype)))
+#define USPACE_UISA(uspace, addr)				vm_uspace_offset(uspace, addr, UISA)
+#define USPACE_UISA_MIN(uspace)					vm_uspace_min(uspace, UISA)
+#define USPACE_UISA_MAX(uspace)					vm_uspace_max(uspace, UISA)
 
-#define USPACE_UISA(uspace, addr)				USPACE_OFFSET(uspace, addr, UISA)
-#define USPACE_UISA_MIN(uspace)					USPACE_MIN(uspace, UISA)
-#define USPACE_UISA_MAX(uspace)					USPACE_MAX(uspace, UISA)
+#define USPACE_UISD(uspace, addr)				vm_uspace_offset(uspace, addr, UISD)
+#define USPACE_UISD_MIN(uspace)					vm_uspace_min(uspace, UISD)
+#define USPACE_UISD_MAX(uspace)					vm_uspace_max(uspace, UISD)
 
-#define USPACE_UISD(uspace, addr)				USPACE_OFFSET(uspace, addr, UISD)
-#define USPACE_UISD_MIN(uspace)					USPACE_MIN(uspace, UISD)
-#define USPACE_UISD_MAX(uspace)					USPACE_MAX(uspace, UISD)
+#define USPACE_UDSA(uspace, addr)				vm_uspace_offset(uspace, addr, UDSA)
+#define USPACE_UDSA_MIN(uspace)					vm_uspace_min(uspace, UDSA)
+#define USPACE_UDSA_MAX(uspace)					vm_uspace_max(uspace, UDSA)
 
-#define USPACE_UDSA(uspace, addr)				USPACE_OFFSET(uspace, addr, UDSA)
-#define USPACE_UDSA_MIN(uspace)					USPACE_MIN(uspace, UDSA)
-#define USPACE_UDSA_MAX(uspace)					USPACE_MAX(uspace, UDSA)
-
-#define USPACE_UDSD(uspace, addr)				USPACE_OFFSET(uspace, addr, UDSD)
-#define USPACE_UDSD_MIN(uspace)					USPACE_MIN(uspace, UDSD)
-#define USPACE_UDSD_MAX(uspace)					USPACE_MAX(uspace, UDSD)
+#define USPACE_UDSD(uspace, addr)				vm_uspace_offset(uspace, addr, UDSD)
+#define USPACE_UDSD_MIN(uspace)					vm_uspace_min(uspace, UDSD)
+#define USPACE_UDSD_MAX(uspace)					vm_uspace_max(uspace, UDSD)
 
 #endif /* _VM_USPACE_H_ */

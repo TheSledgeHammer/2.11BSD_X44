@@ -51,6 +51,7 @@ char *udspace_min, *udspace_max; /* user d-space vm_map range */
 static void vm_uspace_alloc(vm_offset_t, vm_offset_t, vm_size_t, vm_uspace_t);
 static void vm_uispace_map_init(vm_uspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
 static void vm_udspace_map_init(vm_uspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+static vm_offset_t *vm_uspace_map_offset(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
 
 void
 vm_uspace_init(void)
@@ -190,17 +191,17 @@ vm_uspace_map_alloc(uspace, segno, maptype)
 	vm_uspace_t uspace;
 	int segno, maptype;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	int error;
 
-	idspace_i = uspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (uspace->idspace_i != NULL) {
 		switch (maptype) {
 		case UISA:
-			error = vm_idspace_map(idspace_i, uisa_space, segno);
+			error = vm_idspace_map(uspace->idspace_i, &uspace->uisa_space,
+					segno);
 			break;
 		case UISD:
-			error = vm_idspace_map(idspace_i, uisd_space, segno);
+			error = vm_idspace_map(uspace->idspace_i, &uspace->uisd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -208,14 +209,15 @@ vm_uspace_map_alloc(uspace, segno, maptype)
 		}
 	}
 
-	idspace_d = uspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (uspace->idspace_d != NULL) {
 		switch (maptype) {
 		case UDSA:
-			error = vm_idspace_map(idspace_d, udsa_space, segno);
+			error = vm_idspace_map(uspace->idspace_d, &uspace->udsa_space,
+					segno);
 			break;
 		case UDSD:
-			error = vm_idspace_map(idspace_d, udsd_space, segno);
+			error = vm_idspace_map(uspace->idspace_d, &uspace->udsd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -230,17 +232,17 @@ vm_uspace_map_free(uspace, segno, maptype)
 	vm_uspace_t uspace;
 	int segno, maptype;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	int error;
 
-	idspace_i = uspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (uspace->idspace_i != NULL) {
 		switch (maptype) {
 		case UISA:
-			error = vm_idspace_unmap(idspace_i, uisa_space, segno);
+			error = vm_idspace_unmap(uspace->idspace_i, &uspace->uisa_space,
+					segno);
 			break;
 		case UISD:
-			error = vm_idspace_unmap(idspace_i, uisd_space, segno);
+			error = vm_idspace_unmap(uspace->idspace_i, &uspace->uisd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -248,14 +250,15 @@ vm_uspace_map_free(uspace, segno, maptype)
 		}
 	}
 
-	idspace_d = uspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (uspace->idspace_d != NULL) {
 		switch (maptype) {
 		case UDSA:
-			error = vm_idspace_unmap(idspace_d, udsa_space, segno);
+			error = vm_idspace_unmap(uspace->idspace_d, &uspace->udsa_space,
+					segno);
 			break;
 		case UDSD:
-			error = vm_idspace_unmap(idspace_d, udsd_space, segno);
+			error = vm_idspace_unmap(uspace->idspace_d, &uspace->udsd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -272,7 +275,6 @@ vm_uspace_write(uspace, size, segno, maptype, is_txt, is_ext)
 	int segno, maptype;
 	bool_t is_txt, is_ext;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	vm_offset_t addr, desc;
 	int error;
 
@@ -285,14 +287,15 @@ vm_uspace_write(uspace, size, segno, maptype, is_txt, is_ext)
 	desc = (vm_offset_t)u.u_uisd[segno];
 	addr = (vm_offset_t)u.u_uisa[segno];
 
-	idspace_i = uspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (uspace->idspace_i != NULL) {
 		switch (maptype) {
 		case UISA:
-			error = vm_idspace_write(idspace_i, uisa_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_write(uspace->idspace_i, &uspace->uisa_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		case UISD:
-			error = vm_idspace_write(idspace_i, uisd_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_write(uspace->idspace_i, &uspace->uisd_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		default:
 			error = ENOMEM;
@@ -300,14 +303,15 @@ vm_uspace_write(uspace, size, segno, maptype, is_txt, is_ext)
 		}
 	}
 
-	idspace_d = uspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (uspace->idspace_d != NULL) {
 		switch (maptype) {
 		case UDSA:
-			error = vm_idspace_write(idspace_d, udsa_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_write(uspace->idspace_d, &uspace->udsa_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		case UDSD:
-			error = vm_idspace_write(idspace_d, udsd_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_write(uspace->idspace_d, &uspace->udsd_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		default:
 			error = ENOMEM;
@@ -324,21 +328,21 @@ vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
 	int segno, maptype;
 	bool_t is_txt, is_ext;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	vm_offset_t addr, desc;
 	int error;
 
 	desc = (vm_offset_t)u.u_uisd[segno];
 	addr = (vm_offset_t)u.u_uisa[segno];
 
-	idspace_i = uspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (uspace->idspace_i != NULL) {
 		switch (maptype) {
 		case UISA:
-			error = vm_idspace_read(idspace_i, uisa_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_read(uspace->idspace_i, &uspace->uisa_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		case UISD:
-			error = vm_idspace_read(idspace_i, uisd_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_read(uspace->idspace_i, &uspace->uisd_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		default:
 			error = ENOMEM;
@@ -346,14 +350,15 @@ vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
 		}
 	}
 
-	idspace_d = uspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (uspace->idspace_d != NULL) {
 		switch (maptype) {
 		case UDSA:
-			error = vm_idspace_read(idspace_d, udsa_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_read(uspace->idspace_d, &uspace->udsa_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		case UDSD:
-			error = vm_idspace_read(idspace_d, udsd_space, addr, desc, size, segno, is_txt, is_ext);
+			error = vm_idspace_read(uspace->idspace_d, &uspace->udsd_space,
+					addr, desc, size, segno, is_txt, is_ext);
 			break;
 		default:
 			error = ENOMEM;
@@ -363,24 +368,24 @@ vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
 	return (error);
 }
 
-vm_offset_t *
-vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
+static vm_offset_t *
+vm_uspace_map_offset(uspace, offset, use_min, use_max, maptype)
 	vm_uspace_t uspace;
 	vm_offset_t offset;
 	bool_t use_min, use_max;
 	int maptype;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	vm_offset_t *val;
 
-	idspace_i = uspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (uspace->idspace_i != NULL) {
 		switch (maptype) {
 		case UISA:
-			val = vm_idspace_map_offset(idspace_i, uisa_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(uspace->idspace_i, &uspace->uisa_space,
+					offset, use_min, use_max);
 			break;
 		case UISD:
-			val = vm_idspace_map_offset(idspace_i, uisd_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(uspace->idspace_i, &uspace->uisd_space,
+					offset, use_min, use_max);
 			break;
 		default:
 			*val = 0;
@@ -388,14 +393,15 @@ vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 		}
 	}
 
-	idspace_d = uspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (uspace->idspace_d != NULL) {
 		switch (maptype) {
 		case UDSA:
-			val = vm_idspace_map_offset(idspace_d, udsa_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(uspace->idspace_d, &uspace->udsa_space,
+					offset, use_min, use_max);
 			break;
 		case UDSD:
-			val = vm_idspace_map_offset(idspace_d, udsd_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(uspace->idspace_d, &uspace->udsd_space,
+					offset, use_min, use_max);
 			break;
 		default:
 			*val = 0;
@@ -403,4 +409,29 @@ vm_uspace_offset(uspace, offset, use_min, use_max, maptype)
 		}
 	}
 	return (val);
+}
+
+vm_offset_t *
+vm_uspace_offset(uspace, addr, maptype)
+	vm_uspace_t uspace;
+	vm_offset_t addr;
+	int maptype;
+{
+	return (vm_uspace_map_offset(uspace, addr, FALSE, FALSE, maptype));
+}
+
+vm_offset_t *
+vm_uspace_min(uspace, maptype)
+	vm_uspace_t uspace;
+	int maptype;
+{
+	return (vm_uspace_map_offset(uspace, 0, TRUE, FALSE, maptype));
+}
+
+vm_offset_t *
+vm_uspace_max(uspace, maptype)
+	vm_uspace_t uspace;
+	int maptype;
+{
+	return (vm_uspace_map_offset(uspace, 0, FALSE, TRUE, maptype));
 }

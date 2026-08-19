@@ -60,6 +60,8 @@ static int vm_idspace_entry_init(vm_idspace_entry_t, vm_map_t, vm_offset_t *,
 static int vm_idspace_entry_object_init(vm_idspace_entry_t, vm_object_t, vm_size_t);
 static int vm_idspace_entry_segment_alloc(vm_idspace_entry_t, int);
 static int vm_idspace_entry_page_alloc(vm_idspace_entry_t, int);
+void vm_idspace_entry_alloc_wait(vm_idspace_entry_t, vm_offset_t, vm_size_t);
+void vm_idspace_entry_free_wakeup(vm_idspace_entry_t, vm_offset_t, vm_size_t);
 
 static int vm_segment_region_check_segment(vm_segment_region_t, vm_object_t, int);
 static int vm_segment_region_check_page(vm_segment_region_t, int);
@@ -400,12 +402,10 @@ vm_idspace_write(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 		vm_idspace_unlock(idspace);
 		return (error);
 	}
-
 	if ((desc != (vm_offset_t)u.u_uisd[segno]) && (addr != (vm_offset_t)u.u_uisa[segno])) {
 		vm_idspace_unlock(idspace);
 		return (ENOMEM);
 	}
-
 	error = vm_idspace_entry_region_write(entry, segno, addr, desc,
 			(SEGM_RW | SEGM_ACCESS), is_txt, is_ext, TRUE);
 	if (error != 0) {
@@ -440,12 +440,10 @@ vm_idspace_read(idspace, entry, addr, desc, size, segno, is_txt, is_ext)
 		vm_idspace_unlock(idspace);
 		return (error);
 	}
-
 	if ((desc != u.u_uisd[segno]) && (addr != u.u_uisa[segno])) {
 		vm_idspace_unlock(idspace);
 		return (ENOMEM);
 	}
-
 	error = vm_idspace_entry_region_read(entry, segno, addr, desc,
 			(SEGM_RW | SEGM_RO | SEGM_ACCESS), is_txt, is_ext, TRUE);
 	if (error != 0) {
@@ -467,9 +465,9 @@ vm_idspace_save(idspace, entry, val, size, flags)
 	int error;
 
 	vm_idspace_lock(idspace);
-	val = kmem_alloc_wait(entry->map, size);
-
-	error = vm_idspace_entry_region_save(entry, val, val, (SEGM_SAVE | SEGM_RW | SEGM_ACCESS | flags));
+	vm_idspace_entry_alloc_wait(entry, val, size);
+	error = vm_idspace_entry_region_save(entry, val, size,
+			(SEGM_SAVE | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
 		vm_idspace_unlock(idspace);
 		return (error);
@@ -496,14 +494,14 @@ vm_idspace_restore(idspace, entry, val, size, flags)
 	int error;
 
 	vm_idspace_lock(idspace);
-	error = vm_idspace_entry_region_restore(entry, val, val,
+	error = vm_idspace_entry_region_restore(entry, val, size,
 			(SEGM_RESTORE | SEGM_RO | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
 		vm_idspace_unlock(idspace);
 		return (error);
 	}
 
-	kmem_free_wakeup(entry->map, val, size);
+	vm_idspace_entry_free_wakeup(entry->map, val, size);
 	vm_idspace_unlock(idspace);
 	return (0);
 }
@@ -549,6 +547,49 @@ vm_idspace_entry_init(entry, map, min, max, size, pageable)
 		return (0);
 	}
 	return (1);
+}
+
+/* a copy of kmem_alloc_wait */
+static void
+vm_idspace_entry_alloc_wait(entry, addr, size)
+	vm_idspace_entry_t entry;
+	vm_offset_t addr;
+	vm_size_t size;
+{
+	size = round_page(size);
+	for (;;) {
+		/*
+		 * To make this work for more than one map,
+		 * use the map's lock to lock out sleepers/wakers.
+		 */
+		vm_map_lock(entry->map);
+		if (vm_map_findspace(entry->map, entry->start, size, &addr) == 0) {
+			break;
+		}
+		/* no space now; see if we can ever get space */
+		if (vm_map_max(entry->map) - vm_map_min(entry->map) < size) {
+			vm_map_unlock(entry->map);
+			return;
+		}
+		assert_wait(entry->map, TRUE);
+		vm_map_unlock(entry->map);
+		vm_thread_block();
+	}
+	vm_map_insert(entry->map, NULL, entry->start, addr, addr + size);
+	vm_map_unlock(entry->map);
+}
+
+/* a copy of kmem_free_wakeup */
+static void
+vm_idspace_entry_free_wakeup(entry, addr, size)
+	vm_idspace_entry_t entry;
+	vm_offset_t	addr;
+	vm_size_t	size;
+{
+	vm_map_lock(entry->map);
+	(void)vm_map_delete(entry->map, trunc_page(addr), round_page(addr + size));
+	vm_thread_wakeup(entry->map);
+	vm_map_unlock(entry->map);
 }
 
 static int

@@ -505,15 +505,26 @@ vm_pagelist_alloc_memory(addr, len, size, num, low, high, alignment, boundary, n
 		if (segmented == TRUE) {
 			error = vm_pagelist_alloc_contig(size, low, high, alignment,
 					boundary, segmented, &slist, &rlist);
+			if (error != 0) {
+				/* failed to allocate contiguous memory */
+				vm_pagelist_free(addr, len, size, segmented, &slist, &rlist);
+				goto bad;
+			}
 			vm_pagelist_alloc_segment_range(addr, len, SEGMENT_SIZE, num, low,
 					high, &slist);
 		} else {
 			error = vm_pagelist_alloc_contig(size, low, high, alignment,
 					boundary, segmented, NULL, &rlist);
+			if (error != 0) {
+				/* failed to allocate contiguous memory */
+				vm_pagelist_free(addr, len, size, segmented, NULL, &rlist);
+				goto bad;
+			}
 			vm_pagelist_alloc_page_range(addr, len, PAGE_SIZE, num, low, high,
 					&rlist);
 		}
 	}
+bad:
 	return (error);
 }
 

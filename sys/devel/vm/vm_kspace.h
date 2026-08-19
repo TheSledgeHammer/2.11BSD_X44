@@ -40,6 +40,7 @@ struct vm_kspace {
 #define kisd_space idspace_i->dspace /* kisd space */
 #define kdsa_space idspace_d->aspace /* kdsa space */
 #define kdsd_space idspace_d->dspace /* kdsd space */
+
 };
 
 /* virtual kernel I & D space */
@@ -72,9 +73,12 @@ vm_kspace_t vm_kspace_allocate(vm_size_t);
 void vm_kspace_deallocate(vm_kspace_t);
 int vm_kspace_map_alloc(vm_kspace_t, int, int);
 int vm_kspace_map_free(vm_kspace_t, int, int);
-int vm_kspace_save(vm_kspace_t, int, int);
-int vm_kspace_restore(vm_kspace_t, int, int);
-vm_offset_t *vm_kspace_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
+int vm_kspace_save(vm_kspace_t, vm_offset_t, vm_size_t, int, int);
+int vm_kspace_restore(vm_kspace_t, vm_offset_t, vm_size_t, int, int);
+
+vm_offset_t *vm_kspace_offset(vm_kspace_t, vm_offset_t, int);
+vm_offset_t *vm_kspace_min(vm_kspace_t, int);
+vm_offset_t *vm_kspace_max(vm_kspace_t, int);
 
 /* macros for 2.11BSD like save and restore maps */
 #ifdef NONSEPERATE
@@ -98,24 +102,20 @@ vm_offset_t *vm_kspace_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
 #endif
 
 /* Kspace macro's */
-#define KSPACE_OFFSET(kspace, addr, maptype) 	(vm_kspace_offset((kspace), (addr), FALSE, FALSE, (maptype)))
-#define KSPACE_MIN(kspace, maptype) 			(vm_kspace_offset((kspace), 0, TRUE, FALSE, (maptype)))
-#define KSPACE_MAX(kspace, maptype) 			(vm_kspace_offset((kspace), 0, FALSE, TRUE, (maptype)))
+#define KSPACE_KISA(kspace, addr)				vm_kspace_offset(kspace, addr, KISA)
+#define KSPACE_KISA_MIN(kspace)					vm_kspace_min(kspace, KISA)
+#define KSPACE_KISA_MAX(kspace)					vm_kspace_max(kspace, KISA)
 
-#define KSPACE_KISA(kspace, addr)				KSPACE_OFFSET(kspace, addr, KISA)
-#define KSPACE_KISA_MIN(kspace)					KSPACE_MIN(kspace, KISA)
-#define KSPACE_KISA_MAX(kspace)					KSPACE_MAX(kspace, KISA)
+#define KSPACE_KISD(kspace, addr)				vm_kspace_offset(kspace, addr, KISD)
+#define KSPACE_KISD_MIN(kspace)					vm_kspace_min(kspace, KISD)
+#define KSPACE_KISD_MAX(kspace)					vm_kspace_max(kspace, KISD)
 
-#define KSPACE_KISD(kspace, addr)				KSPACE_OFFSET(kspace, addr, KISD)
-#define KSPACE_KISD_MIN(kspace)					KSPACE_MIN(kspace, KISD)
-#define KSPACE_KISD_MAX(kspace)					KSPACE_MAX(kspace, KISD)
+#define KSPACE_KDSA(kspace, addr)				vm_kspace_offset(kspace, addr, KDSA)
+#define KSPACE_KDSA_MIN(kspace)					vm_kspace_min(kspace, KDSA)
+#define KSPACE_KDSA_MAX(kspace)					vm_kspace_max(kspace, KDSA)
 
-#define KSPACE_KDSA(kspace, addr)				KSPACE_OFFSET(kspace, addr, KDSA)
-#define KSPACE_KDSA_MIN(kspace)					KSPACE_MIN(kspace, KDSA)
-#define KSPACE_KDSA_MAX(kspace)					KSPACE_MAX(kspace, KDSA)
-
-#define KSPACE_KDSD(kspace, addr)				KSPACE_OFFSET(kspace, addr, KDSD)
-#define KSPACE_KDSD_MIN(kspace)					KSPACE_MIN(kspace, KDSD)
-#define KSPACE_KDSD_MAX(kspace)					KSPACE_MAX(kspace, KDSD)
+#define KSPACE_KDSD(kspace, addr)				vm_kspace_offset(kspace, addr, KDSD)
+#define KSPACE_KDSD_MIN(kspace)					vm_kspace_min(kspace, KDSD)
+#define KSPACE_KDSD_MAX(kspace)					vm_kspace_max(kspace, KDSD)
 
 #endif /* _VM_KSPACE_H_ */

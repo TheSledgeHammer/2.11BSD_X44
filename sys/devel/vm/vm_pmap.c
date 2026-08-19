@@ -538,16 +538,13 @@ vm_xswapout(p, addr, size, freecore, odata, ostack)
 	register u_int odata, ostack;
 {
 	{
-		static u_long savekdsa6;
 		vm_kspace_t kspace;
 		int s;
 
 		s = splclock();
-		vm_kspace_save(kspace, KDSA, SEGM_SEG6);
-		savekdsa6 = kspace->kdsa_space->kisa;
+		vm_kspace_save(kspace, p->p_addr, sizeof(p->p_addr), KDSA, SEGM_SEG6);
 		u.u_ru.ru_nswap++;
-		kspace->kdsa_space->kisa = (vm_offset_t)p->p_addr;
-		vm_kspace_restore(kspace, KDSA, SEGM_SEG6);
+		vm_kspace_restore(kspace, p->p_addr, sizeof(p->p_addr), KDSA, SEGM_SEG6);
 		splx(s);
 	}
 }

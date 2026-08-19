@@ -51,6 +51,7 @@ char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
 static void vm_kspace_alloc(vm_offset_t, vm_offset_t, vm_size_t, vm_kspace_t);
 static void vm_kispace_map_init(vm_kspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
 static void vm_kdspace_map_init(vm_kspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+static vm_offset_t *vm_kspace_map_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
 
 void
 vm_kspace_init(void)
@@ -190,17 +191,17 @@ vm_kspace_map_alloc(kspace, segno, maptype)
 	vm_kspace_t kspace;
 	int segno, maptype;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	int error;
 
-	idspace_i = kspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (kspace->idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_map(idspace_i, kisa_space, segno);
+			error = vm_idspace_map(kspace->idspace_i, &kspace->kisa_space,
+					segno);
 			break;
 		case KISD:
-			error = vm_idspace_map(idspace_i, kisd_space, segno);
+			error = vm_idspace_map(kspace->idspace_i, &kspace->kisd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -208,14 +209,15 @@ vm_kspace_map_alloc(kspace, segno, maptype)
 		}
 	}
 
-	idspace_d = kspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (kspace->idspace_d != NULL) {
 		switch (maptype) {
 		case KDSA:
-			error = vm_idspace_map(idspace_d, kdsa_space, segno);
+			error = vm_idspace_map(kspace->idspace_d, &kspace->kdsa_space,
+					segno);
 			break;
 		case KDSD:
-			error = vm_idspace_map(idspace_d, kdsd_space, segno);
+			error = vm_idspace_map(kspace->idspace_d, &kspace->kdsd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -230,17 +232,17 @@ vm_kspace_map_free(kspace, segno, maptype)
 	vm_kspace_t kspace;
 	int segno, maptype;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	int error;
 
-	idspace_i = kspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (kspace->idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_unmap(idspace_i, kisa_space, segno);
+			error = vm_idspace_unmap(kspace->idspace_i, &kspace->kisa_space,
+					segno);
 			break;
 		case KISD:
-			error = vm_idspace_unmap(idspace_i, kisd_space, segno);
+			error = vm_idspace_unmap(kspace->idspace_i, &kspace->kisd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -248,14 +250,15 @@ vm_kspace_map_free(kspace, segno, maptype)
 		}
 	}
 
-	idspace_d = kspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (kspace->idspace_d != NULL) {
 		switch (maptype) {
 		case KDSA:
-			error = vm_idspace_unmap(idspace_d, kdsa_space, segno);
+			error = vm_idspace_unmap(kspace->idspace_d, &kspace->kdsa_space,
+					segno);
 			break;
 		case KDSD:
-			error = vm_idspace_unmap(idspace_d, kdsd_space, segno);
+			error = vm_idspace_unmap(kspace->idspace_d, &kspace->kdsd_space,
+					segno);
 			break;
 		default:
 			error = ENOMEM;
@@ -266,11 +269,12 @@ vm_kspace_map_free(kspace, segno, maptype)
 }
 
 int
-vm_kspace_save(kspace, maptype, flags)
+vm_kspace_save(kspace, addr, size, maptype, flags)
 	vm_kspace_t kspace;
+	vm_offset_t addr;
+	vm_size_t size;
 	int maptype, flags;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	int error, segno;
 
 	segno = (NOVL + 1);
@@ -279,16 +283,16 @@ vm_kspace_save(kspace, maptype, flags)
 		(void)vm_kspace_map_free(kspace, segno, maptype);
 		return (error);
 	}
-	idspace_i = kspace->idspace_i;
-	if (idspace_i != NULL) {
+
+	if (kspace->idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_save(idspace_i, kisa_space, kisa_space->kisa,
-					sizeof(kisa_space->kisa), segno, flags);
+			error = vm_idspace_save(kspace->idspace_i, &kspace->kisa_space,
+					addr, size, flags);
 			break;
 		case KISD:
-			error = vm_idspace_save(idspace_i, kisd_space, kisd_space->kisd,
-					sizeof(kisd_space->kisd), segno, flags);
+			error = vm_idspace_save(kspace->idspace_i, &kspace->kisd_space,
+					addr, size, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -296,16 +300,15 @@ vm_kspace_save(kspace, maptype, flags)
 		}
 	}
 
-	idspace_d = kspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (kspace->idspace_d != NULL) {
 		switch (maptype) {
 		case KDSA:
-			error = vm_idspace_save(idspace_d, kdsa_space, kdsa_space->kisa,
-					sizeof(kdsa_space->kisa), segno, flags);
+			error = vm_idspace_save(kspace->idspace_d, &kspace->kdsa_space,
+					addr, size, flags);
 			break;
 		case KDSD:
-			error = vm_idspace_save(idspace_d, kdsd_space, kdsd_space->kisd,
-					sizeof(kdsd_space->kisd), segno, flags);
+			error = vm_idspace_save(kspace->idspace_d, &kspace->kdsd_space,
+					addr, size, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -316,24 +319,24 @@ vm_kspace_save(kspace, maptype, flags)
 }
 
 int
-vm_kspace_restore(kspace, maptype, flags)
+vm_kspace_restore(kspace, addr, size, maptype, flags)
 	vm_kspace_t kspace;
+	vm_offset_t addr;
+	vm_size_t size;
 	int maptype, flags;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	int error, segno;
 
 	segno = (NOVL + 1);
-	idspace_i = kspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (kspace->idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_save(idspace_i, kisa_space, kisa_space->kisa,
-					sizeof(kisa_space->kisa), segno, flags);
+			error = vm_idspace_save(kspace->idspace_i, &kspace->kisa_space,
+					addr, size, flags);
 			break;
 		case KISD:
-			error = vm_idspace_save(idspace_i, kisd_space, kisd_space->kisd,
-					sizeof(kisd_space->kisd), segno, flags);
+			error = vm_idspace_save(kspace->idspace_i, &kspace->kisd_space,
+					addr, size, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -341,16 +344,15 @@ vm_kspace_restore(kspace, maptype, flags)
 		}
 	}
 
-	idspace_d = kspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (kspace->idspace_d != NULL) {
 		switch (maptype) {
 		case KDSA:
-			error = vm_idspace_restore(idspace_d, kdsa_space, kdsa_space->kisa,
-					sizeof(kdsa_space->kisa), segno, flags);
+			error = vm_idspace_restore(kspace->idspace_d, &kspace->kdsa_space,
+					addr, size, flags);
 			break;
 		case KDSD:
-			error = vm_idspace_restore(idspace_d, kdsd_space, kdsd_space->kisd,
-					sizeof(kdsd_space->kisd), segno, flags);
+			error = vm_idspace_restore(kspace->idspace_d, kspace->kdsd_space,
+					addr, size, flags);
 			break;
 		default:
 			error = ENOMEM;
@@ -360,24 +362,24 @@ vm_kspace_restore(kspace, maptype, flags)
 	return (error);
 }
 
-vm_offset_t *
-vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
+static vm_offset_t *
+vm_kspace_map_offset(kspace, offset, use_min, use_max, maptype)
 	vm_kspace_t kspace;
 	vm_offset_t offset;
 	bool_t use_min, use_max;
 	int maptype;
 {
-	vm_idspace_t idspace_i, idspace_d;
 	vm_offset_t *val;
 
-	idspace_i = kspace->idspace_i;
-	if (idspace_i != NULL) {
+	if (kspace->idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			val = vm_idspace_map_offset(idspace_i, kisa_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(kspace->idspace_i, &kspace->kisa_space,
+					offset, use_min, use_max);
 			break;
 		case KISD:
-			val = vm_idspace_map_offset(idspace_i, kisd_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(kspace->idspace_i, &kspace->kisd_space,
+					offset, use_min, use_max);
 			break;
 		default:
 			*val = 0;
@@ -385,14 +387,15 @@ vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
 		}
 	}
 
-	idspace_d = kspace->idspace_d;
-	if (idspace_d != NULL) {
+	if (kspace->idspace_d != NULL) {
 		switch (maptype) {
 		case KDSA:
-			val = vm_idspace_map_offset(idspace_d, kdsa_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(kspace->idspace_d, &kspace->kdsa_space,
+					offset, use_min, use_max);
 			break;
 		case KDSD:
-			val = vm_idspace_map_offset(idspace_d, kdsd_space, offset, use_min, use_max);
+			val = vm_idspace_map_offset(kspace->idspace_d, &kspace->kdsd_space,
+					offset, use_min, use_max);
 			break;
 		default:
 			*val = 0;
@@ -400,4 +403,69 @@ vm_kspace_offset(kspace, offset, use_min, use_max, maptype)
 		}
 	}
 	return (val);
+}
+
+int
+vm_kspace_saveseg5(kspace, addr, size, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t addr;
+	vm_size_t size;
+	int maptype;
+{
+	return (vm_kspace_save(kspace, addr, size, maptype, SEGM_SEG5));
+}
+
+int
+vm_kspace_restoreseg5(kspace, addr, size, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t addr;
+	vm_size_t size;
+	int maptype;
+{
+	return (vm_kspace_restore(kspace, addr, size, maptype, SEGM_SEG5));
+}
+
+int
+vm_kspace_saveseg6(kspace, addr, size, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t addr;
+	vm_size_t size;
+	int maptype;
+{
+	return (vm_kspace_save(kspace, addr, size, maptype, SEGM_SEG6));
+}
+
+int
+vm_kspace_restoreseg6(kspace, addr, size, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t addr;
+	vm_size_t size;
+	int maptype;
+{
+	return (vm_kspace_restore(kspace, addr, size, maptype, SEGM_SEG6));
+}
+
+vm_offset_t *
+vm_kspace_offset(kspace, addr, maptype)
+	vm_kspace_t kspace;
+	vm_offset_t addr;
+	int maptype;
+{
+	return (vm_kspace_map_offset(kspace, addr, FALSE, FALSE, maptype));
+}
+
+vm_offset_t *
+vm_kspace_min(kspace, maptype)
+	vm_kspace_t kspace;
+	int maptype;
+{
+	return (vm_kspace_map_offset(kspace, 0, TRUE, FALSE, maptype));
+}
+
+vm_offset_t *
+vm_kspace_max(kspace, maptype)
+	vm_kspace_t kspace;
+	int maptype;
+{
+	return (vm_kspace_map_offset(kspace, 0, FALSE, TRUE, maptype));
 }
