@@ -2,7 +2,7 @@
 
 PROG=	wsconsctl
 SRCS=	display.c keyboard.c keysym.c map_parse.y map_scan.l \
-		mouse.c util.c wsconsctl.c edid.c vesagtf.o videomode.o
+		mouse.c util.c wsconsctl.c
 MAN=	wsconsctl.8
 
 YHEADER=	1
@@ -11,8 +11,6 @@ DPSRCS+=	keysym.h
 CLEANFILES+=	keysym.h
 
 .include <bsd.prog.mk>
-
-.PATH: ${NETBSDSRCDIR}/sys/dev/video/videomode
 
 # Environment for scripts executed during build.
 SCRIPT_ENV= \
