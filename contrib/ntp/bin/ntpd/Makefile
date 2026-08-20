@@ -89,7 +89,8 @@ YHEADER=1
 
 # XXXGCC5
 .if defined(HAVE_GCC) && ${HAVE_GCC} >= 5 && ${ACTIVE_CC} == "gcc"
-COPTS.ntp_control.c+=  -Wno-error=maybe-uninitialized
+COPTS.ntp_control.c+= -Wno-error=maybe-uninitialized
+COPTS.ntp_control.c+= -Wno-error=implicit-function-declaration -Wno-error=unused-variable
 .endif
 
 CLEANFILES+=${MAN}
