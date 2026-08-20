@@ -94,7 +94,7 @@ static	int64_t	find_parsenum(PLAN *, char *, char *, char *);
 	int	f_inum(PLAN *, FTSENT *);
 	int	f_links(PLAN *, FTSENT *);
 	int	f_ls(PLAN *, FTSENT *);
-	int	f_mindepth(PLAN *, FTSENT *));
+	int	f_mindepth(PLAN *, FTSENT *);
 	int	f_maxdepth(PLAN *, FTSENT *);
 	int	f_mmin(PLAN *, FTSENT *);
 	int	f_mtime(PLAN *, FTSENT *);
