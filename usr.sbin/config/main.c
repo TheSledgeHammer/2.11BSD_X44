@@ -801,7 +801,7 @@ addoption(const char *name, const char *value)
 	const char *n;
 	char *p, c;
 	char low[500];
-	int is_fs, is_param, is_flag, is_opt, is_undecl;
+	int is_fs, is_param, is_flag, /* is_opt,*/ is_undecl;
 
 	/* 
 	 * Figure out how this option was declared (if at all.)
@@ -810,7 +810,7 @@ addoption(const char *name, const char *value)
 	 */
 	is_fs = OPT_FSOPT(name);
 	is_param = OPT_DEFPARAM(name);
-	is_opt = OPT_DEFOPT(name);
+	//is_opt = OPT_DEFOPT(name);
 	is_flag =  OPT_DEFFLAG(name);
 	is_undecl = !DEFINED_OPTION(name);
 
@@ -842,7 +842,7 @@ addoption(const char *name, const char *value)
 		*p++ = isupper(c) ? tolower(c) : c;
 	*p = 0;
 	n = intern(low);
-	(void)ht_insert(selecttab, n, (void *)n);
+	(void)ht_insert(selecttab, n, (void *)__UNCONST(n));
 }
 
 void
@@ -890,11 +890,11 @@ addfsoption(const char *name)
 	 * Add a lower-case version to the table for root file system
 	 * verification.
 	 */
-	if (ht_insert(fsopttab, n, (void *)n))
+	if (ht_insert(fsopttab, n, (void *)__UNCONST(n)))
 		panic("addfsoption: already in table");
 
 	/* Add to select table. */
-	(void)ht_insert(selecttab, n, (void *)n);
+	(void)ht_insert(selecttab, n, (void *)__UNCONST(n));
 }
 
 void
@@ -1355,7 +1355,8 @@ logconfig_include(FILE *cf, const char *filename)
 
 	if (!cfg)
 		return;
-
+    
+    missingeol = 0;
 	if (fstat(fileno(cf), &st) == -1)
 		return;
 	if (cfgtime < st.st_mtime)

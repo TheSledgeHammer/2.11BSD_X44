@@ -1,7 +1,7 @@
 #	$NetBSD: Makefile,v 1.29 2003/10/19 23:15:54 he Exp $
 #	from: @(#)Makefile	8.2 (Berkeley) 4/19/94
-.include <bsd.own.mk>
-WARNS=6
+
+#.include <bsd.own.mk>
 
 PROG=	config
 SRCS=	files.c gram.y hash.c main.c mkheaders.c mkioconf.c \
@@ -17,6 +17,8 @@ DPADD+=${LIBUTIL}
 COPTS.mkheaders.c+=	${GCC_NO_FORMAT_TRUNCATION}
 COPTS.sem.c+=		${GCC_NO_FORMAT_TRUNCATION}
 .endif
+
+COPTS.main.c+=		${GCC_NO_FORMAT_TRUNCATION}
 
 CWARNFLAGS+=-Wno-format-y2k
 

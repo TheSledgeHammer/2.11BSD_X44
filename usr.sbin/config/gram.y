@@ -52,14 +52,14 @@
 #include "defs.h"
 #include "sem.h"
 
-/*
+
 #define	FORMAT(n) (((n).fmt == 8 && (n).val != 0) ? "0%llo" : \
     ((n).fmt == 16) ? "0x%llx" : "%lld")
-*/
 
+/*
 #define	FORMAT(n) (((n).fmt == 8 && (n).val != 0) ? "0%o" : \
     ((n).fmt == 16) ? "0x%x" : "%d")
-
+*/
 #define	stop(s)	error(s), exit(1)
 
 static	struct	config conf;	/* at most one active at a time */
@@ -102,7 +102,7 @@ static	struct nvlist *mk_ns(const char *, struct nvlist *);
 	struct	nvlist 		*list;
 	const char 			*str;
 	struct	numconst 	num;
-	int				    val;
+	int64_t			    val;
 }
 
 %token	AND AT ATTACH BUILD CINCLUDE COMPILE_WITH CONFIG DEFFS DEFINE DEFOPT 
@@ -376,7 +376,7 @@ value:
 	WORD							{ $$ = $1; } |
 	EMPTY							{ $$ = $1; } |
 	signed_number					{ char bf[40];
-					  					(void)snprintf(bf, sizeof(bf), FORMAT($1), $1.val);
+					  					(void)snprintf(bf, sizeof(bf), FORMAT($1), (long long)$1.val);
 					  					$$ = intern(bf); };
 
 stringvalue:
@@ -660,7 +660,6 @@ mk_nsis(const char *name, int count, struct nvlist *adefs, int opt)
 	*p = 0;
 	return defs;
 }
-
 
 static struct nvlist *
 mk_ns(const char *name, struct nvlist *vals)
