@@ -102,7 +102,7 @@ static	struct nvlist *mk_ns(const char *, struct nvlist *);
 	struct	nvlist 		*list;
 	const char 			*str;
 	struct	numconst 	num;
-	int64_t				val;
+	int				    val;
 }
 
 %token	AND AT ATTACH BUILD CINCLUDE COMPILE_WITH CONFIG DEFFS DEFINE DEFOPT 
@@ -376,7 +376,7 @@ value:
 	WORD							{ $$ = $1; } |
 	EMPTY							{ $$ = $1; } |
 	signed_number					{ char bf[40];
-					  					(void)snprintf(bf, sizeof(bf), FORMAT($1), (long long)$1.val);
+					  					(void)snprintf(bf, sizeof(bf), FORMAT($1), $1.val);
 					  					$$ = intern(bf); };
 
 stringvalue:
