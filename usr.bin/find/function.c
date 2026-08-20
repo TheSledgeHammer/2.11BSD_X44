@@ -76,7 +76,7 @@ __RCSID("$NetBSD: function.c,v 1.46.4.2 2005/10/11 23:47:05 reed Exp $");
 	}								\
 }
 
-static	int64_t	find_parsenum(PLAN *, char *, char *, char *);
+static	int64_t	find_parsenum(PLAN *, const char *, char *, char *);
 	int	f_always_true(PLAN *, FTSENT *);
 	int	f_amin(PLAN *, FTSENT *);
 	int	f_anewer(PLAN *, FTSENT *);
@@ -126,7 +126,7 @@ extern time_t now;
  *	Parse a string of the form [+-]# and return the value.
  */
 static int64_t
-find_parsenum(PLAN *plan, char *option, char *vp, char *endch)
+find_parsenum(PLAN *plan, const char *option, char *vp, char *endch)
 {
 	int64_t value;
 	char *endchar, *str;	/* Pointer to character ending conversion. */
