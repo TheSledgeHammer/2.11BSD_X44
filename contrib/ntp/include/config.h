@@ -134,7 +134,7 @@
 #define CLOCK_SEL240X 1
 
 /* clock thru shared memory */
-#define CLOCK_SHM 1
+/* #undef CLOCK_SHM */
 
 /* Spectracom 8170/Netclock/2 WWVB receiver */
 #define CLOCK_SPECTRACOM 1
@@ -1453,7 +1453,7 @@
 /* #undef NTP_SYSCALLS_STD */
 
 /* Do we have support for SHMEM_STATUS? */
-#define ONCORE_SHMEM_STATUS 1
+/* #undef ONCORE_SHMEM_STATUS */
 
 #ifndef __NetBSD__
 /* NetBSD: set by build process */
