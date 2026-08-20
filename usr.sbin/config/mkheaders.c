@@ -273,7 +273,7 @@ locators_print(const char *name, void *value, void *arg)
 static int
 emitlocs(void)
 {
-	char *tfname;
+	const char *tfname;
 	int rval;
 	FILE *tfp;
 	
