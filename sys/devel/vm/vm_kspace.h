@@ -72,22 +72,22 @@ vm_offset_t *vm_kspace_max(int);
 
 /* KISA */
 #define KISA_SAVESEG5(addr, size) \
-	vm_kspace_save(addr, size, KISA, SEGM_SEG5)
+	vm_kspace_saveseg5(addr, size, KISA)
 
 #define KISA_SAVESEG6(addr, size) \
-	vm_kspace_save(addr, size, KISA, SEGM_SEG6)
+	vm_kspace_saveseg6(addr, size, KISA)
 
 #define KISA_SAVESEG56(addr, size) \
-	vm_kspace_save(addr, size, KISA, SEGM_SEG56)
+	vm_kspace_saveseg56(addr, size, KISA)
 
 #define KISA_RESTORESEG5(addr, size) \
-	vm_kspace_restore(addr, size, KISA, SEGM_SEG5)
+	vm_kspace_restoreseg5(addr, size, KISA)
 
 #define KISA_RESTORESEG6(addr, size) \
-	vm_kspace_restore(addr, size, KISA, SEGM_SEG6)
+	vm_kspace_restoreseg6(addr, size, KISA)
 
 #define KISA_RESTORESEG56(addr, size) \
-	vm_kspace_restore(addr, size, KISA, SEGM_SEG56)
+	vm_kspace_restoreseg56(addr, size, KISA)
 
 #define KISA_OFFSET(addr) \
 	vm_kspace_offset(addr, KISA)
@@ -100,22 +100,22 @@ vm_offset_t *vm_kspace_max(int);
 
 /* KISD */
 #define KISD_SAVESEG5(addr, size) \
-	vm_kspace_save(addr, size, KISD, SEGM_SEG5)
+	vm_kspace_saveseg5(addr, size, KISD)
 
 #define KISD_SAVESEG6(addr, size) \
-	vm_kspace_save(addr, size, KISD, SEGM_SEG6)
+	vm_kspace_saveseg6(addr, size, KISD)
 
 #define KISD_SAVESEG56(addr, size) \
-	vm_kspace_save(addr, size, KISD, SEGM_SEG56)
+	vm_kspace_saveseg56(addr, size, KISD)
 
 #define KISD_RESTORESEG5(addr, size) \
-	vm_kspace_restore(addr, size, KISD, SEGM_SEG5)
+	vm_kspace_restoreseg5(addr, size, KISD)
 
 #define KISD_RESTORESEG6(addr, size) \
-	vm_kspace_restore(addr, size, KISD, SEGM_SEG6)
+	vm_kspace_restoreseg6(addr, size, KISD)
 
 #define KISD_RESTORESEG56(addr, size) \
-	vm_kspace_restore(addr, size, KISD, SEGM_SEG56)
+	vm_kspace_restoreseg56(addr, size, KISD)
 
 #define KISD_OFFSET(addr) \
 	vm_kspace_offset(addr, KISD)
@@ -130,22 +130,22 @@ vm_offset_t *vm_kspace_max(int);
 
 /* KDSA */
 #define KDSA_SAVESEG5(addr, size) \
-	vm_kspace_save(addr, size, KDSA, SEGM_SEG5)
+	vm_kspace_saveseg5(addr, size, KDSA)
 
 #define KDSA_SAVESEG6(addr, size) \
-	vm_kspace_save(addr, size, KDSA, SEGM_SEG6)
+	vm_kspace_saveseg6(addr, size, KDSA)
 
 #define KDSA_SAVESEG56(addr, size) \
-	vm_kspace_save(addr, size, KDSA, SEGM_SEG56)
+	vm_kspace_saveseg56(addr, size, KDSA)
 
 #define KDSA_RESTORESEG5(addr, size) \
-	vm_kspace_restore(addr, size, KDSA, SEGM_SEG5)
+	vm_kspace_restoreseg5(addr, size, KDSA)
 
 #define KDSA_RESTORESEG6(addr, size) \
-	vm_kspace_restore(addr, size, KDSA, SEGM_SEG6)
+	vm_kspace_restoreseg6(addr, size, KDSA)
 
 #define KDSA_RESTORESEG56(addr, size) \
-	vm_kspace_restore(addr, size, KDSA, SEGM_SEG56)
+	vm_kspace_restoreseg56(addr, size, KDSA)
 
 #define KDSA_OFFSET(addr) \
 	vm_kspace_offset(addr, KDSA)
@@ -158,22 +158,22 @@ vm_offset_t *vm_kspace_max(int);
 
 /* KDSD */
 #define KDSD_SAVESEG5(addr, size) \
-	vm_kspace_save(addr, size, KDSD, SEGM_SEG5)
+	vm_kspace_saveseg5(addr, size, KDSD)
 
 #define KDSD_SAVESEG6(addr, size) \
-	vm_kspace_save(addr, size, KDSD, SEGM_SEG6)
+	vm_kspace_saveseg6(addr, size, KDSD)
 
 #define KDSD_SAVESEG56(addr, size) \
-	vm_kspace_save(addr, size, KDSD, SEGM_SEG56)
+	vm_kspace_saveseg56(addr, size, KDSD)
 
 #define KDSD_RESTORESEG5(addr, size) \
-	vm_kspace_restore(addr, size, KDSD, SEGM_SEG5)
+	vm_kspace_restoreseg5(addr, size, KDSD)
 
 #define KDSD_RESTORESEG6(addr, size) \
-	vm_kspace_restore(addr, size, KDSD, SEGM_SEG6)
+	vm_kspace_restoreseg6(addr, size, KDSD)
 
 #define KDSD_RESTORESEG56(addr, size) \
-	vm_kspace_restore(addr, size, KDSD, SEGM_SEG56)
+	vm_kspace_restoreseg56(addr, size, KDSD)
 
 #define KDSD_OFFSET(addr) \
 	vm_kspace_offset(addr, KDSD)
