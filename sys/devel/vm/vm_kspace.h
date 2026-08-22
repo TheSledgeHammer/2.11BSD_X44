@@ -56,66 +56,133 @@ extern vm_map_t    kisa_map; /* kernel I-Space address map */
 extern vm_map_t    kdsd_map; /* kernel D-Space descriptor map */
 extern vm_map_t    kdsa_map; /* kernel D-Space address map */
 
-/* map min offset */
-#define KISA_MIN	vm_map_min(kisa_map)
-#define KISD_MIN	vm_map_min(kisd_map)
-#define KDSA_MIN	vm_map_min(kdsa_map)
-#define KDSD_MIN	vm_map_min(kdsd_map)
-
-/* map max offset */
-#define KISA_MAX	vm_map_max(kisa_map)
-#define KISD_MAX	vm_map_max(kisd_map)
-#define KDSA_MAX	vm_map_max(kdsa_map)
-#define KDSD_MAX	vm_map_max(kdsd_map)
-
 void vm_kspace_init(void);
-vm_kspace_t vm_kspace_allocate(vm_size_t);
-void vm_kspace_deallocate(vm_kspace_t);
-int vm_kspace_map_alloc(vm_kspace_t, int, int);
-int vm_kspace_map_free(vm_kspace_t, int, int);
-int vm_kspace_save(vm_kspace_t, vm_offset_t, vm_size_t, int, int);
-int vm_kspace_restore(vm_kspace_t, vm_offset_t, vm_size_t, int, int);
-
-vm_offset_t *vm_kspace_offset(vm_kspace_t, vm_offset_t, int);
-vm_offset_t *vm_kspace_min(vm_kspace_t, int);
-vm_offset_t *vm_kspace_max(vm_kspace_t, int);
-
-/* macros for 2.11BSD like save and restore maps */
-#ifdef NONSEPERATE
-#define savemap(kspace, flags) \
-	(void)vm_kspace_save((kspace), KISA, (flags)); \
-	(void)vm_kspace_save((kspace), KISD, (flags));
-
-#define restoremap(kspace, flags) \
-	(void)vm_kspace_restore((kspace), KISA, (flags)); \
-	(void)vm_kspace_restore((kspace), KISD, (flags));
-
-#else
-
-#define savemap(kspace, flags) \
-	(void)vm_kspace_save((kspace), KDSA, (flags)); \
-	(void)vm_kspace_save((kspace), KDSD, (flags));
-
-#define restoremap(kspace, flags) \
-	(void)vm_kspace_restore((kspace), KDSA, (flags)); \
-	(void)vm_kspace_restore((kspace), KDSD, (flags));
-#endif
+int vm_kspace_saveseg5(vm_offset_t, vm_size_t, int);
+int vm_kspace_restoreseg5(vm_offset_t, vm_size_t, int);
+int vm_kspace_saveseg6(vm_offset_t, vm_size_t, int);
+int vm_kspace_restoreseg6(vm_offset_t, vm_size_t, int);
+int vm_kspace_saveseg56(vm_offset_t, vm_size_t, int);
+int vm_kspace_restoreseg56(vm_offset_t, vm_size_t, int);
+vm_offset_t *vm_kspace_offset(vm_offset_t, int);
+vm_offset_t *vm_kspace_min(int);
+vm_offset_t *vm_kspace_max(int);
 
 /* Kspace macro's */
-#define KSPACE_KISA(kspace, addr)				vm_kspace_offset(kspace, addr, KISA)
-#define KSPACE_KISA_MIN(kspace)					vm_kspace_min(kspace, KISA)
-#define KSPACE_KISA_MAX(kspace)					vm_kspace_max(kspace, KISA)
+#ifdef NONSEPARATE
 
-#define KSPACE_KISD(kspace, addr)				vm_kspace_offset(kspace, addr, KISD)
-#define KSPACE_KISD_MIN(kspace)					vm_kspace_min(kspace, KISD)
-#define KSPACE_KISD_MAX(kspace)					vm_kspace_max(kspace, KISD)
+/* KISA */
+#define KISA_SAVESEG5(addr, size) \
+	vm_kspace_save(addr, size, KISA, SEGM_SEG5)
 
-#define KSPACE_KDSA(kspace, addr)				vm_kspace_offset(kspace, addr, KDSA)
-#define KSPACE_KDSA_MIN(kspace)					vm_kspace_min(kspace, KDSA)
-#define KSPACE_KDSA_MAX(kspace)					vm_kspace_max(kspace, KDSA)
+#define KISA_SAVESEG6(addr, size) \
+	vm_kspace_save(addr, size, KISA, SEGM_SEG6)
 
-#define KSPACE_KDSD(kspace, addr)				vm_kspace_offset(kspace, addr, KDSD)
-#define KSPACE_KDSD_MIN(kspace)					vm_kspace_min(kspace, KDSD)
-#define KSPACE_KDSD_MAX(kspace)					vm_kspace_max(kspace, KDSD)
+#define KISA_SAVESEG56(addr, size) \
+	vm_kspace_save(addr, size, KISA, SEGM_SEG56)
 
+#define KISA_RESTORESEG5(addr, size) \
+	vm_kspace_restore(addr, size, KISA, SEGM_SEG5)
+
+#define KISA_RESTORESEG6(addr, size) \
+	vm_kspace_restore(addr, size, KISA, SEGM_SEG6)
+
+#define KISA_RESTORESEG56(addr, size) \
+	vm_kspace_restore(addr, size, KISA, SEGM_SEG56)
+
+#define KISA_OFFSET(addr) \
+	vm_kspace_offset(addr, KISA)
+
+#define KISA_MIN \
+	vm_kspace_min(KISA)
+
+#define KISA_MAX \
+	vm_kspace_max(KISA)
+
+/* KISD */
+#define KISD_SAVESEG5(addr, size) \
+	vm_kspace_save(addr, size, KISD, SEGM_SEG5)
+
+#define KISD_SAVESEG6(addr, size) \
+	vm_kspace_save(addr, size, KISD, SEGM_SEG6)
+
+#define KISD_SAVESEG56(addr, size) \
+	vm_kspace_save(addr, size, KISD, SEGM_SEG56)
+
+#define KISD_RESTORESEG5(addr, size) \
+	vm_kspace_restore(addr, size, KISD, SEGM_SEG5)
+
+#define KISD_RESTORESEG6(addr, size) \
+	vm_kspace_restore(addr, size, KISD, SEGM_SEG6)
+
+#define KISD_RESTORESEG56(addr, size) \
+	vm_kspace_restore(addr, size, KISD, SEGM_SEG56)
+
+#define KISD_OFFSET(addr) \
+	vm_kspace_offset(addr, KISD)
+
+#define KISD_MIN \
+	vm_kspace_min(KISD)
+
+#define KISD_MAX \
+	vm_kspace_max(KISD)
+
+#else /* !NONSEPARATE */
+
+/* KDSA */
+#define KDSA_SAVESEG5(addr, size) \
+	vm_kspace_save(addr, size, KDSA, SEGM_SEG5)
+
+#define KDSA_SAVESEG6(addr, size) \
+	vm_kspace_save(addr, size, KDSA, SEGM_SEG6)
+
+#define KDSA_SAVESEG56(addr, size) \
+	vm_kspace_save(addr, size, KDSA, SEGM_SEG56)
+
+#define KDSA_RESTORESEG5(addr, size) \
+	vm_kspace_restore(addr, size, KDSA, SEGM_SEG5)
+
+#define KDSA_RESTORESEG6(addr, size) \
+	vm_kspace_restore(addr, size, KDSA, SEGM_SEG6)
+
+#define KDSA_RESTORESEG56(addr, size) \
+	vm_kspace_restore(addr, size, KDSA, SEGM_SEG56)
+
+#define KDSA_OFFSET(addr) \
+	vm_kspace_offset(addr, KDSA)
+
+#define KDSA_MIN \
+	vm_kspace_min(KDSA)
+
+#define KDSA_MAX \
+	vm_kspace_max(KDSA)
+
+/* KDSD */
+#define KDSD_SAVESEG5(addr, size) \
+	vm_kspace_save(addr, size, KDSD, SEGM_SEG5)
+
+#define KDSD_SAVESEG6(addr, size) \
+	vm_kspace_save(addr, size, KDSD, SEGM_SEG6)
+
+#define KDSD_SAVESEG56(addr, size) \
+	vm_kspace_save(addr, size, KDSD, SEGM_SEG56)
+
+#define KDSD_RESTORESEG5(addr, size) \
+	vm_kspace_restore(addr, size, KDSD, SEGM_SEG5)
+
+#define KDSD_RESTORESEG6(addr, size) \
+	vm_kspace_restore(addr, size, KDSD, SEGM_SEG6)
+
+#define KDSD_RESTORESEG56(addr, size) \
+	vm_kspace_restore(addr, size, KDSD, SEGM_SEG56)
+
+#define KDSD_OFFSET(addr) \
+	vm_kspace_offset(addr, KDSD)
+
+#define KDSD_MIN \
+	vm_kspace_min(KDSD)
+
+#define KDSD_MAX \
+	vm_kspace_max(KDSD)
+
+#endif /* !NONSEPARATE */
 #endif /* _VM_KSPACE_H_ */

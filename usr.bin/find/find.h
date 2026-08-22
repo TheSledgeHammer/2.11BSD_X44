@@ -105,10 +105,10 @@ typedef struct _plandata {
 #define	regexp_data	p_un._regexp_data
 
 typedef struct _option {
-	char *name;			/* option name */
+	const char *name;			/* option name */
 	enum ntype token;		/* token type */
 	PLAN *(*create)			/* create function */
-		__P((char ***, int));
+		(char ***, int);
 	int arg;			/* function needs arg */
 } OPTION;
 

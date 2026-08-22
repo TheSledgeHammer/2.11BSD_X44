@@ -48,9 +48,16 @@ vm_object_t kspace_object;
 char *kispace_min, *kispace_max; /* kernel i-space vm_map range */
 char *kdspace_min, *kdspace_max; /* kernel d-space vm_map range */
 
+vm_kspace_t vm_kspace_allocate(vm_size_t);
+void vm_kspace_deallocate(vm_kspace_t);
+
 static void vm_kspace_alloc(vm_offset_t, vm_offset_t, vm_size_t, vm_kspace_t);
 static void vm_kispace_map_init(vm_kspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
 static void vm_kdspace_map_init(vm_kspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+static int vm_kspace_map_alloc(vm_kspace_t, int, int);
+static int vm_kspace_map_free(vm_kspace_t, int, int);
+static int vm_kspace_save(vm_kspace_t, vm_offset_t, vm_size_t, int, int);
+static int vm_kspace_restore(vm_kspace_t, vm_offset_t, vm_size_t, int, int);
 static vm_offset_t *vm_kspace_map_offset(vm_kspace_t, vm_offset_t, bool_t, bool_t, int);
 
 void
@@ -105,7 +112,7 @@ vm_kspace_alloc(min, max, size, kspace)
 	vm_kdspace_map_init(kspace, M_VMKSPACE, kspace_object, &min, &max, size, TRUE);
 }
 
-void
+static void
 vm_kispace_map_init(kspace, mtype, object, min, max, size, pageable)
 	vm_kspace_t kspace;
 	int mtype;
@@ -145,7 +152,7 @@ vm_kispace_map_init(kspace, mtype, object, min, max, size, pageable)
 	}
 }
 
-void
+static void
 vm_kdspace_map_init(kspace, mtype, object, min, max, size, pageable)
 	vm_kspace_t kspace;
 	int mtype;
@@ -186,7 +193,7 @@ vm_kdspace_map_init(kspace, mtype, object, min, max, size, pageable)
 }
 
 /* kspace maps */
-int
+static int
 vm_kspace_map_alloc(kspace, segno, maptype)
 	vm_kspace_t kspace;
 	int segno, maptype;
@@ -227,7 +234,7 @@ vm_kspace_map_alloc(kspace, segno, maptype)
 	return (error);
 }
 
-int
+static int
 vm_kspace_map_free(kspace, segno, maptype)
 	vm_kspace_t kspace;
 	int segno, maptype;
@@ -268,7 +275,7 @@ vm_kspace_map_free(kspace, segno, maptype)
 	return (error);
 }
 
-int
+static int
 vm_kspace_save(kspace, addr, size, maptype, flags)
 	vm_kspace_t kspace;
 	vm_offset_t addr;
@@ -280,8 +287,7 @@ vm_kspace_save(kspace, addr, size, maptype, flags)
 	segno = (NOVL + 1);
 	error = vm_kspace_map_alloc(kspace, segno, maptype);
 	if (error != 0) {
-		(void)vm_kspace_map_free(kspace, segno, maptype);
-		return (error);
+		goto free;
 	}
 
 	if (kspace->idspace_i != NULL) {
@@ -315,10 +321,18 @@ vm_kspace_save(kspace, addr, size, maptype, flags)
 			break;
 		}
 	}
+
 	return (error);
+
+free:
+	error = vm_kspace_map_free(kspace, segno, maptype);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
 }
 
-int
+static int
 vm_kspace_restore(kspace, addr, size, maptype, flags)
 	vm_kspace_t kspace;
 	vm_offset_t addr;
@@ -406,66 +420,77 @@ vm_kspace_map_offset(kspace, offset, use_min, use_max, maptype)
 }
 
 int
-vm_kspace_saveseg5(kspace, addr, size, maptype)
-	vm_kspace_t kspace;
+vm_kspace_saveseg5(addr, size, maptype)
 	vm_offset_t addr;
 	vm_size_t size;
 	int maptype;
 {
-	return (vm_kspace_save(kspace, addr, size, maptype, SEGM_SEG5));
+	return (vm_kspace_save(kernel_kspace, addr, size, maptype, SEGM_SEG5));
 }
 
 int
-vm_kspace_restoreseg5(kspace, addr, size, maptype)
-	vm_kspace_t kspace;
+vm_kspace_restoreseg5(addr, size, maptype)
 	vm_offset_t addr;
 	vm_size_t size;
 	int maptype;
 {
-	return (vm_kspace_restore(kspace, addr, size, maptype, SEGM_SEG5));
+	return (vm_kspace_restore(kernel_kspace, addr, size, maptype, SEGM_SEG5));
 }
 
 int
-vm_kspace_saveseg6(kspace, addr, size, maptype)
-	vm_kspace_t kspace;
+vm_kspace_saveseg6(addr, size, maptype)
 	vm_offset_t addr;
 	vm_size_t size;
 	int maptype;
 {
-	return (vm_kspace_save(kspace, addr, size, maptype, SEGM_SEG6));
+	return (vm_kspace_save(kernel_kspace, addr, size, maptype, SEGM_SEG6));
 }
 
 int
-vm_kspace_restoreseg6(kspace, addr, size, maptype)
-	vm_kspace_t kspace;
+vm_kspace_restoreseg6(addr, size, maptype)
 	vm_offset_t addr;
 	vm_size_t size;
 	int maptype;
 {
-	return (vm_kspace_restore(kspace, addr, size, maptype, SEGM_SEG6));
+	return (vm_kspace_restore(kernel_kspace, addr, size, maptype, SEGM_SEG6));
+}
+
+int
+vm_kspace_saveseg56(addr, size, maptype)
+	vm_offset_t addr;
+	vm_size_t size;
+	int maptype;
+{
+	return (vm_kspace_save(kernel_kspace, addr, size, maptype, SEGM_SEG56));
+}
+
+int
+vm_kspace_restoreseg56(addr, size, maptype)
+	vm_offset_t addr;
+	vm_size_t size;
+	int maptype;
+{
+	return (vm_kspace_restore(kernel_kspace, addr, size, maptype, SEGM_SEG56));
 }
 
 vm_offset_t *
-vm_kspace_offset(kspace, addr, maptype)
-	vm_kspace_t kspace;
+vm_kspace_offset(addr, maptype)
 	vm_offset_t addr;
 	int maptype;
 {
-	return (vm_kspace_map_offset(kspace, addr, FALSE, FALSE, maptype));
+	return (vm_kspace_map_offset(kernel_kspace, addr, FALSE, FALSE, maptype));
 }
 
 vm_offset_t *
-vm_kspace_min(kspace, maptype)
-	vm_kspace_t kspace;
+vm_kspace_min(maptype)
 	int maptype;
 {
-	return (vm_kspace_map_offset(kspace, 0, TRUE, FALSE, maptype));
+	return (vm_kspace_map_offset(kernel_kspace, 0, TRUE, FALSE, maptype));
 }
 
 vm_offset_t *
-vm_kspace_max(kspace, maptype)
-	vm_kspace_t kspace;
+vm_kspace_max(maptype)
 	int maptype;
 {
-	return (vm_kspace_map_offset(kspace, 0, FALSE, TRUE, maptype));
+	return (vm_kspace_map_offset(kernel_kspace, 0, FALSE, TRUE, maptype));
 }

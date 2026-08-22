@@ -50,9 +50,6 @@ struct vm_segment_register segregs[NOVL+2];
 
 simple_lock_data_t vm_segment_region_lock;
 
-//static bool_t uses_allocator = FALSE;
-
-static int vm_pmap_init_phys(vm_idspace_entry_t);
 static void vm_idspace_entry_alloc(vm_idspace_entry_t, vm_map_t, vm_offset_t,
 		vm_offset_t, vm_size_t);
 static int vm_idspace_entry_init(vm_idspace_entry_t, vm_map_t, vm_offset_t *,
@@ -60,8 +57,6 @@ static int vm_idspace_entry_init(vm_idspace_entry_t, vm_map_t, vm_offset_t *,
 static int vm_idspace_entry_object_init(vm_idspace_entry_t, vm_object_t, vm_size_t);
 static int vm_idspace_entry_segment_alloc(vm_idspace_entry_t, int);
 static int vm_idspace_entry_page_alloc(vm_idspace_entry_t, int);
-void vm_idspace_entry_alloc_wait(vm_idspace_entry_t, vm_offset_t, vm_size_t);
-void vm_idspace_entry_free_wakeup(vm_idspace_entry_t, vm_offset_t, vm_size_t);
 
 static int vm_segment_region_check_segment(vm_segment_region_t, vm_object_t, int);
 static int vm_segment_region_check_page(vm_segment_region_t, int);
@@ -144,7 +139,7 @@ vm_pmap_phys(map, size, segno, start, end)
 		goto bad;
 	}
 
-	if ((size < 0) || (size > (end - start)) || (virt > size)) {
+	if ((size < 0) || (size > (end - start))) {
 		error = EINVAL;
 		goto bad;
 	}
@@ -190,28 +185,6 @@ bad:
 	return (error);
 }
 
-/* initialize pmap_phys */
-static int
-vm_pmap_init_phys(entry)
-	vm_idspace_entry_t entry;
-{
-	vm_offset_t virt, phys, num;
-	int error;
-
-	error = vm_pmap_find_phys(entry->map, &virt, &phys, &num, 0, entry->start, entry->end);
-	if (error != 0) {
-		return (error);
-	}
-
-	u.u_uisd[0] = 0;
-	u.u_uisa[0] = 0;
-
-	printf("vm_idspace: max virtual address %lu\n", virt);
-	printf("vm_idspace: max physical address %lu\n", phys);
-	printf("vm_idspace: max number of vm_segments %lu\n", num);
-	return (0);
-}
-
 /*
  * vm_idspace
  */
@@ -236,11 +209,6 @@ vm_idspace_init(idspace, entry, mtype, map, min, max, object, size, pageable)
 			return (error);
 		}
 		error = vm_idspace_entry_object_init(entry, object, size);
-		if (error != 0) {
-			vm_idspace_deallocate(idspace, entry, mtype);
-			return (error);
-		}
-		error = vm_pmap_init_phys(entry);
 		if (error != 0) {
 			vm_idspace_deallocate(idspace, entry, mtype);
 			return (error);
@@ -465,7 +433,7 @@ vm_idspace_save(idspace, entry, val, size, flags)
 	int error;
 
 	vm_idspace_lock(idspace);
-	vm_idspace_entry_alloc_wait(entry, val, size);
+	val = kmem_alloc_wait(entry->map, size);
 	error = vm_idspace_entry_region_save(entry, val, size,
 			(SEGM_SAVE | SEGM_RW | SEGM_ACCESS | flags));
 	if (error != 0) {
@@ -501,7 +469,7 @@ vm_idspace_restore(idspace, entry, val, size, flags)
 		return (error);
 	}
 
-	vm_idspace_entry_free_wakeup(entry->map, val, size);
+	kmem_free_wakeup(entry->map, val, size);
 	vm_idspace_unlock(idspace);
 	return (0);
 }
@@ -547,49 +515,6 @@ vm_idspace_entry_init(entry, map, min, max, size, pageable)
 		return (0);
 	}
 	return (1);
-}
-
-/* a copy of kmem_alloc_wait */
-static void
-vm_idspace_entry_alloc_wait(entry, addr, size)
-	vm_idspace_entry_t entry;
-	vm_offset_t addr;
-	vm_size_t size;
-{
-	size = round_page(size);
-	for (;;) {
-		/*
-		 * To make this work for more than one map,
-		 * use the map's lock to lock out sleepers/wakers.
-		 */
-		vm_map_lock(entry->map);
-		if (vm_map_findspace(entry->map, entry->start, size, &addr) == 0) {
-			break;
-		}
-		/* no space now; see if we can ever get space */
-		if (vm_map_max(entry->map) - vm_map_min(entry->map) < size) {
-			vm_map_unlock(entry->map);
-			return;
-		}
-		assert_wait(entry->map, TRUE);
-		vm_map_unlock(entry->map);
-		vm_thread_block();
-	}
-	vm_map_insert(entry->map, NULL, entry->start, addr, addr + size);
-	vm_map_unlock(entry->map);
-}
-
-/* a copy of kmem_free_wakeup */
-static void
-vm_idspace_entry_free_wakeup(entry, addr, size)
-	vm_idspace_entry_t entry;
-	vm_offset_t	addr;
-	vm_size_t	size;
-{
-	vm_map_lock(entry->map);
-	(void)vm_map_delete(entry->map, trunc_page(addr), round_page(addr + size));
-	vm_thread_wakeup(entry->map);
-	vm_map_unlock(entry->map);
 }
 
 static int

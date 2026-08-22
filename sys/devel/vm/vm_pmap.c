@@ -84,6 +84,8 @@
 #include <vm/include/vm_page.h>
 
 #include "vm_idspace.h"
+#include "vm_kspace.h"
+#include "vm_uspace.h"
 
 
 static int
@@ -365,8 +367,6 @@ vm_estabur(p, tsize, dsize, ssize, sep, flags)
 	return (0);
 }
 
-#include "vm_uspace.h"
-
 void
 vm_sureg(void)
 {
@@ -391,11 +391,11 @@ vm_sureg(void)
 	limudp = &u.u_uisd[8];
 #endif /* !NONSEPARATE */
 #ifdef NONSEPARATE
-	rap = vm_map_offset(uisa_map, 0, TRUE, FALSE);
-	rdp = vm_map_offset(uisd_map, 0, TRUE, FALSE);
+	rap = UISA_MIN;
+	rdp = UISD_MIN;
 #else /* !NONSEPARATE */
-	rap = vm_map_offset(udsa_map, 0, TRUE, FALSE);
-	rdp = vm_map_offset(udsd_map, 0, TRUE, FALSE);
+	rap = UDSA_MIN;
+	rdp = UDSD_MIN;
 #endif /* !NONSEPARATE */
 	uap = &u.u_uisa[0];
 	for (udp = &u.u_uisd[0]; udp < limudp;) {
@@ -420,13 +420,13 @@ choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
 	vm_offset_t *rap, *rdp, *limrdp, addr, tsize, data;
 
 #ifdef NONSEPARATE
-	rap = vm_map_offset(uisa_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	rdp = vm_map_offset(uisd_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	limrdp = vm_map_offset(uisd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
+	rap = UISA_OFFSET((vm_offset_t)ovbase);
+	rdp = UISA_OFFSET((vm_offset_t)ovbase);
+	limrdp = UISD_OFFSET((vm_offset_t)(ovbase + nseg));
 #else /* !NONSEPARATE */
-	rap = vm_map_offset(udsa_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	rdp = vm_map_offset(udsd_map, (vm_offset_t)ovbase, FALSE, FALSE);
-	limrdp = vm_map_offset(udsd_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
+	rap = UDSA_OFFSET((vm_offset_t)ovbase);
+	rdp = UDSD_OFFSET((vm_offset_t)ovbase);
+	limrdp = UDSD_OFFSET((vm_offset_t)(ovbase + nseg));
 #endif /* !NONSEPARATE */
 	if (curov) {
 		addr = ovoffset[curov - 1];
@@ -456,15 +456,15 @@ choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
 	 * on the overlaid segment, which normally don't happen.
 	 */
 	if (!u.u_sep && sep_id) {
-		rdp = vm_map_offset(udsd_map, (vm_offset_t)ovbase, FALSE, FALSE);
+		rdp = UDSD_OFFSET((vm_offset_t)ovbase);
 		rap = rdp + 8;
 		/* limrdp is still correct */
 		while (rdp < limrdp) {
 			*rap++ = *rdp++;
 		}
-		rdp = vm_map_offset(udsa_map, (vm_offset_t)ovbase, FALSE, FALSE);
+		rdp = UDSA_OFFSET((vm_offset_t)ovbase);
 		rap = rdp + 8;
-		limrdp = vm_map_offset(udsa_map, (vm_offset_t)(ovbase + nseg), FALSE, FALSE);
+		limrdp = UDSA_OFFSET((vm_offset_t)(ovbase + nseg));
 		while (rdp < limrdp) {
 			*rap++ = *rdp++;
 		}
@@ -497,6 +497,7 @@ vm_xalloc(vp, tsize, toff)
 	u_long 	tsize;
 	off_t 	toff;
 {
+	struct proc *p;
 	register vm_text_t xp;
 	u_int count;
 
@@ -527,8 +528,6 @@ vm_xalloc(vp, tsize, toff)
 	u.u_ovdata.uo_curov = 0;
 }
 
-#include "vm_kspace.h"
-
 void
 vm_xswapout(p, addr, size, freecore, odata, ostack)
 	struct proc *p;
@@ -538,13 +537,18 @@ vm_xswapout(p, addr, size, freecore, odata, ostack)
 	register u_int odata, ostack;
 {
 	{
-		vm_kspace_t kspace;
 		int s;
 
 		s = splclock();
-		vm_kspace_save(kspace, p->p_addr, sizeof(p->p_addr), KDSA, SEGM_SEG6);
+#ifdef NONSEPARATE
+		KISA_SAVESEG6(p->p_addr, sizeof(p->p_addr));
 		u.u_ru.ru_nswap++;
-		vm_kspace_restore(kspace, p->p_addr, sizeof(p->p_addr), KDSA, SEGM_SEG6);
+		KISA_RESTORESEG6(p->p_addr, sizeof(p->p_addr));
+#else /* !NONSEPARATE */
+		KDSA_SAVESEG6(p->p_addr, sizeof(p->p_addr));
+		u.u_ru.ru_nswap++;
+		KDSA_RESTORESEG6(p->p_addr, sizeof(p->p_addr));
+#endif /* !NONSEPARATE */
 		splx(s);
 	}
 }

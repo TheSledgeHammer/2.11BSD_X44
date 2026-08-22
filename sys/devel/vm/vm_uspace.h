@@ -55,46 +55,81 @@ extern vm_map_t    uisa_map; /* user I-Space address map */
 extern vm_map_t    udsd_map; /* user D-Space descriptor map */
 extern vm_map_t    udsa_map; /* user D-Space address map */
 
-/* map min offset */
-#define UISA_MIN	vm_map_min(uisa_map)
-#define UISD_MIN	vm_map_min(uisd_map)
-#define UDSA_MIN	vm_map_min(udsa_map)
-#define UDSD_MIN	vm_map_min(udsd_map)
-
-/* map max offset */
-#define UISA_MAX	vm_map_max(uisa_map)
-#define UISD_MAX	vm_map_max(uisd_map)
-#define UDSA_MAX	vm_map_max(udsa_map)
-#define UDSD_MAX	vm_map_max(udsd_map)
-
 void vm_uspace_init(void);
-vm_uspace_t vm_uspace_allocate(vm_size_t);
-void vm_uspace_deallocate(vm_uspace_t);
-int vm_uspace_map_alloc(vm_uspace_t, int, int);
-int vm_uspace_map_free(vm_uspace_t, int, int);
-int vm_uspace_write(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
-int vm_uspace_read(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
-
-vm_offset_t *vm_uspace_offset(vm_uspace_t, vm_offset_t, int);
-vm_offset_t *vm_uspace_min(vm_uspace_t, int);
-vm_offset_t *vm_uspace_max(vm_uspace_t, int);
+int vm_uspace_read(vm_size_t, int, int, bool_t, bool_t);
+int vm_uspace_write(vm_size_t, int, int, bool_t, bool_t);
+vm_offset_t *vm_uspace_offset(vm_offset_t, int);
+vm_offset_t *vm_uspace_min(int);
+vm_offset_t *vm_uspace_max(int);
 
 /* Uspace macro's */
+#ifdef NONSEPARATE
 
-#define USPACE_UISA(uspace, addr)				vm_uspace_offset(uspace, addr, UISA)
-#define USPACE_UISA_MIN(uspace)					vm_uspace_min(uspace, UISA)
-#define USPACE_UISA_MAX(uspace)					vm_uspace_max(uspace, UISA)
+/* UISA */
+#define UISA_READ(size, segno, is_txt, is_ext) \
+	vm_uspace_read(size, segno, UISA, is_txt, is_ext)
 
-#define USPACE_UISD(uspace, addr)				vm_uspace_offset(uspace, addr, UISD)
-#define USPACE_UISD_MIN(uspace)					vm_uspace_min(uspace, UISD)
-#define USPACE_UISD_MAX(uspace)					vm_uspace_max(uspace, UISD)
+#define UISA_WRITE(size, segno, is_txt, is_ext) \
+	vm_uspace_write(size, segno, UISA, is_txt, is_ext)
 
-#define USPACE_UDSA(uspace, addr)				vm_uspace_offset(uspace, addr, UDSA)
-#define USPACE_UDSA_MIN(uspace)					vm_uspace_min(uspace, UDSA)
-#define USPACE_UDSA_MAX(uspace)					vm_uspace_max(uspace, UDSA)
+#define UISA_OFFSET(addr) \
+	vm_uspace_offset(addr, UISA)
 
-#define USPACE_UDSD(uspace, addr)				vm_uspace_offset(uspace, addr, UDSD)
-#define USPACE_UDSD_MIN(uspace)					vm_uspace_min(uspace, UDSD)
-#define USPACE_UDSD_MAX(uspace)					vm_uspace_max(uspace, UDSD)
+#define UISA_MIN \
+	vm_uspace_min(UISA)
 
+#define UISA_MAX \
+	vm_uspace_max(UISA)
+
+/* UISD */
+#define UISD_READ(size, segno, is_txt, is_ext) \
+	vm_uspace_read(size, segno, UISD, is_txt, is_ext)
+
+#define UISD_WRITE(size, segno, is_txt, is_ext)	\
+	vm_uspace_write(size, segno, UISD, is_txt, is_ext)
+
+#define UISD_OFFSET(addr) \
+	vm_uspace_offset(addr, UISD)
+
+#define UISD_MIN \
+	vm_uspace_min(UISD)
+
+#define UISD_MAX \
+	vm_uspace_max(UISD)
+
+#else /* !NONSEPARATE */
+
+/* UDSA */
+#define UDSA_READ(size, segno, is_txt, is_ext) \
+	vm_uspace_read(size, segno, UDSA, is_txt, is_ext)
+
+#define UDSA_WRITE(size, segno, is_txt, is_ext)	\
+	vm_uspace_write(size, segno, UDSA, is_txt, is_ext)
+
+#define UDSA_OFFSET(addr) \
+	vm_uspace_offset(addr, UDSA)
+
+#define UDSA_MIN \
+	vm_uspace_min(UDSA)
+
+#define UDSA_MAX \
+	vm_uspace_max(UDSA)
+
+/* UDSD */
+#define UDSD_READ(size, segno, is_txt, is_ext) \
+	vm_uspace_read(size, segno, UDSD, is_txt, is_ext)
+
+#define UDSD_WRITE(size, segno, is_txt, is_ext)	\
+	vm_uspace_write(size, segno, UDSD, is_txt, is_ext)
+
+#define UDSD_OFFSET(addr) \
+	vm_uspace_offset(addr, UDSD)
+
+#define UDSD_MIN \
+	vm_uspace_min(UDSD)
+
+#define UDSD_MAX \
+	vm_uspace_max(UDSD)
+
+#endif /* !NONSEPARATE */
 #endif /* _VM_USPACE_H_ */

@@ -48,9 +48,16 @@ vm_object_t uspace_object;
 char *uispace_min, *uispace_max; /* user i-space vm_map range */
 char *udspace_min, *udspace_max; /* user d-space vm_map range */
 
+vm_uspace_t vm_uspace_allocate(vm_size_t);
+void vm_uspace_deallocate(vm_uspace_t);
+
 static void vm_uspace_alloc(vm_offset_t, vm_offset_t, vm_size_t, vm_uspace_t);
 static void vm_uispace_map_init(vm_uspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
 static void vm_udspace_map_init(vm_uspace_t, int, vm_object_t, vm_offset_t *, vm_offset_t *, vm_size_t, bool_t);
+static int vm_uspace_map_alloc(vm_uspace_t, int, int);
+static int vm_uspace_map_free(vm_uspace_t, int, int);
+static int vm_uspace_map_write(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
+static int vm_uspace_map_read(vm_uspace_t, vm_size_t, int, int, bool_t, bool_t);
 static vm_offset_t *vm_uspace_map_offset(vm_uspace_t, vm_offset_t, bool_t, bool_t, int);
 
 void
@@ -186,7 +193,7 @@ vm_udspace_map_init(uspace, mtype, object, min, max, size, pageable)
 }
 
 /* uspace maps */
-int
+static int
 vm_uspace_map_alloc(uspace, segno, maptype)
 	vm_uspace_t uspace;
 	int segno, maptype;
@@ -227,7 +234,7 @@ vm_uspace_map_alloc(uspace, segno, maptype)
 	return (error);
 }
 
-int
+static int
 vm_uspace_map_free(uspace, segno, maptype)
 	vm_uspace_t uspace;
 	int segno, maptype;
@@ -268,8 +275,8 @@ vm_uspace_map_free(uspace, segno, maptype)
 	return (error);
 }
 
-int
-vm_uspace_write(uspace, size, segno, maptype, is_txt, is_ext)
+static int
+vm_uspace_map_write(uspace, size, segno, maptype, is_txt, is_ext)
 	vm_uspace_t uspace;
 	vm_size_t size;
 	int segno, maptype;
@@ -280,8 +287,7 @@ vm_uspace_write(uspace, size, segno, maptype, is_txt, is_ext)
 
 	error = vm_uspace_map_alloc(uspace, segno, maptype);
 	if (error != 0) {
-		(void)vm_uspace_map_free(uspace, segno, maptype);
-		return (error);
+		goto free;
 	}
 
 	desc = (vm_offset_t)u.u_uisd[segno];
@@ -319,10 +325,17 @@ vm_uspace_write(uspace, size, segno, maptype, is_txt, is_ext)
 		}
 	}
 	return (error);
+
+free:
+	error = vm_uspace_map_free(uspace, segno, maptype);
+	if (error != 0) {
+		return (error);
+	}
+	return (0);
 }
 
-int
-vm_uspace_read(uspace, size, segno, maptype, is_txt, is_ext)
+static int
+vm_uspace_map_read(uspace, size, segno, maptype, is_txt, is_ext)
 	vm_uspace_t uspace;
 	vm_size_t size;
 	int segno, maptype;
@@ -411,27 +424,42 @@ vm_uspace_map_offset(uspace, offset, use_min, use_max, maptype)
 	return (val);
 }
 
+int
+vm_uspace_read(size, segno, maptype, is_txt, is_ext)
+	vm_size_t size;
+	int segno, maptype;
+	bool_t is_txt, is_ext;
+{
+	return (vm_uspace_map_read(kernel_uspace, size, segno, maptype, is_txt, is_ext));
+}
+
+int
+vm_uspace_write(size, segno, maptype, is_txt, is_ext)
+	vm_size_t size;
+	int segno, maptype;
+	bool_t is_txt, is_ext;
+{
+	return (vm_uspace_map_write(kernel_uspace, size, segno, maptype, is_txt, is_ext));
+}
+
 vm_offset_t *
-vm_uspace_offset(uspace, addr, maptype)
-	vm_uspace_t uspace;
+vm_uspace_offset(addr, maptype)
 	vm_offset_t addr;
 	int maptype;
 {
-	return (vm_uspace_map_offset(uspace, addr, FALSE, FALSE, maptype));
+	return (vm_uspace_map_offset(kernel_uspace, addr, FALSE, FALSE, maptype));
 }
 
 vm_offset_t *
-vm_uspace_min(uspace, maptype)
-	vm_uspace_t uspace;
+vm_uspace_min(maptype)
 	int maptype;
 {
-	return (vm_uspace_map_offset(uspace, 0, TRUE, FALSE, maptype));
+	return (vm_uspace_map_offset(kernel_uspace, 0, TRUE, FALSE, maptype));
 }
 
 vm_offset_t *
-vm_uspace_max(uspace, maptype)
-	vm_uspace_t uspace;
+vm_uspace_max(maptype)
 	int maptype;
 {
-	return (vm_uspace_map_offset(uspace, 0, FALSE, TRUE, maptype));
+	return (vm_uspace_map_offset(kernel_uspace, 0, FALSE, TRUE, maptype));
 }
