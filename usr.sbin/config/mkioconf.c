@@ -114,8 +114,8 @@ cforder(const void *a, const void *b)
 {
 	int n1, n2;
 
-	n1 = (*(struct devi **)a)->i_cfindex;
-	n2 = (*(struct devi **)b)->i_cfindex;
+	n1 = (*(const struct devi * const *)a)->i_cfindex;
+	n2 = (*(const struct devi * const *)b)->i_cfindex;
 	return (n1 - n2);
 }
 
@@ -277,12 +277,12 @@ static short pv[%d] = {",
 static int
 emitcfdata(FILE *fp)
 {
-	struct devi **p, *i, **ps;
+	struct devi **p, *i;
 	int unit, v;
 	const char *state, *basename, *attachment;
 	struct nvlist *nv;
 	struct attr *a;
-	char *loc;
+	const char *loc;
 	char locbuf[20];
 	const char *lastname = "";
 
@@ -297,7 +297,6 @@ struct cfdata cfdata[] = {\n\
 		/* the description */
 		if (fprintf(fp, "/*%3d: %s at ", i->i_cfindex, i->i_name) < 0)
 			return (1);
-		ps = i->i_parents;
 		for (v = 0; v < i->i_pvlen; v++) {
 			if (fprintf(fp, "%s%s", v == 0 ? "" : "|", i->i_parents[v]->i_name)
 					< 0)
