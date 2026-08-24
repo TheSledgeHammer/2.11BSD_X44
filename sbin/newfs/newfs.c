@@ -167,6 +167,7 @@ int	headswitch;				/* head switch time, usec */
 int	trackseek;				/* track-to-track seek, usec */
 int	fsize = 0;				/* fragment size */
 int	bsize = 0;				/* block size */
+int	maxbsize = 0;		    /* maximum clustering */
 int	cpg = DESCPG;			/* cylinders/cylinder group */
 int	cpgflg;					/* cylinders/cylinder group flag was given */
 int	minfree = MINFREE;		/* free space threshold */
