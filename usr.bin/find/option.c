@@ -148,5 +148,5 @@ int
 typecompare(const void *a, const void *b)
 {
 
-	return (strcmp(((OPTION *)a)->name, ((OPTION *)b)->name));
+	return (strcmp(((const OPTION *)a)->name, ((const OPTION *)b)->name));
 }
