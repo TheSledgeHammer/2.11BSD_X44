@@ -655,10 +655,10 @@
 #define HAVE_NLIST_H 1
 
 /* via __adjtimex */
-#define HAVE_NTP_ADJTIME 1
+/* #undef HAVE_NTP_ADJTIME */
 
 /* via __ntp_gettime */
-#define HAVE_NTP_GETTIME 1
+/* #undef HAVE_NTP_GETTIME */
 
 /* Do we want support for Samba's signing daemon? */
 /* #undef HAVE_NTP_SIGND */
@@ -1447,7 +1447,7 @@
 /* #undef NTP_SIGND_PATH */
 
 /* Do we have ntp_{adj,get}time in libc? */
-#define NTP_SYSCALLS_LIBC 1
+/* #undef NTP_SYSCALLS_LIBC */
 
 /* Do we have ntp_{adj,get}time in the kernel? */
 /* #undef NTP_SYSCALLS_STD */
