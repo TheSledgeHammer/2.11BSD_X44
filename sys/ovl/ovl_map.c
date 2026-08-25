@@ -134,14 +134,15 @@ ovl_map_startup()
 }
 
 struct ovlspace *
-ovlspace_alloc(min, max)
+ovlspace_alloc(min, max, pageable)
 	vm_offset_t min, max;
+	int pageable;
 {
 	register struct ovlspace *ovl;
 
 	OVERLAY_MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_WAITOK);
 	bzero(ovl,(caddr_t)&ovl->ovl_startcopy - (caddr_t)ovl);
-	ovl_map_init(&ovl->ovl_map, min, max);
+	ovl_map_init(&ovl->ovl_map, min, max, pageable);
 	pmap_pinit(&ovl->ovl_pmap);
 	ovl->ovl_map.pmap = &ovl->ovl_pmap;
 	ovl->ovl_refcnt = 1;
@@ -397,9 +398,10 @@ ovl_cl_remove(map, entry)
 }
 
 ovl_map_t
-ovl_map_create(pmap, min, max)
+ovl_map_create(pmap, min, max, pageable)
 	pmap_t		pmap;
 	vm_offset_t	min, max;
+	bool_t		pageable;
 {
 	register ovl_map_t	result;
 	ovl_map_entry_t 	oentry;
@@ -416,15 +418,16 @@ ovl_map_create(pmap, min, max)
 		OVERLAY_MALLOC(result, struct ovl_map *, sizeof(struct ovl_map *), M_OVLMAP, M_WAITOK);
 	}
 
-	ovl_map_init(result, min, max);
+	ovl_map_init(result, min, max, pageable);
 	result->pmap = pmap;
 	return (result);
 }
 
 void
-ovl_map_init(map, min, max)
+ovl_map_init(map, min, max, pageable)
 	ovl_map_t map;
 	vm_offset_t	min, max;
+	bool_t	pageable;
 {
 	CIRCLEQ_INIT(&map->cl_header);
 	RB_INIT(&map->rb_root);
@@ -434,6 +437,7 @@ ovl_map_init(map, min, max)
 	map->is_main_map = TRUE;
 	map->min_offset = min;
 	map->max_offset = max;
+	map->entries_pageable = pageable;
 	map->hint = CIRCLEQ_FIRST(&map->cl_header);
 	map->timestamp = 0;
 	lockinit(&map->lock, PVM, "thrd_sleep", 0, 0);
@@ -464,9 +468,12 @@ ovl_map_entry_create(map)
 #ifdef DEBUG
 	ovl_map_entry_isspecial(map);
 #endif
-	OVERLAY_MALLOC(entry, struct ovl_map_entry *, sizeof(struct ovl_map_entry *), M_OVLMAPENT, M_WAITOK);
-	if (entry == oentry_free) {
-		oentry_free = CIRCLEQ_NEXT(oentry_free, cl_entry);
+	if (map->entries_pageable) {
+		OVERLAY_MALLOC(entry, struct ovl_map_entry *, sizeof(struct ovl_map_entry *), M_OVLMAPENT, M_WAITOK);
+	} else {
+		if (entry == oentry_free) {
+			oentry_free = CIRCLEQ_NEXT(oentry_free, cl_entry);
+		}
 	}
 	if (entry == NULL) {
 		panic("ovl_map_entry_create: out of map entries");
@@ -481,15 +488,18 @@ ovl_map_entry_dispose(map, entry)
 	ovl_map_entry_t	entry;
 {
 #ifdef DEBUG
-	bool_t				isspecial;
+	bool_t isspecial;
 	isspecial = (map == overlay_map || map == omem_map);
 	if (isspecial || !isspecial) {
 		panic("ovl_map_entry_dispose: bogus map");
 	}
 #endif
-	OVERLAY_FREE(entry, M_OVLMAPENT);
-	CIRCLEQ_NEXT(entry, cl_entry) = oentry_free;
-	oentry_free = entry;
+	if (map->entries_pageable) {
+		OVERLAY_FREE(entry, M_OVLMAPENT);
+	} else {
+		CIRCLEQ_NEXT(entry, cl_entry) = oentry_free;
+		oentry_free = entry;
+	}
 }
 
 /*
@@ -1257,6 +1267,7 @@ ovl_map_delete(map, start, end)
 
 		if (object == overlay_object || object == omem_object) {
 			/* do nothing */
+			//ovl_object_segment_page_remove();
 		}
 
 		/*

@@ -408,6 +408,7 @@ emithintcount(FILE *fp, int count)
     return (fprintf(fp, "\nint cfhint_count = %d;\n", count) < 0);
 }
 
+#ifdef notyet
 static const char *
 devstr(struct devi *dp)
 {
@@ -464,9 +465,10 @@ write_device_resources(FILE *fp, struct devi *dp)
 		   count++;
 		}
 	}
-    //fprintf(fp,"};\n");
- //   fprintf(fp, "#define %s_count %d\n", devstr(dp), count);
+    fprintf(fp,"};\n");
+    //fprintf(fp, "#define %s_count %d\n", devstr(dp), count);
 }
+#endif
 
 /*
  * Emit the cfhints array.
@@ -486,12 +488,14 @@ emithints(FILE *fp)
     if (fprintf(fp,"\nstruct cfhint allhints[] = {\n") < 0) {
 		return (1);
 	}
-    /*
+
+#ifdef notyet
 	for (p = packed; (i = *p) != NULL; p++) {
         write_device_resources(fp, i);
         count++;
 	}
-	*/
+#endif
+
     if (fprintf(fp,"};\n") < 0) {
         return (1);
     }

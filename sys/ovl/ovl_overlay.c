@@ -110,10 +110,11 @@ omem_free(map, addr, size)
 }
 
 ovl_map_t
-omem_suballoc(parent, min, max, size)
+omem_suballoc(parent, min, max, size, pageable)
 	register ovl_map_t	parent;
 	vm_offset_t			*min, *max;
 	register vm_size_t	size;
+	bool_t				pageable;
 {
 	register int ret;
 	ovl_map_t result;
@@ -126,10 +127,11 @@ omem_suballoc(parent, min, max, size)
 	}
 	*max = *min + size;
 	pmap_reference(ovl_map_pmap(parent));
-	result = ovl_map_create(ovl_map_pmap(parent), *min, *max);
+	result = ovl_map_create(ovl_map_pmap(parent), *min, *max, pageable);
 	if (result == NULL)
 		panic("ovl_suballoc: cannot create submap");
-	if ((ret = ovl_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
+	ret = ovl_map_submap(parent, *min, *max, result);
+	if (ret != KERN_SUCCESS)
 		panic("ovl_suballoc: unable to change range to submap");
 	return (result);
 }
@@ -227,7 +229,7 @@ omem_init(start, end)
 {
 	register ovl_map_t map;
 
-	map = ovl_map_create(kernel_pmap, OVL_MIN_ADDRESS, end);
+	map = ovl_map_create(kernel_pmap, OVL_MIN_ADDRESS, end, FALSE);
 	ovl_map_lock(map);
 	overlay_map = map;
 	(void)ovl_map_insert(map, NULL, (vm_offset_t)0, OVL_MIN_ADDRESS, start);

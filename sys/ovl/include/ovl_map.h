@@ -70,6 +70,7 @@ struct ovl_map {
 	ovl_map_entry_t						hint;			/* hint for quick lookups */
     simple_lock_data_t	                hint_lock;	    /* lock for hint storage */
 	ovl_map_entry_t						first_free;		/* First free space hint */
+	bool_t								entries_pageable; 	/* map entries pageable?? */
     unsigned int		                timestamp;	    /* Version number */
 
 #define	min_offset			    		cl_header.cqh_first->start
@@ -127,7 +128,7 @@ struct ovl_map {
 
 #ifdef _KERNEL
 struct pmap;
-ovl_map_t		ovl_map_create(struct pmap *, vm_offset_t, vm_offset_t);
+ovl_map_t		ovl_map_create(struct pmap *, vm_offset_t, vm_offset_t, bool_t);
 void			ovl_map_deallocate(ovl_map_t);
 int		 		ovl_map_delete(ovl_map_t, vm_offset_t, vm_offset_t);
 ovl_map_entry_t	ovl_map_entry_create(ovl_map_t);
@@ -135,7 +136,7 @@ void			ovl_map_entry_delete(ovl_map_t, ovl_map_entry_t);
 void			ovl_map_entry_dispose(ovl_map_t, ovl_map_entry_t);
 int		 		ovl_map_find(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t *, vm_size_t, bool_t);
 int		 		ovl_map_findspace(ovl_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
-void			ovl_map_init(ovl_map_t, vm_offset_t, vm_offset_t);
+void			ovl_map_init(ovl_map_t, vm_offset_t, vm_offset_t, bool_t);
 int				ovl_map_insert(ovl_map_t, ovl_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
 bool_t			ovl_map_lookup_entry(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 void			ovl_map_reference(ovl_map_t);

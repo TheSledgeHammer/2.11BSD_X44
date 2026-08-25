@@ -599,7 +599,7 @@ kmeminit(void)
 	kmemusage = (struct kmemusage *)kmem_alloc(kernel_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
 	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 #ifdef OVERLAY
-	omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG));
+	omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&kmembase, (vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 #endif
 
 #ifdef KMEMSTATS

@@ -109,7 +109,7 @@ mkoneswap(struct config *cf)
 	 * Emit the root device.
 	 */
 	nv = cf->cf_root;
-	/*
+#ifdef notyet
 	if (cf->cf_root->nv_str == s_qmark) {
 		strlcpy(specinfo, "NULL", sizeof(specinfo));
 	} else {
@@ -118,7 +118,7 @@ mkoneswap(struct config *cf)
 	if (fprintf(fp, "const char *rootspec = %s;\n", specinfo) < 0) {
 		goto wrerror;
 	}
-	*/
+#endif
 	if (fprintf(fp, "dev_t\trootdev = %s;\t/* %s */\n\n", mkdevstr(nv->nv_int), nv->nv_str == s_qmark ? "wildcarded" : nv->nv_str) < 0) {
 		goto wrerror;
 	}
@@ -127,7 +127,7 @@ mkoneswap(struct config *cf)
 	 * Emit the dump device.
 	 */
 	nv = cf->cf_dump;
-	/*
+#ifdef notyet
 	if (cf->cf_dump == NULL) {
 		strlcpy(specinfo, "NULL", sizeof(specinfo));
 	} else {
@@ -136,7 +136,7 @@ mkoneswap(struct config *cf)
 	if (fprintf(fp, "const char *dumpspec = %s;\n", specinfo) < 0) {
 		goto wrerror;
 	}
-	*/
+#endif
 	if (fprintf(fp, "dev_t\tdumpdev = %s;\t/* %s */\n\n", nv ? mkdevstr(nv->nv_int) : "NODEV", nv ? nv->nv_str : "unspecified") < 0) {
 		goto wrerror;
 	}
@@ -145,7 +145,7 @@ mkoneswap(struct config *cf)
 	 * Emit the swap device.
 	 */
 	nv = cf->cf_swap;
-	/*
+#ifdef notyet
 	if (cf->cf_swap == NULL) {
 		strlcpy(specinfo, "NULL", sizeof(specinfo));
 	} else {
@@ -154,7 +154,7 @@ mkoneswap(struct config *cf)
 	if (fprintf(fp, "const char *swapspec = %s;\n", specinfo) < 0) {
 		goto wrerror;
 	}
-	*/
+#endif
 	for (nv = cf->cf_swap; nv != NULL; nv = nv->nv_next) {
 		if (fprintf(fp, "dev_t\tswapdev = %s;\t/* %s */\n\n", nv ? mkdevstr(nv->nv_int) : "NODEV", nv ? nv->nv_str : "unspecified") < 0) {
 			goto wrerror;
