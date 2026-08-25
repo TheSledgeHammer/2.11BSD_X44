@@ -1639,7 +1639,7 @@ sysctl_ifqctl(name, oldp, oldlenp, newp, newlen, ifq)
 {
 	int error;
 
-	switch(name[0]) {
+	switch (name[0]) {
 	case IFQCTL_IFQ:
 		error = sysctl_rdstruct(oldp, oldlenp, newp, ifq, sizeof(struct ifqueue));
 		break;
@@ -1700,7 +1700,7 @@ sysctl_ifqctl_ip(ipn, qid, name, oldp, oldlenp, newp, newlen, ifq)
 {
 	int error;
 
-	switch(qid) {
+	switch (qid) {
 	case IPCTL_IFQ:
 		error = sysctl_ifqctl_protocol(ipn, name, oldp, oldlenp, newp, newlen, ifq);
 		break;

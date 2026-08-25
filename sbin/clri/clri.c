@@ -37,13 +37,17 @@
 #include <sys/cdefs.h>
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1990, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)clri.c	8.3 (Berkeley) 4/28/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,7 +55,7 @@ static char sccsid[] = "@(#)clri.c	8.3 (Berkeley) 4/28/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-#include <ufs/ffs/ffs_extern.h>
+//#include <ufs/ffs/ffs_extern.h>
 
 #include <err.h>
 #include <errno.h>

@@ -60,15 +60,15 @@
 static int	kenv_mvallen = 	KENV_MVALLEN;
 
 /* pointer to the config-generated static environment */
-char						*kern_envp;
+char *kern_envp;
 
 /* pointer to the md-static environment */
-char						*md_envp;
+char *md_envp;
 
 /* dynamic environment variables */
-char						**kenvp;
-struct lock					kenv_lock;
-bool_t						dynamic_kenv;
+char **kenvp;
+struct lock kenv_lock;
+bool_t dynamic_kenv;
 
 #define KENV_CHECK do { 							\
 	if (!dynamic_kenv) {							\
@@ -430,6 +430,41 @@ kenv_init(void)
 {
 	init_dynamic_kenv();
 }
+
+#ifdef notyet
+int
+sysctl_kenv(name, namelen)
+	int *name;
+	u_int namelen;
+{
+	char *cp;
+	int i, error;
+
+    if (kern_envp == NULL) {
+    	return (ENOENT);
+    }
+
+    name++;
+    namelen--;
+
+	if (namelen != 1) {
+		return (EINVAL);
+	}
+
+	cp = kern_envp;
+	for (i = 0; i < name[0]; i++) {
+		cp = kernenv_next(cp);
+		if (cp == NULL) {
+			break;
+		}
+	}
+	if (cp == NULL) {
+		return (ENOENT);
+	}
+	error = copyout(&kern_envp, cp, strlen(cp) + 1);
+	return (error);
+}
+#endif
 
 /*
  * Internal functions for string lookup.

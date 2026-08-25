@@ -35,6 +35,7 @@
 
 #ifndef _UFS_FFS_EXTERN_H
 #define	_UFS_FFS_EXTERN_H
+
 /*
  * Sysctl values for the fast filesystem.
  */
@@ -79,6 +80,7 @@ int			ffs_update(struct vop_update_args *);
 int			ffs_valloc(struct vop_valloc_args *);
 int			ffs_vfree(struct vop_vfree_args *);
 int			ffs_write(struct vop_write_args *);
+
 int			ffs_alloc(struct inode *, ufs2_daddr_t, ufs2_daddr_t, int, struct ucred *, ufs2_daddr_t *);
 int			ffs_balloc(struct inode *, ufs_lbn_t, int, struct ucred *, struct buf **, int);
 void		ffs_blkfree(struct inode *, ufs2_daddr_t, long);

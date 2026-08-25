@@ -99,6 +99,7 @@ struct dirhash {
 	int			dh_dirblks;		/* number of DIRBLKSIZ blocks in dir */
 	int			dh_firstfree[DH_NFSTATS + 1]; /* first blk with N words free */
 
+	int			dh_seqopt;		/* sequential access optimisation enabled */
 	doff_t		dh_seqoff;		/* sequential access optimisation offset */
 
 	int			dh_score;		/* access count for this dirhash */
@@ -109,6 +110,21 @@ struct dirhash {
 	/* Protected by ufsdirhash_mtx. */
 	TAILQ_ENTRY(dirhash) dh_list;	/* chain of all dirhashes */
 };
+
+/* UFS DIRHASH sysctl support */
+#define UFSCTL_DIRHASH_MINBLOCKS 	1
+#define UFSCTL_DIRHASH_MAXMEM 		2
+#define UFSCTL_DIRHASH_MEMUSED 		3
+#define UFSCTL_DIRHASH_DOCHECK 		4
+
+#define CTL_UFS_DIRHASH { 			\
+	{ 0, 0 }, 						\
+	{ "minblocks", CTLTYPE_INT	}, 	\
+	{ "maxmem", CTLTYPE_INT }, 		\
+	{ "memused", CTLTYPE_INT }, 	\
+	{ "docheck", CTLTYPE_INT }, 	\
+
+int sysctl_ufs_dirhash(int *, void *, size_t *, void *, size_t);
 
 /*
  * Dirhash functions.

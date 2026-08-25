@@ -421,7 +421,7 @@ choverlay(p, xp, ovbase, curov, ovoffset, nseg, flags)
 
 #ifdef NONSEPARATE
 	rap = UISA_OFFSET((vm_offset_t)ovbase);
-	rdp = UISA_OFFSET((vm_offset_t)ovbase);
+	rdp = UISD_OFFSET((vm_offset_t)ovbase);
 	limrdp = UISD_OFFSET((vm_offset_t)(ovbase + nseg));
 #else /* !NONSEPARATE */
 	rap = UDSA_OFFSET((vm_offset_t)ovbase);

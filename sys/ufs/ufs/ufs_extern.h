@@ -73,7 +73,7 @@ void	ufs_ihashins(struct inode *);
 struct vnode *ufs_ihashlookup(dev_t, ino_t);
 void	ufs_ihashrem(struct inode *);
 int	 	ufs_init(struct vfsconf *);
-int	 	ufs_makeinode(int mode, struct vnode *, struct vnode **, struct componentname *);
+int	 	ufs_makeinode(int, struct vnode *, struct vnode **, struct componentname *);
 int	 	ufs_reclaim(struct vnode *, struct proc *);
 int	 	ufs_root(struct mount *, struct vnode **);
 int	 	ufs_start(struct mount *, int, struct proc *);
@@ -85,7 +85,7 @@ int	 	lease_check (struct vop_lease_args *);
 #define	 	ufs_lease_check ((int (*) (struct vop_lease_args *))nullop)
 #endif
 #define		ufs_revoke ((int (*) (struct vop_revoke_args *))vop_norevoke)
-int 		ufs_abortop(struct vop_abortop_args *);
+int 	ufs_abortop(struct vop_abortop_args *);
 int		ufs_access(struct vop_access_args *);
 int		ufs_advlock(struct vop_advlock_args *);
 int		ufs_bmap(struct vop_bmap_args *);
