@@ -141,7 +141,7 @@ emithdr(FILE *ofp)
 	ifn = sourcepath(ifnbuf);
 	if ((ifp = fopen(ifn, "r")) != NULL) {
 		while ((n = fread(buf, 1, sizeof(buf), ifp)) > 0)
-			if (fwrite(buf, 1, n, ofp) != n) {
+			if (fwrite(buf, 1, n, ofp) != (size_t)n) {
 				rv = 1;
 				break;
 			}
@@ -433,7 +433,7 @@ write_device_resources(FILE *fp, struct devi *dp)
     const char *lastname = "";
 
     count = 0;
-	//fprintf(fp,"\nstruct cfresource %s_cfresources[] = {\n", devstr(dp));
+	fprintf(fp,"\nstruct cfresource %s_cfresources[] = {\n", devstr(dp));
     if (dp->i_base->d_name) {
     	if (dp->i_unit >= 0) {
     		snprintf(buf, sizeof(buf), "%s%d", dp->i_base->d_name, dp->i_unit);
@@ -476,9 +476,11 @@ write_device_resources(FILE *fp, struct devi *dp)
 static int
 emithints(FILE *fp)
 {
+#ifdef notyet
 	struct devi **p, *i;
-	int count;
     char buf[80];
+#endif
+    int count;
 
     count = 0;
 
