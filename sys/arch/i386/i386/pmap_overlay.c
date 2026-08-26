@@ -39,6 +39,7 @@
 
 #include <machine/pmap.h>
 #include <machine/pmap_hat.h>
+#include <machine/pte.h>
 
 #ifdef OVERLAY
 void
