@@ -30,6 +30,17 @@
  *	Virtual Memory Overlays. OVL to VM management interface.
  */
 
+/*
+ * TODO:
+ * Handling of VM Overlayed Maps, Segments and Pages.
+ * - VM is to cleanup after itself, when using the OVL.
+ * 		- VM Resident Pages etc should be forbidden and actively excluded.
+ * 			As they can potentially clog up ovlspace indefinitely.
+ * - All VM components (i.e. maps etc) should be marked as being in the OVL.
+ * - If the VM misses or fails to clean up overlayed components. The OVL
+ * can remove them as needed (more critical if space is required).
+ */
+
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_segment.h>
@@ -54,25 +65,26 @@ overlay_find_vm_object(oobject, pager, vobject, size)
 	vm_object_t *vobject;
 	vm_size_t size;
 {
-	vm_object_t tmp;
-
-	/* check ovl_object for existing vm_object */
-	tmp = ovl_object_lookup_vm_object(oobject);
-	if (tmp == NULL) {
-		/* lookup vm_object or allocate */
-		if (pager != NULL) {
-			tmp = vm_object_lookup(pager);
-		} else {
-			tmp = vm_object_allocate(size);
-		}
-		if (tmp != NULL) {
-			if (*vobject == NULL) {
-				*vobject = tmp;
-			}
-			return (tmp);
-		}
+	if (oobject == NULL) {
+		return (NULL);
 	}
-	return (NULL);
+
+	if (*vobject == NULL) {
+		*vobject = ovl_object_lookup_vm_object(oobject);
+		if (*vobject != NULL) {
+			return (*vobject);
+		}
+		if (pager != NULL) {
+			*vobject = vm_object_lookup(pager);
+		} else {
+			*vobject = ovl_object_allocate_vm_object(oobject, size);
+		}
+		if (*vobject != NULL) {
+			return (*vobject);
+		}
+		return (NULL);
+	}
+	return (*vobject);
 }
 
 /*
@@ -87,18 +99,10 @@ overlay_vm_object(oobject, vobject)
 {
 	vm_object_t tmp;
 
-	if (oobject == NULL) {
-		return;
-	}
-
 	tmp = overlay_find_vm_object(oobject, oobject->pager, &vobject, sizeof(vobject));
-	if (tmp == NULL) {
-		return;
+	if (tmp == NULL || tmp != vobject) {
+		ovl_object_deallocate_vm_object(oobject);
 	}
-	if (tmp != vobject) {
-		return;
-	}
-	ovl_object_enter_vm_object(oobject, vobject);
 }
 
 /*
@@ -109,32 +113,33 @@ overlay_vm_object(oobject, vobject)
  * returns vm_segment on success or null if unsuccessful.
  */
 vm_segment_t
-overlay_find_vm_segment(osegment, vsegment, vmsgoffset)
+overlay_find_vm_segment(osegment, vsegment, voffset)
 	ovl_segment_t osegment;
 	vm_segment_t *vsegment;
-	vm_offset_t vmsgoffset;
+	vm_offset_t voffset;
 {
 	vm_object_t vobject;
-	vm_segment_t tmp;
 
-	/* check ovl_segment for existing vm_segment */
-	tmp = ovl_segment_lookup_vm_segment(osegment);
-	if (tmp == NULL) {
+	if (osegment == NULL) {
+		return (NULL);
+	}
+
+	if (*vsegment == NULL) {
+		*vsegment = ovl_segment_lookup_vm_segment(osegment);
+		if (*vsegment != NULL) {
+			return (*vsegment);
+		}
 		vobject = ovl_object_lookup_vm_object(osegment->object);
 		if (vobject != NULL) {
-			tmp = vm_segment_lookup(vobject, vmsgoffset);
-			if (tmp == NULL) {
-				tmp = vm_segment_allocate(vobject, vmsgoffset);
-			}
-			if (tmp != NULL) {
-				if (*vsegment == NULL) {
-					*vsegment = tmp;
-				}
-				return (tmp);
+			*vsegment = ovl_segment_allocate_vm_segment(osegment, vobject, voffset);
+			if (*vsegment != NULL) {
+				return (*vsegment);
 			}
 		}
+		return (NULL);
 	}
-	return (NULL);
+
+	return (*vsegment);
 }
 
 /*
@@ -149,18 +154,10 @@ overlay_vm_segment(osegment, vsegment)
 {
 	vm_segment_t tmp;
 
-	if (osegment == NULL) {
-		return;
-	}
-
 	tmp = overlay_find_vm_segment(osegment, &vsegment, vsegment->offset);
-	if (tmp == NULL) {
-		return;
+	if (tmp == NULL || tmp != vsegment) {
+		ovl_segment_deallocate_vm_segment(osegment);
 	}
-	if (tmp != vsegment) {
-		return;
-	}
-	ovl_segment_insert_vm_segment(osegment, vsegment);
 }
 
 /*
@@ -171,33 +168,32 @@ overlay_vm_segment(osegment, vsegment)
  * returns vm_page on success or null if unsuccessful.
  */
 vm_page_t
-overlay_find_vm_page(opage, vpage, vmpgoffset)
+overlay_find_vm_page(opage, vpage, voffset)
 	ovl_page_t opage;
 	vm_page_t *vpage;
-	vm_offset_t vmpgoffset;
+	vm_offset_t voffset;
 {
 	vm_segment_t vsegment;
-	vm_page_t tmp;
 
-	/* check ovl_page for existing vm_page */
-	tmp = ovl_page_lookup_vm_page(opage);
-	if (tmp == NULL) {
+	if (opage == NULL) {
+		return (NULL);
+	}
+	if (*vpage == NULL) {
+		*vpage = ovl_page_lookup_vm_page(opage);
+		if (*vpage != NULL) {
+			return (*vpage);
+		}
 		vsegment = ovl_segment_lookup_vm_segment(opage->segment);
 		if (vsegment != NULL) {
-			tmp = vm_page_lookup(vsegment, vmpgoffset);
-			if (tmp == NULL) {
-				tmp = vm_page_allocate(vsegment, vmpgoffset);
+			*vpage = ovl_page_allocate_vm_page(opage, vsegment, voffset);
+			if (*vpage != NULL) {
+				return (*vpage);
 			}
-			if (tmp != NULL) {
-				if (*vpage == NULL) {
-					*vpage = tmp;
-				}
-				return (tmp);
-			}
-			return (tmp);
 		}
+		return (NULL);
 	}
-	return (NULL);
+
+	return (*vpage);
 }
 
 /*
@@ -212,16 +208,8 @@ overlay_vm_page(opage, vpage)
 {
 	vm_page_t tmp;
 
-	if (opage == NULL) {
-		return;
-	}
-
 	tmp = overlay_find_vm_page(opage, &vpage, vpage->offset);
-	if (tmp == NULL) {
-		return;
+	if (tmp == NULL || tmp != vpage) {
+		ovl_page_deallocate_vm_page(opage);
 	}
-	if (tmp != vpage) {
-		return;
-	}
-	ovl_page_insert_vm_page(opage, vpage);
 }

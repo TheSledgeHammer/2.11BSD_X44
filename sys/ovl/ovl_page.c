@@ -407,3 +407,37 @@ ovl_page_remove_vm_page(vpage)
     	 }
     }
 }
+
+vm_page_t
+ovl_page_allocate_vm_page(opage, vsegment, voffset)
+	ovl_page_t opage;
+	vm_segment_t vsegment;
+	vm_offset_t voffset;
+{
+	vm_page_t vpage;
+
+	if (opage == NULL || vsegment == NULL) {
+		return (NULL);
+	}
+	vpage = vm_page_alloc(vsegment, voffset);
+	if (vpage != NULL) {
+		ovl_page_insert_vm_page(opage, vpage);
+		return (vpage);
+	}
+	return (NULL);
+}
+
+void
+ovl_page_deallocate_vm_page(opage)
+	ovl_page_t opage;
+{
+	vm_page_t vpage;
+
+	if (opage == NULL) {
+		return;
+	}
+	vpage = ovl_page_lookup_vm_page(opage);
+	if (vpage != NULL) {
+		ovl_page_remove_vm_page(vpage);
+	}
+}

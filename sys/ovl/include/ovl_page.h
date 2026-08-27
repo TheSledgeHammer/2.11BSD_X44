@@ -138,6 +138,8 @@ vm_offset_t						ovl_first_phys_addr;
 extern
 vm_offset_t						ovl_last_phys_addr;
 
+#define OVL_PAGE_TO_PHYS(entry)			((entry)->phys_addr)
+
 #define	ovl_page_lock_lists()		simple_lock(&ovl_page_list_lock)
 #define	ovl_page_unlock_lists()		simple_unlock(&ovl_page_list_lock)
 

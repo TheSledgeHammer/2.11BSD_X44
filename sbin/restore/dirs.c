@@ -226,7 +226,7 @@ skipdirs(void)
  *	pname and pass them off to be processed.
  */
 void
-treescan(char *pname, ino_t ino, long (*todo)(char *, ino_t, int))
+treescan(const char *pname, ino_t ino, long (*todo)(const char *, ino_t, int))
 {
 	struct inotab *itp;
 	struct direct *dp;
@@ -251,7 +251,7 @@ treescan(char *pname, ino_t ino, long (*todo)(char *, ino_t, int))
 	 * begin search through the directory
 	 * skipping over "." and ".."
 	 */
-	(void) snprintf(locname, sizeof(locname), "%s/", pname);
+	(void)snprintf(locname, sizeof(locname), "%s/", pname);
 	namelen = strlen(locname);
 	rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	dp = rst_readdir(dirp); /* "." */

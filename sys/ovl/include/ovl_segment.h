@@ -40,8 +40,8 @@ CIRCLEQ_HEAD(ovl_seglist, ovl_segment);
 struct ovl_segment {
 	struct ovl_pglist				pglist; 				/* Pages in overlay pglist memory */
 
-	CIRCLEQ_ENTRY(ovl_segment) 		hashlist;				/* hash table links (O) */
-	CIRCLEQ_ENTRY(ovl_segment) 		seglist;				/* segments in same object (O) */
+	CIRCLEQ_ENTRY(ovl_segment) 		hashq;					/* hash table links (O) */
+	CIRCLEQ_ENTRY(ovl_segment)		listq;					/* segments in same object (O) */
 
 	int								flags;
 	ovl_object_t					object;					/* which object am I in (O,S)*/
@@ -76,6 +76,8 @@ extern
 vm_offset_t							ovl_first_logical_addr;
 extern
 vm_offset_t							ovl_last_logical_addr;
+
+#define OVL_SEGMENT_TO_PHYS(entry)	((entry)->log_addr)
 
 #define	ovl_segment_lock_lists()	simple_lock(&ovl_segment_list_lock)
 #define	ovl_segment_unlock_lists()	simple_unlock(&ovl_segment_list_lock)

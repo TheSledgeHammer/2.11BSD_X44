@@ -75,7 +75,7 @@ time_t	dumptime;
 time_t	dumpdate;
 size_t	pagesize;
 FILE 	*terminal;
-char	*tmpdir;
+const char	*tmpdir;
 
 int	main(int, char *[]);
 static	void obsolete(int *, char **[]);
@@ -86,9 +86,10 @@ main(int argc, char *argv[])
 {
 	int ch;
 	ino_t ino;
-	char *inputdev;
-	char *symtbl = "./restoresymtable";
+	const char *inputdev;
+	const char *symtbl = "./restoresymtable";
 	char *p, name[MAXPATHLEN];
+	static char dot[] = ".";
 
 	if (argc < 2)
 		usage();
@@ -180,7 +181,7 @@ main(int argc, char *argv[])
 
 	if (argc == 0) {
 		argc = 1;
-		*--argv = ".";
+		*--argv = dot;
 	}
 
 	switch (command) {

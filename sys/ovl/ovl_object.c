@@ -224,10 +224,32 @@ void
 ovl_object_terminate(object)
 	register ovl_object_t	object;
 {
+	register ovl_segment_t	segment;
+	register ovl_page_t		page;
+
 	while (object->paging_in_progress) {
-			//ovl_object_sleep(object, object, FALSE);
+			ovl_object_sleep(object, object, FALSE);
 			ovl_object_lock(object);
 	}
+
+#ifdef notyet
+	while ((segment == CIRCLEQ_FIRST(&object->seglist)) != NULL) {
+		//OVL_SEGMENT_CHECK(segment);
+		ovl_segment_lock_lists();
+		if (!TAILQ_EMPTY(&segment->pglist)) {
+			while ((page = TAILQ_FIRST(&segment->pglist)) != NULL) {
+				//OVL_PAGE_CHECK(page);
+				ovl_page_lock_lists();
+				ovl_page_free(page);
+				cnt.v_pfree++;
+				ovl_page_unlock_lists();
+			}
+		} else {
+			ovl_segment_free(segment);
+			ovl_segment_unlock_lists();
+		}
+	}
+#endif
 
 	ovl_object_unlock(object);
 
@@ -242,6 +264,77 @@ ovl_object_terminate(object)
 
 	overlay_free((caddr_t)object, M_OVLOBJ);
 }
+
+#ifdef notyet
+/*
+ *	ovl_object_segment_page_clean
+ *
+ *	Clean all dirty pages or dirty segments in the specified range of object.
+ *	If syncio is TRUE, page cleaning is done synchronously.
+ *	If de_queue is TRUE, pages are removed from any paging queue
+ *	they were on, otherwise they are left on whatever queue they
+ *	were on before the cleaning operation began.
+ *
+ *	Odd semantics: if start == end, we clean everything.
+ *
+ *	The object must be locked.
+ *
+ *	Returns TRUE if all was well, FALSE if there was a pager error
+ *	somewhere.  We attempt to clean (and dequeue) all pages regardless
+ *	of where an error occurs.
+ */
+bool_t
+ovl_object_segment_page_clean(object, start, end, syncio, de_queue)
+	register ovl_object_t	object;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	bool_t					syncio, de_queue;
+{
+	register ovl_segment_t segment;
+	register ovl_page_t page;
+	int onqueue;
+	bool_t noerror, ismod;
+
+	noerror = TRUE;
+
+	if (object == NULL) {
+		return (TRUE);
+	}
+
+	/*
+	 * If it is an internal object and there is no pager, attempt to
+	 * allocate one.  Note that vm_object_collapse may relocate one
+	 * from a collapsed object so we must recheck afterward.
+	 */
+	if ((object->flags & OBJ_INTERNAL) && object->pager == NULL) {
+		ovl_object_collapse(object);
+		if (object->pager == NULL) {
+			vm_pager_t pager;
+
+			ovl_object_unlock(object);
+			pager = vm_pager_allocate(PG_OVERLAY, (caddr_t)0, object->size, VM_PROT_ALL, (vm_offset_t)0);
+			if (pager) {
+				ovl_object_setpager(object, pager, 0, FALSE);
+			}
+			ovl_object_lock(object);
+		}
+	}
+
+	if (object->pager == NULL) {
+		return (TRUE);
+	}
+
+	/*
+	 * Wait until the pageout daemon is through with the object.
+	 */
+	while (object->paging_in_progress) {
+		ovl_object_sleep(object, object, FALSE);
+		ovl_object_lock(object);
+	}
+	return (noerror);
+}
+
+#endif
 
 void
 ovl_object_setpager(object, pager, paging_offset, read_only)
@@ -354,6 +447,50 @@ ovl_object_remove(pager)
 	}
 }
 
+#ifdef notyet
+/*
+ *	ovl_object_segment_page_remove: [internal]
+ *
+ *	Removes all physical pages in the specified
+ *	object range from the object's list of pages.
+ *
+ *	The object must be locked.
+ */
+void
+ovl_object_segment_page_remove(object, start, end)
+	register ovl_object_t	object;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+{
+	register ovl_segment_t 	segment;
+	register ovl_page_t		page;
+
+	if (object == NULL) {
+		return;
+	}
+
+	CIRCLEQ_FOREACH(segment, &object->seglist, listq) {
+		if ((start <= segment->offset) && (segment->offset < end)) {
+			if (!TAILQ_EMPTY(&segment->pglist)) {
+				TAILQ_FOREACH(page, &segment->pglist, listq) {
+					if (page->segment == segment) {
+						pmap_page_protect(OVL_PAGE_TO_PHYS(page), VM_PROT_NONE);
+						ovl_page_lock_lists();
+						ovl_page_free(page);
+						ovl_page_unlock_lists();
+					}
+				}
+			} else {
+				pmap_page_protect(OVL_SEGMENT_TO_PHYS(segment), VM_PROT_NONE);
+				ovl_segment_lock_lists();
+				ovl_segment_free(segment);
+				ovl_segment_unlock_lists();
+			}
+		}
+	}
+}
+#endif
+
 /* vm objects */
 u_long
 ovl_vobject_hash(oobject, vobject)
@@ -423,4 +560,37 @@ ovl_object_remove_vm_object(vobject)
        		}
        	}
     }
+}
+
+vm_object_t
+ovl_object_allocate_vm_object(oobject, size)
+	ovl_object_t oobject;
+	vm_size_t size;
+{
+	vm_object_t vobject;
+
+	if (oobject == NULL) {
+		return (NULL);
+	}
+	vobject = vm_object_allocate(size);
+	if (vobject != NULL) {
+		ovl_object_enter_vm_object(oobject, vobject);
+		return (vobject);
+	}
+	return (NULL);
+}
+
+void
+ovl_object_deallocate_vm_object(oobject)
+	ovl_object_t oobject;
+{
+	vm_object_t vobject;
+
+	if (oobject == NULL) {
+		return;
+	}
+	vobject = ovl_object_lookup_vm_object(oobject);
+	if (vobject != NULL) {
+		ovl_object_remove_vm_object(vobject);
+	}
 }

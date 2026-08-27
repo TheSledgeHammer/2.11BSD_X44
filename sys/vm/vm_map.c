@@ -2795,7 +2795,6 @@ vmspace_fork(vm1)
 						if (old_entry->max_protection & VM_PROT_WRITE) {
 							pmap_protect(old_map->pmap, old_entry->start, old_entry->end, old_entry->protection & ~VM_PROT_WRITE);
 						}
-						//old_entry->etype |= TRUE;
 					}
 				} else {
 					pmap_copy(new_pmap, old_map->pmap, new_entry->start, (old_entry->end - old_entry->start), old_entry->start);

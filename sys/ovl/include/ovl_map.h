@@ -36,6 +36,7 @@ union ovl_map_object {
 	struct ovl_object					*ovl_object;	/* overlay_object object */
 	struct ovl_map						*share_map;		/* share map */
 	struct ovl_map						*sub_map;		/* belongs to another map */
+	//struct vm_map						*vm_map;		/* vm map. Treated as if in vmspace */
 };
 
 struct ovl_map_entry {
@@ -48,7 +49,8 @@ struct ovl_map_entry {
   union ovl_map_object			   		object;			/* object I point to */
   vm_offset_t				          	offset;			/* offset into object */
   bool_t								is_a_map;		/* Is "object" a map? */
-  bool_t								is_sub_map;		/* Is "object" a submap? */
+  bool_t								is_sub_map;		/* Is "object" a submap? Only in sharing maps: */
+  //bool_t								is_vm_map;		/* Is "object" a vm_map? Only in vm maps: */
   bool_t								copy_on_write;	/* is data copy-on-write */
   vm_prot_t								protection;		/* protection code */
   vm_prot_t								max_protection;	/* maximum protection */
@@ -100,11 +102,11 @@ struct ovl_map {
 #endif /* DIAGNOSTIC */
 
 #define	ovl_map_unlock(ovl) 												\
-		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
+	lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
 #define	ovl_map_lock_read(ovl) 												\
-		lockmgr(&(ovl)->lock, LK_SHARED, (void *)0, curproc->p_pid)
+	lockmgr(&(ovl)->lock, LK_SHARED, (void *)0, curproc->p_pid)
 #define	ovl_map_unlock_read(ovl) 											\
-		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
+	lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
 #define ovl_map_set_recursive(ovl) { 										\
 	simple_lock(&(ovl)->lk_lnterlock); 										\
 	(ovl)->lk_flags |= LK_CANRECURSE; 										\
@@ -143,5 +145,6 @@ void			ovl_map_reference(ovl_map_t);
 int		 		ovl_map_remove(ovl_map_t, vm_offset_t, vm_offset_t);
 void			ovl_map_startup(void);
 int				ovl_map_submap(ovl_map_t, vm_offset_t, vm_offset_t, ovl_map_t);
+int		 		ovl_map_protect(ovl_map_t, vm_offset_t, vm_offset_t, vm_prot_t, bool_t);
 #endif
 #endif /* _OVL_MAP_ */

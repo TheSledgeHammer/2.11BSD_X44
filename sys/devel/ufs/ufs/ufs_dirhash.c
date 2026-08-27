@@ -173,10 +173,10 @@ ufsdirhash_build(struct inode *ip)
 	if (dh->dh_hash == NULL || dh->dh_blkfree == NULL)
 		goto fail;
 	for (i = 0; i < narrays; i++) {
-		if ((dh->dh_hash[i] = DIRHASH_BLKALLOC_WAITOK()) == NULL)
+		if ((dh->dh_hash[i] = DIRHASH_BLKALLOC(dh->dh_hash[i])) == NULL)
 			goto fail;
 		for (j = 0; j < DH_NBLKOFF; j++)
-			dh->dh_hash[i][j] = DIRHASH_EMPTY;
+			DIRHASH_EMPTY(dh->dh_hash[i][j]);
 	}
 
 	/* Initialise the hash table and block statistics. */

@@ -214,10 +214,10 @@ ovl_segment_insert(segment, object, offset)
 	bucket = &ovl_segment_buckets[ovl_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	CIRCLEQ_INSERT_TAIL(bucket, segment, hashlist);
+	CIRCLEQ_INSERT_TAIL(bucket, segment, hashq);
     simple_unlock(&ovl_segment_bucket_lock);
 
-    CIRCLEQ_INSERT_TAIL(&object->seglist, segment, seglist);
+    CIRCLEQ_INSERT_TAIL(&object->seglist, segment, listq);
     segment->flags |= SEG_ALLOCATED;
 
     object->segment_count++;
@@ -236,10 +236,10 @@ ovl_segment_remove(segment)
 	bucket = &ovl_segment_buckets[ovl_segment_hash(segment->object, segment->offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	CIRCLEQ_REMOVE(bucket, segment, hashlist);
+	CIRCLEQ_REMOVE(bucket, segment, hashq);
 	simple_unlock(&ovl_segment_bucket_lock);
 
-	CIRCLEQ_REMOVE(&segment->object->seglist, segment, seglist);
+	CIRCLEQ_REMOVE(&segment->object->seglist, segment, listq);
 
 	segment->object->segment_count--;
 	segment->flags &= ~SEG_ALLOCATED;
@@ -298,7 +298,7 @@ ovl_segment_search_next(object, offset)
 	bucket = &ovl_segment_buckets[ovl_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	CIRCLEQ_FOREACH(segment, bucket, hashlist) {
+	CIRCLEQ_FOREACH(segment, bucket, hashq) {
 		if (segment->object == object && segment->offset == offset) {
 			simple_unlock(&ovl_segment_bucket_lock);
 			return (segment);
@@ -319,7 +319,7 @@ ovl_segment_search_prev(object, offset)
 	bucket = &ovl_segment_buckets[ovl_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	CIRCLEQ_FOREACH_REVERSE(segment, bucket, hashlist) {
+	CIRCLEQ_FOREACH_REVERSE(segment, bucket, hashq) {
 		if (segment->object == object && segment->offset == offset) {
 			simple_unlock(&ovl_segment_bucket_lock);
 			return (segment);
@@ -328,6 +328,7 @@ ovl_segment_search_prev(object, offset)
 	simple_unlock(&ovl_segment_bucket_lock);
 	return (NULL);
 }
+
 
 /* vm segments */
 u_long
@@ -398,5 +399,40 @@ ovl_segment_remove_vm_segment(vsegment)
 				ovl_vm_segment_count--;
 			}
 		}
+	}
+}
+
+vm_segment_t
+ovl_segment_allocate_vm_segment(osegment, vobject, voffset)
+	ovl_segment_t osegment;
+	vm_object_t vobject;
+	vm_offset_t voffset;
+{
+	vm_segment_t vsegment;
+
+	if (osegment == NULL || vobject == NULL) {
+		return (NULL);
+	}
+
+	vsegment = vm_segment_alloc(vobject, voffset);
+	if (vsegment != NULL) {
+		ovl_segment_insert_vm_segment(osegment, vsegment);
+		return (vsegment);
+	}
+	return (NULL);
+}
+
+void
+ovl_segment_deallocate_vm_segment(osegment)
+	ovl_segment_t osegment;
+{
+	vm_segment_t vsegment;
+
+	if (osegment == NULL) {
+		return;
+	}
+	vsegment = ovl_segment_lookup_vm_segment(osegment);
+	if (vsegment != NULL) {
+		ovl_segment_remove_vm_segment(vsegment);
 	}
 }

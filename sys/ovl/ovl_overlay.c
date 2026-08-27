@@ -79,8 +79,8 @@ ovl_map_t overlay_map;
 
 vm_offset_t
 omem_alloc(map, size)
-	register ovl_map_t		map;
-	register vm_size_t		size;
+	register ovl_map_t map;
+	register vm_size_t size;
 {
 	vm_offset_t 			addr;
 	register vm_offset_t 	offset;

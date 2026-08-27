@@ -138,6 +138,9 @@ ovl_object_t				omem_object;
 #define	ovl_object_lock_init(object)	simple_lock_init(&(object)->lock, "ovl_object_lock")
 #define	ovl_object_lock(object)			simple_lock(&(object)->lock)
 #define	ovl_object_unlock(object)		simple_unlock(&(object)->lock)
+#define	ovl_object_lock_try(object)		simple_lock_try(&(object)->lock)
+#define	ovl_object_sleep(event, object, interruptible) \
+			vm_thread_sleep((event), &(object)->lock, (interruptible))
 
 #ifdef _KERNEL
 ovl_object_t	ovl_object_allocate(vm_size_t);

@@ -72,16 +72,38 @@
 
 #include <ovl/include/ovl.h>
 
+/*
+ *	ovl_protect sets the protection of the specified range in the
+ *	specified map.
+ */
+int
+ovl_protect(map, start, size, set_maximum, new_protection)
+	register ovl_map_t	map;
+	vm_offset_t		start;
+	vm_size_t		size;
+	bool_t			set_maximum;
+	vm_prot_t		new_protection;
+{
+	if (map == NULL)
+		return (KERN_INVALID_ARGUMENT);
+
+	return (ovl_map_protect(map, trunc_page(start), round_page(start + size), new_protection, set_maximum));
+}
+
+/*
+ *	ovl_allocate allocates "zero fill" memory in the specfied
+ *	map.
+ */
 int
 ovl_allocate(map, addr, size, anywhere)
 	register ovl_map_t		map;
 	register vm_offset_t	*addr;
 	register vm_size_t		size;
-	bool_t				anywhere;
+	bool_t					anywhere;
 {
 	int	result;
 
-	if(map == NULL) {
+	if (map == NULL) {
 		return (KERN_INVALID_ARGUMENT);
 	}
 	if (size == 0) {
@@ -96,6 +118,10 @@ ovl_allocate(map, addr, size, anywhere)
 	return (result);
 }
 
+/*
+ *	ovl_deallocate deallocates the specified range of addresses in the
+ *	specified address map.
+ */
 int
 ovl_deallocate(map, start, size)
 	register ovl_map_t	map;

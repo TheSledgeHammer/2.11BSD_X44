@@ -1191,6 +1191,65 @@ ovl_map_protect(map, start, end, new_prot, set_max)
 	return (KERN_SUCCESS);
 }
 
+#ifdef notyet
+/*
+ *	ovl_map_pageable:
+ *
+ *	Sets the pageability of the specified address
+ *	range in the target map.  Regions specified
+ *	as not pageable require locked-down physical
+ *	memory and physical page maps.
+ *
+ *	The map must not be locked, but a reference
+ *	must remain to the map throughout the call.
+ */
+int
+ovl_map_pageable(map, start, end, new_pageable)
+	register ovl_map_t		map;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	register bool_t			new_pageable;
+{
+	register ovl_map_entry_t	entry;
+	ovl_map_entry_t			start_entry;
+	register vm_offset_t	failed;
+	int						rv;
+
+	ovl_map_lock(map);
+
+	OVL_MAP_RANGE_CHECK(map, start, end);
+
+	/*
+	 *	Only one pageability change may take place at one
+	 *	time, since vm_fault assumes it will be called
+	 *	only once for each wiring/unwiring.  Therefore, we
+	 *	have to make sure we're actually changing the pageability
+	 *	for the entire region.  We do so before making any changes.
+	 */
+
+	if (ovl_map_lookup_entry(map, start, &start_entry) == FALSE) {
+		ovl_map_unlock(map);
+		return (KERN_INVALID_ADDRESS);
+	}
+	entry = start_entry;
+
+	/*
+	 *	Actions are rather different for wiring and unwiring,
+	 *	so we have two separate cases.
+	 */
+
+	if (new_pageable) {
+
+	} else {
+
+	}
+
+	ovl_map_unlock(map);
+
+	return (KERN_SUCCESS);
+}
+#endif
+
 void
 ovl_map_entry_delete(map, entry)
 	register ovl_map_t			map;
@@ -1391,3 +1450,128 @@ ovlspace_mapin(ovl)
 	 *	- Something probably like vmspace_fork
 	 */
 }
+
+#ifdef notyet
+struct ovlspace *
+ovlspace_fork(ovl1)
+	struct ovlspace *ovl1;
+{
+	register struct ovlspace *ovl2;
+	struct ovl_map old_map;
+	struct ovl_map new_map;
+	ovl_map_entry_t	old_first;
+	ovl_map_entry_t	old_entry;
+	ovl_map_entry_t	new_entry;
+	pmap_t			new_pmap;
+
+	old_map = &ovl1->ovl_map;
+	ovl_map_lock(old_map);
+
+	ovl2 = ovlspace_alloc(old_map->min_offset, old_map->max_offset, old_map->entries_pageable);
+	bcopy(&ovl1->ovl_startcopy, &ovl2->ovl_startcopy, (caddr_t) (ovl1 + 1) - (caddr_t)&ovl1->ovl_startcopy);
+	new_pmap = &ovl2->ovl_pmap;		/* XXX */
+	new_map = &ovl2->ovl_map;		/* XXX */
+
+	old_first = CIRCLEQ_FIRST(&old_map->cl_header);
+	old_entry = CIRCLEQ_NEXT(old_first, cl_entry);
+
+	while (old_entry != CIRCLEQ_FIRST(&old_map->cl_header)) {
+		if (old_entry->is_sub_map) {
+			panic("ovl_map_fork: encountered a submap");
+		}
+
+		if (old_entry->is_vm_map) {
+			//do something here!
+		}
+
+		switch (old_entry->inheritance) {
+			//do something here!
+		}
+		//check if vm_map. submap and share_map?
+	}
+
+	new_map->size = old_map->size;
+	ovl_map_unlock(old_map);
+	return (ovl2);
+}
+
+/*
+ * ovl_map_range_check_vm_map:		[ kernel use only ]
+ *
+ * Determines the range of vm_map. The map must be smaller
+ * than or equal to the range of the ovl map that is handling
+ * the vm_map.
+ */
+int
+ovl_map_range_check_vm_map(vmmap, start, end)
+	vm_map_t vmmap;
+	vm_offset_t start;
+	vm_offset_t end;
+{
+	vm_map_entry_t vmentry;
+	register int result = KERN_INVALID_ARGUMENT;
+
+	vm_map_lock(vmmap);
+	if (vm_map_lookup_entry(vmmap, start, &vmentry)) {
+		vm_map_clip_start(vmmap, vmentry, start);
+	} else {
+		vmentry = CIRCLEQ_NEXT(vmentry, cl_entry);
+	}
+	vm_map_clip_end(vmmap, vmentry, end);
+
+	if ((vmentry->start <= start) && (vmentry->end <= end)) {
+		result = KERN_SUCCESS;
+	}
+	vm_map_unlock(vmmap);
+	return (result);
+}
+
+/*
+ *	ovl_map_vm_map:		[ kernel use only ]
+ *
+ *	Mark the given range as being used for vm maps.
+ *
+ *	This range must have been created with ovl_map_find,
+ *	and no other operations may have been performed on this
+ *	range prior to calling ovl_map_vm_map.
+ */
+int
+ovl_map_vm_map(map, start, end, vmmap)
+	register ovl_map_t		map;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	vm_map_t				vmmap;
+{
+	ovl_map_entry_t	entry;
+	register int result = KERN_INVALID_ARGUMENT;
+
+	ovl_map_lock(map);
+
+	OVL_MAP_RANGE_CHECK(map, start, end);
+
+	if (ovl_map_lookup_entry(map, start, &entry)) {
+		ovl_map_clip_start(map, entry, start);
+	} else {
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
+	}
+
+	ovl_map_clip_end(map, entry, end);
+
+	if ((entry->start == start) && (entry->end == end) &&
+		(!entry->is_a_map) && (!entry->is_sub_map) &&
+	   	(entry->object.ovl_object == NULL)) {
+		entry->is_a_map = FALSE;
+		entry->is_sub_map = FALSE;
+		entry->is_vm_map = TRUE;
+		result = ovl_map_range_check_vm_map(vmmap, start, end);
+		if (result) {
+			vm_map_reference(entry->object.vm_map = vmmap);
+			result = KERN_SUCCESS;
+		}
+	}
+	ovl_map_unlock(map);
+
+	return (result);
+}
+
+#endif

@@ -96,7 +96,7 @@ void	 	 skipdirs(void);
 void		 skipfile(void);
 void		 skipmaps(void);
 void		 swabst(u_char *, u_char *);
-void	 	 treescan(char *, ino_t, long (*)(char *, ino_t, int));
+void	 	 treescan(const char *, ino_t, long (*)(const char *, ino_t, int));
 ino_t		 upperbnd(ino_t);
 long		 verifyfile(char *, ino_t, int);
 void		 xtrnull(char *, long);
