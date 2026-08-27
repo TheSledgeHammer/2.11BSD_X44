@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-USE_WIDECHAR?=yes
+USE_WIDECHAR?=no #no support for swprintf at this time
 
 WARNS=	5
 
