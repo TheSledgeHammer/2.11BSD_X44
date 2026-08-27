@@ -208,7 +208,7 @@ static int
 emitdefs(FILE *fp)
 {
 	struct nvlist *nv;
-	char *sp;
+	const char *sp;
 
 	if (fprintf(fp, "KERNEL_BUILD=%s\n", conffile) < 0)
 		return (1);
