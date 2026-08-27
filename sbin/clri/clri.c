@@ -118,7 +118,7 @@ main(int argc, char *argv[])
 
 		/* check we haven't found an alternate */
 		if (is_ufs2 || (sbp->fs_flags & FS_FLAGS_UPDATED)) {
-			if ((uint64_t) sblockloc != sbp->fs_sblockloc)
+			if ((int64_t) sblockloc != sbp->fs_sblockloc)
 				continue;
 		} else {
 			if (sblockloc == SBLOCK_UFS2)
