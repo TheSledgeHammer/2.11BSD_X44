@@ -501,7 +501,11 @@ int	dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
 #endif
 
 #if !defined(KERNEL) && !defined(LOCORE)
+#define	DISKUNIT(dev)	(minor(dev) / MAXPARTITIONS)
+#define	DISKPART(dev)	(minor(dev) % MAXPARTITIONS)
+
 #define	LABELDESC	(((btoc(sizeof(struct disklabel)) - 1) << 8))
+
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
