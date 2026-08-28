@@ -89,6 +89,23 @@ struct statfs {
 	char					f_fstypename[MFSNAMELEN]; 	/* fs type name */
 	char					f_mntonname[MNAMELEN];		/* directory on which mounted */
 	char					f_mntfromname[MNAMELEN];	/* mounted filesystem */
+
+#if defined(STATFS_COMPAT)
+
+#define fs_type     f_type
+#define fs_flags    f_flags
+#define fs_bsize    f_bsize
+#define fs_iosize   f_iosize
+#define	fs_blocks   f_blocks
+#define	fs_bfree    f_bfree
+#define	fs_bavail   f_bavail
+#define	fs_files    f_files
+#define	fs_ffree    f_ffree
+#define	fs_fsid     f_fsid
+#define	fs_owner    f_owner
+#define	fs_spare    f_spare
+
+#endif
 };
 
 /*
