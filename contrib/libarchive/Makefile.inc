@@ -8,6 +8,7 @@ LIBARCHIVEDIR=	${NETBSDSRCDIR}/contrib/libarchive/dist
 
 CPPFLAGS+=	-I${NETBSDSRCDIR}/contrib/libarchive/include
 CPPFLAGS+=	-DPLATFORM_CONFIG_H=\"config_netbsd.h\"
+CPPFLAGS+=  -D__ICONV_COMPAT -DSTATFS_COMPAT
 
 .PATH:      ${NETBSDSRCDIR}/include/hash
 CPPFLAGS+=  -I${NETBSDSRCDIR}/include/hash
