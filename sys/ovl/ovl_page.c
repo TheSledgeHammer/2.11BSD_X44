@@ -101,8 +101,11 @@ int							ovl_page_bucket_count = 0;	/* How big is array? */
 int							ovl_page_hash_mask;			/* Mask for hash function */
 simple_lock_data_t			ovl_page_bucket_lock;		/* lock for all page buckets XXX */
 
-struct ovl_pglist			ovl_page_list;
-simple_lock_data_t			ovl_page_list_lock;
+struct ovl_pglist			ovl_page_queue_free;
+struct ovl_pglist			ovl_page_queue_active;
+struct ovl_pglist			ovl_page_queue_inactive;
+simple_lock_data_t			ovl_page_queue_free_lock;
+simple_lock_data_t			ovl_page_queue_lock;
 
 long						ovl_first_page;
 long						ovl_last_page;
@@ -169,10 +172,12 @@ ovl_page_startup(start, end)
 	vm_offset_t				 	pa;
 	int i;
 
-	simple_lock_init(&ovl_page_list_lock, "ovl_page_list_lock");
+	simple_lock_init(&ovl_page_queue_lock, "ovl_page_queue_lock");
 	simple_lock_init(&ovl_vm_page_hash_lock, "ovl_vm_page_hash_lock");
 
-	TAILQ_INIT(&ovl_page_list);
+	TAILQ_INIT(&ovl_page_queue_free);
+	TAILQ_INIT(&ovl_page_queue_active);
+	TAILQ_INIT(&ovl_page_queue_inactive);
 
 	if (ovl_page_bucket_count == 0) {
 		ovl_page_bucket_count = 1;
@@ -327,13 +332,91 @@ ovl_page_lookup(segment, offset)
 		VM_PAGE_CHECK(mem);
 		if ((mem->segment == segment) && (mem->offset == offset)) {
 			simple_unlock(&ovl_page_bucket_lock);
-			return(mem);
+			return (mem);
 		}
 	}
 
 	simple_unlock(&ovl_page_bucket_lock);
-	return(NULL);
+	return (NULL);
 }
+
+ovl_page_t
+ovl_page_alloc(segment, offset)
+	ovl_segment_t segment;
+	vm_offset_t	offset;
+{
+	register ovl_page_t	mem;
+	int		spl;
+
+	spl = splimp();				/* XXX */
+	simple_lock(&ovl_page_queue_free_lock);
+	if (TAILQ_FIRST(&ovl_page_queue_free) == NULL) {
+		simple_unlock(&ovl_page_queue_free_lock);
+		splx(spl);
+		return(NULL);
+	}
+
+	mem = TAILQ_FIRST(&ovl_page_queue_free);
+	TAILQ_REMOVE(&ovl_page_queue_free, mem, pageq);
+
+	//cnt.v_page_free_count--;
+	simple_unlock(&ovl_page_queue_free_lock);
+	splx(spl);
+
+	mem->flags = PG_BUSY | PG_CLEAN | PG_FAKE;
+	ovl_page_insert(mem, segment, offset);
+	//mem->wire_count = 0;
+
+	/*
+	 *	Decide if we should poke the pageout daemon.
+	 *	We do this if the free count is less than the low
+	 *	water mark, or if the free count is less than the high
+	 *	water mark (but above the low water mark) and the inactive
+	 *	count is less than its target.
+	 *
+	 *	We don't have the counts locked ... if they change a little,
+	 *	it doesn't really matter.
+	 */
+#ifdef notyet
+	if (cnt.v_page_free_count < cnt.v_page_free_min ||
+	    (cnt.v_page_free_count < cnt.v_page_free_target &&
+	     cnt.v_page_inactive_count < cnt.v_page_inactive_target)) {
+		vm_thread_wakeup(&vm_pages_needed);
+	}
+#endif
+	return (mem);
+}
+
+void
+ovl_page_free(mem)
+	register ovl_page_t	mem;
+{
+	ovl_page_remove(mem);
+	if (mem->flags & PG_ACTIVE) {
+		TAILQ_REMOVE(&ovl_page_queue_active, mem, pageq);
+		mem->flags &= ~PG_ACTIVE;
+		//cnt.v_page_active_count--;
+	}
+
+	if (mem->flags & PG_INACTIVE) {
+		TAILQ_REMOVE(&ovl_page_queue_inactive, mem, pageq);
+		mem->flags &= ~PG_INACTIVE;
+		//cnt.v_page_inactive_count--;
+	}
+
+	if (!(mem->flags & PG_FICTITIOUS)) {
+		int spl;
+
+		spl = splimp();
+		simple_lock(&ovl_page_queue_free_lock);
+		TAILQ_INSERT_TAIL(&ovl_page_queue_free, mem, pageq);
+
+		//cnt.v_page_free_count++;
+		simple_unlock(&ovl_page_queue_free_lock);
+		splx(spl);
+	}
+}
+
 
 /* vm page */
 u_long
@@ -353,7 +436,7 @@ ovl_page_insert_vm_page(opage, vpage)
 {
     struct ovl_vm_page_hash_head 	*vbucket;
 
-    if(vpage == NULL) {
+    if (vpage == NULL || vpage->wire_count > 0) {
         return;
     }
 
@@ -378,7 +461,7 @@ ovl_page_lookup_vm_page(opage)
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
     ovl_vm_page_hash_lock();
     TAILQ_FOREACH(opage, vbucket, vm_page_hlist) {
-    	 if(vpage == TAILQ_NEXT(opage, vm_page_hlist)->vm_page) {
+    	 if (vpage == TAILQ_NEXT(opage, vm_page_hlist)->vm_page) {
     		 vpage = TAILQ_NEXT(opage, vm_page_hlist)->vm_page;
     		 ovl_vm_page_hash_unlock();
     		 return (vpage);
@@ -398,9 +481,9 @@ ovl_page_remove_vm_page(vpage)
     vbucket = &ovl_vm_page_hashtable[ovl_vpage_hash(opage, vpage)];
 
     TAILQ_FOREACH(opage, vbucket, vm_page_hlist) {
-    	 if(vpage == TAILQ_NEXT(opage, vm_page_hlist)->vm_page) {
+    	 if (vpage == TAILQ_NEXT(opage, vm_page_hlist)->vm_page) {
     		 vpage = TAILQ_NEXT(opage, vm_page_hlist)->vm_page;
-    		 if(vpage != NULL) {
+    		 if (vpage != NULL) {
     			 TAILQ_REMOVE(vbucket, opage, vm_page_hlist);
     	         ovl_vm_page_count--;
     		 }

@@ -235,12 +235,6 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 
 #define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
-#define	VM_PAGE_INIT(mem, seg, offset) { 			\
-	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; 	\
-	vm_page_insert((mem), (seg), (offset)); 		\
-	(mem)->wire_count = 0; 							\
-}
-
 void 		 *vm_pmap_bootinit(void *, vm_size_t, int);
 void		 vm_page_activate(vm_page_t);
 vm_page_t	 vm_page_alloc(vm_segment_t, vm_offset_t);

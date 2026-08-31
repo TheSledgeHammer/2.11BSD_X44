@@ -56,7 +56,7 @@ static char *keyval(int);
  * List entries on the tape.
  */
 long
-listfile(char *name, ino_t ino, int type)
+listfile(const char *name, ino_t ino, int type)
 {
 	long descend = hflag ? GOOD : FAIL;
 
@@ -72,7 +72,7 @@ listfile(char *name, ino_t ino, int type)
  * Request that new entries be extracted.
  */
 long
-addfile(char *name, ino_t ino, int type)
+addfile(const char *name, ino_t ino, int type)
 {
 	struct entry *ep;
 	long descend = hflag ? GOOD : FAIL;
@@ -113,7 +113,7 @@ addfile(char *name, ino_t ino, int type)
  */
 /* ARGSUSED */
 long
-deletefile(char *name, ino_t ino, int type)
+deletefile(const char *name, ino_t ino, int type)
 {
 	long descend = hflag ? GOOD : FAIL;
 	struct entry *ep;
@@ -204,7 +204,7 @@ removeoldleaves(void)
  *	Renames are done at the same time.
  */
 long
-nodeupdates(char *name, ino_t ino, int type)
+nodeupdates(const char *name, ino_t ino, int type)
 {
 	struct entry *ep, *np, *ip;
 	long descend = GOOD;
@@ -834,7 +834,7 @@ checkrestore(void)
  * A paranoid check that things are as they should be.
  */
 long
-verifyfile(char *name, ino_t ino, int type)
+verifyfile(const char *name, ino_t ino, int type)
 {
 	struct entry *np, *ep;
 	long descend = GOOD;

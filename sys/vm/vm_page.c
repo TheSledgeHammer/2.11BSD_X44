@@ -531,7 +531,9 @@ vm_page_alloc(segment, offset)
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(spl);
 
-	VM_PAGE_INIT(mem, segment, offset);
+	mem->flags = PG_BUSY | PG_CLEAN | PG_FAKE;
+	vm_page_insert(mem, segment, offset);
+	mem->wire_count = 0;
 
 	/*
 	 *	Decide if we should poke the pageout daemon.

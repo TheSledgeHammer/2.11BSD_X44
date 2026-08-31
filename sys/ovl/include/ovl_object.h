@@ -147,6 +147,7 @@ ovl_object_t	ovl_object_allocate(vm_size_t);
 void		 	ovl_object_enter(ovl_object_t, vm_pager_t);
 void		 	ovl_object_init(vm_size_t);
 ovl_object_t	ovl_object_lookup(vm_pager_t);
+void 			ovl_object_segment_page_remove(ovl_object_t, vm_offset_t, vm_offset_t);
 void		 	ovl_object_reference(ovl_object_t);
 void			ovl_object_deallocate(ovl_object_t);
 void			ovl_object_terminate(ovl_object_t);

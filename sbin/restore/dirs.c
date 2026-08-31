@@ -642,7 +642,7 @@ setdirmodes(int flags)
  * Generate a literal copy of a directory.
  */
 int
-genliteraldir(char *name, ino_t ino)
+genliteraldir(const char *name, ino_t ino)
 {
 	struct inotab *itp;
 	int ofile, dp, i, size;

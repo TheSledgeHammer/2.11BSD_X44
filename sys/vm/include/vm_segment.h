@@ -224,12 +224,6 @@ simple_lock_data_t	vm_segment_list_free_lock;
 
 #define vm_segment_set_modified(m)	{ (m)->flags &= ~SEG_CLEAN; }
 
-#define	VM_SEGMENT_INIT(seg, object, offset) { 			\
-	(seg)->flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 		\
-	vm_segment_insert((seg), (object), (offset)); 		\
-	(seg)->wire_tracker = 0;							\
-}
-
 void		 	vm_segment_activate(vm_segment_t);
 vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);
 void			vm_segment_deactivate(vm_segment_t);

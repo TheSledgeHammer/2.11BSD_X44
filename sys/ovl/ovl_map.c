@@ -479,7 +479,7 @@ ovl_map_entry_create(map)
 		panic("ovl_map_entry_create: out of map entries");
 	}
 
-	return(entry);
+	return (entry);
 }
 
 void
@@ -567,7 +567,7 @@ ovl_map_deallocate(map)
 
 	ovl_map_lock_drain_interlock(map);
 
-	(void) ovl_map_delete(map, map->min_offset, map->max_offset);
+	(void)ovl_map_delete(map, map->min_offset, map->max_offset);
 
 	pmap_overlay_destroy(map->pmap);
 

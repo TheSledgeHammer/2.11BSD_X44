@@ -1533,6 +1533,7 @@ vm_map_inherit(map, start, end, new_inheritance)
 	case VM_INHERIT_NONE:
 	case VM_INHERIT_COPY:
 	case VM_INHERIT_SHARE:
+	case VM_INHERIT_OVERLAY:
 		break;
 	default:
 		return (KERN_INVALID_ARGUMENT);

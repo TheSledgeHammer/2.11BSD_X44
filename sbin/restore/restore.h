@@ -62,7 +62,7 @@ extern time_t	dumpdate;	/* time that this dump was made */
 extern char	command;	/* opration being performed */
 extern size_t	pagesize;	/* system page size */
 extern FILE	*terminal;	/* file descriptor for the terminal input */
-extern char	*tmpdir;	/* where to store temporary files */
+extern const char *tmpdir;	/* where to store temporary files */
 extern int	oldinofmt;	/* reading tape with old format inodes */
 extern int	Bcvt;		/* need byte swapping on inodes and dirs */
 

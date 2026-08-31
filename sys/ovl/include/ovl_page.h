@@ -99,6 +99,7 @@ TAILQ_HEAD(ovl_vm_page_hash_head, ovl_page);
 struct ovl_pglist;
 TAILQ_HEAD(ovl_pglist, ovl_page);
 struct ovl_page {
+	TAILQ_ENTRY(ovl_page)	pageq;					/* queue info for FIFO queue or free list (P) */
 	TAILQ_ENTRY(ovl_page)	hashq;					/* hash table links (S)*/
 	TAILQ_ENTRY(ovl_page)	listq;					/* pages in same segment (S)*/
 
@@ -116,11 +117,16 @@ struct ovl_page {
 #define OVL_PG_VM_PG			0x16				/* overlay page holds vm_page */
 
 #ifdef _KERNEL
-
 extern
-struct ovl_pglist				ovl_page_list;
+struct ovl_pglist				ovl_page_queue_free;
 extern
-simple_lock_data_t				ovl_page_list_lock;
+struct ovl_pglist				ovl_page_queue_active;
+extern
+struct ovl_pglist				ovl_page_queue_inactive;
+extern
+simple_lock_data_t				ovl_page_queue_free_lock;
+extern
+simple_lock_data_t				ovl_page_queue_lock;
 extern
 struct ovl_vm_page_hash_head   	*ovl_vm_page_hashtable;
 extern
@@ -140,8 +146,8 @@ vm_offset_t						ovl_last_phys_addr;
 
 #define OVL_PAGE_TO_PHYS(entry)			((entry)->phys_addr)
 
-#define	ovl_page_lock_lists()		simple_lock(&ovl_page_list_lock)
-#define	ovl_page_unlock_lists()		simple_unlock(&ovl_page_list_lock)
+#define	ovl_page_lock_lists()		simple_lock(&ovl_page_queue_lock)
+#define	ovl_page_unlock_lists()		simple_unlock(&ovl_page_queue_lock)
 
 #define	ovl_vm_page_hash_lock()		simple_lock(&ovl_vm_page_hash_lock)
 #define	ovl_vm_page_hash_unlock()	simple_unlock(&ovl_vm_page_hash_lock)
@@ -151,6 +157,8 @@ void		ovl_page_startup(vm_offset_t *, vm_offset_t *);
 void		ovl_page_insert(ovl_page_t, ovl_segment_t, vm_offset_t);
 void		ovl_page_remove(ovl_page_t);
 ovl_page_t	ovl_page_lookup(ovl_segment_t, vm_offset_t);
+ovl_page_t	ovl_page_alloc(ovl_segment_t, vm_offset_t);
+void		ovl_page_free(ovl_page_t);
 
 //vm_page_copy_to_ovl_page		/* inserts into ovl_page hash list */
 //vm_page_copy_from_ovl_page	/* removes from ovl_page hash list */

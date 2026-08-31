@@ -140,7 +140,7 @@ static void	 swap_old_header(struct s_ospcl *);
  * Set up an input source
  */
 void
-setinput(char *source)
+setinput(const char *source)
 {
 	FLUSHTAPEBUF();
 	if (bflag)

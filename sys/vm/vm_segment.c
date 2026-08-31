@@ -97,7 +97,6 @@
 #include <sys/fnv_hash.h>
 
 #include <vm/include/vm.h>
-//#include <vm/include/vm_text.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_segment.h>
 #include <vm/include/vm_map.h>
@@ -385,7 +384,9 @@ vm_segment_alloc(object, offset)
 	cnt.v_segment_free_count--;
 	simple_unlock(&vm_segment_list_free_lock);
 
-	VM_SEGMENT_INIT(seg, object, offset);
+	seg->flags = SEG_BUSY | SEG_CLEAN;
+	vm_segment_insert(seg, object, offset);
+	seg->wire_tracker = 0;
 
 	return (seg);
 }

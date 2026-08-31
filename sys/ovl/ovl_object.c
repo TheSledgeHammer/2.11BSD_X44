@@ -447,7 +447,6 @@ ovl_object_remove(pager)
 	}
 }
 
-#ifdef notyet
 /*
  *	ovl_object_segment_page_remove: [internal]
  *
@@ -489,7 +488,6 @@ ovl_object_segment_page_remove(object, start, end)
 		}
 	}
 }
-#endif
 
 /* vm objects */
 u_long

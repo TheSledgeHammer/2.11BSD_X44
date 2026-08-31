@@ -40,6 +40,7 @@ CIRCLEQ_HEAD(ovl_seglist, ovl_segment);
 struct ovl_segment {
 	struct ovl_pglist				pglist; 				/* Pages in overlay pglist memory */
 
+	CIRCLEQ_ENTRY(ovl_segment)		segmentq;				/* queue info for FIFO queue or free list (S) */
 	CIRCLEQ_ENTRY(ovl_segment) 		hashq;					/* hash table links (O) */
 	CIRCLEQ_ENTRY(ovl_segment)		listq;					/* segments in same object (O) */
 
@@ -57,9 +58,14 @@ struct ovl_segment {
 #define OVL_SEG_VM_SEG				0x16					/* overlay segment holds vm_segment */
 
 #ifdef _KERNEL
-
 extern
-struct ovl_seglist 					ovl_segment_list;
+struct ovl_seglist 					ovl_segment_list_free;
+extern
+struct ovl_seglist 					ovl_segment_list_active;
+extern
+struct ovl_seglist 					ovl_segment_list_inactive;
+extern
+simple_lock_data_t					ovl_segment_list_free_lock;
 extern
 simple_lock_data_t					ovl_segment_list_lock;
 extern
@@ -85,10 +91,12 @@ vm_offset_t							ovl_last_logical_addr;
 #define	ovl_vm_segment_hash_lock()		simple_lock(&ovl_vm_segment_hash_lock)
 #define	ovl_vm_segment_hash_unlock()	simple_unlock(&ovl_vm_segment_hash_lock)
 
-void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
-void				ovl_segment_remove(ovl_segment_t);
-ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
-void				ovl_segment_startup(vm_offset_t *, vm_offset_t *);
+void			ovl_segment_startup(vm_offset_t *, vm_offset_t *);
+void			ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
+void			ovl_segment_remove(ovl_segment_t);
+ovl_segment_t	ovl_segment_lookup(ovl_object_t, vm_offset_t);
+ovl_segment_t 	ovl_segment_alloc(ovl_object_t, vm_offset_t);
+void		 	ovl_segment_free(ovl_segment_t);
 
 #endif /* KERNEL */
 #endif /* _OVL_SEGMENT_H_ */

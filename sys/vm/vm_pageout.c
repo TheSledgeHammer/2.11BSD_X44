@@ -462,7 +462,7 @@ vm_pageout_active(page, segment, object)
 		vm_page_unlock_queues();
 		vm_segment_unlock_lists();
 		vm_object_unlock(object);
-		(void) tsleep((caddr_t) &lbolt, PZERO | PCATCH, "pageout", 0);
+		(void)tsleep((caddr_t) &lbolt, PZERO | PCATCH, "pageout", 0);
 		vm_object_lock(object);
 		vm_segment_lock_lists();
 		vm_page_lock_queues();
