@@ -349,7 +349,7 @@ ovl_segment_alloc(object, offset)
 	seg = CIRCLEQ_FIRST(&ovl_segment_list_free);
 	CIRCLEQ_REMOVE(&ovl_segment_list_free, seg, segmentq);
 
-	simple_unlock(&vm_segment_list_free_lock);
+	simple_unlock(&ovl_segment_list_free_lock);
 
 	seg->flags = SEG_BUSY | SEG_CLEAN;
 	ovl_segment_insert(seg, object, offset);
@@ -372,9 +372,9 @@ ovl_segment_free(segment)
 		segment->flags &= SEG_INACTIVE;
 		//cnt.v_segment_inactive_count--;
 	}
-	simple_lock(&ovl_segment_list_free);
+	simple_lock(&ovl_segment_list_free_lock);
 	CIRCLEQ_INSERT_TAIL(&ovl_segment_list_free, segment, segmentq);
-	simple_unlock(&ovl_segment_list_free);
+	simple_unlock(&ovl_segment_list_free_lock);
 }
 
 /* vm segments */
