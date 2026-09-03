@@ -466,9 +466,9 @@ loclencmp(const void *a, const void *b)
 static int
 samepv(const void *ptr, int off, int len)
 {
-	const int * const *p, * const *q;
+	const short * const *p, * const *q;
 
-	for (p = &parents.vec[off], q = (const int * const *)ptr; --len >= 0;)
+	for (p = (const short * const *)&parents.vec[off], q = (const short * const *)ptr; --len >= 0;)
 		if (*p++ != *q++)
 			return (0); /* different */
 	return (1); 		/* same */
