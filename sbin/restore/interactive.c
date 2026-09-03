@@ -455,7 +455,7 @@ copynext(char *input, char *output)
  * remove any imbedded "." and ".." components.
  */
 void
-canon(char *rawname, char *canonname)
+canon(const char *rawname, char *canonname)
 {
 	char *cp, *np;
 
@@ -523,7 +523,7 @@ printlist(char *name, char *basename)
 		list = &single;
 		mkentry(name, dp, list);
 		len = strlen(basename) + 1;
-		if (strlen(name) - len > single.len) {
+		if (strlen(name) - len > (size_t)single.len) {
 			freename(single.fname);
 			single.fname = savename(&name[len]);
 			single.len = strlen(single.fname);
@@ -648,7 +648,8 @@ static void
 formatf(struct afile *list, int nentry)
 {
 	struct afile *fp, *endlist;
-	int width, bigino, haveprefix, havepostfix;
+    ino_t bigino;
+	int width, haveprefix, havepostfix;
 	int i, j, w, precision, columns, lines;
 
 	width = 0;
@@ -685,7 +686,7 @@ formatf(struct afile *list, int nentry)
 		for (j = 0; j < columns; j++) {
 			fp = &list[j * lines + i];
 			if (vflag) {
-				fprintf(stderr, "%*d ", precision, fp->fnum);
+				fprintf(stderr, "%*ld ", precision, fp->fnum);
 				fp->len += precision + 1;
 			}
 			if (haveprefix) {
@@ -761,8 +762,8 @@ glob_stat(const char *name, struct stat *stp)
 static int
 fcmp(const void *f1, const void *f2)
 {
-	return (strcmp(((struct afile *)f1)->fname,
-	    ((struct afile *)f2)->fname));
+	return (strcmp(((const struct afile *)f1)->fname,
+	    ((const struct afile *)f2)->fname));
 }
 
 /*

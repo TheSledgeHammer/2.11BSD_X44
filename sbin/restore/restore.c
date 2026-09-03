@@ -589,7 +589,7 @@ removeoldnodes(void)
  * Extract new leaves.
  */
 void
-createleaves(char *symtabfile)
+createleaves(const char *symtabfile)
 {
 	struct entry *ep;
 	ino_t first;

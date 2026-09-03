@@ -40,7 +40,7 @@ void		 checkrestore(void);
 void 		 cleanup(void);
 void		 closemt(void);
 void		 createfiles(void);
-void		 createleaves(char *);
+void		 createleaves(const char *);
 void		 createlinks(void);
 long		 deletefile(const char *, ino_t, int);
 void		 deleteino(ino_t);
