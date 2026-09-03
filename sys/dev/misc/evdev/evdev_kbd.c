@@ -66,7 +66,7 @@ int evdev_kbd_mux_open(struct wsevsrc *, struct wseventvar *);
 int evdev_kbd_mux_close(struct wsevsrc *);
 
 struct wssrcops evkbd_srcops = {
-		.type = WSMUX_EVDEV,
+		.type = WSMUX_EVDEV_KBD,
 		.dopen = evdev_kbd_mux_open,
 		.dclose = evdev_kbd_mux_close,
 		.dioctl = evdev_do_ioctl,
