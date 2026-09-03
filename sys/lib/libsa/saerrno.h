@@ -33,22 +33,31 @@
  *	@(#)saerrno.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _LIBSA_SAERRNO_H_
+#define _LIBSA_SAERRNO_H_
+
+#include <sys/errno.h>
+
 extern	int errno;	/* just like unix */
 
-/* error codes */
-#define	EADAPT	1	/* bad adaptor */
-#define	ECTLR	2	/* bad controller */
-#define	EUNIT	3	/* bad drive */
-#define	EPART	4	/* bad partition */
-#define	ERDLAB	5	/* can't read disk label */
-#define	EUNLAB	6	/* unlabeled disk */
-#define	ENXIO	7	/* bad device specification */
-#define	EBADF	8	/* bad file descriptor */
-#define	EOFFSET	9	/* relative seek not supported */
-#define	ESRCH	10	/* directory search for file failed */
-#define	EIO		11	/* generic error */
-#define	ECMD	12	/* undefined driver command */
-#define	EBSE	13	/* bad sector error */
-#define	EWCK	14	/* write check error */
-#define	EECC	15	/* uncorrectable ecc error */
-#define	EHER	16	/* hard error */
+/* stand error codes */
+#define	EADAPT	(ELAST+1)	/* bad adaptor */
+#define	ECTLR	(ELAST+2)	/* bad controller */
+#define	EUNIT	(ELAST+3)	/* bad drive */
+#define ESLICE	(ELAST+4)	/* bad slice */
+#define	EPART	(ELAST+5)	/* bad partition */
+#define	ERDLAB	(ELAST+6)	/* can't read disk label */
+#define	EUNLAB	(ELAST+7)	/* unlabeled disk */
+#define	ENXIO	(ELAST+8)	/* bad device specification */
+#define	EBADF	(ELAST+9)	/* bad file descriptor */
+#define	EOFFSET	(ELAST+10)	/* relative seek not supported */
+#define	ESRCH	(ELAST+11)	/* directory search for file failed */
+#define	EIO		(ELAST+12)	/* generic error */
+#define	ECMD	(ELAST+13)	/* undefined driver command */
+#define	EBSE	(ELAST+14)	/* bad sector error */
+#define	EWCK	(ELAST+15)	/* write check error */
+#define	EECC	(ELAST+16)	/* uncorrectable ecc error */
+#define	EHER	(ELAST+17)	/* hard error */
+#define	ESALAST	(ELAST+17)	/* */
+
+#endif /* _LIBSA_SAERRNO_H_ */

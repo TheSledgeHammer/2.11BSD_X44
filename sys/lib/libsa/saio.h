@@ -33,6 +33,9 @@
  *	@(#)saio.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _LIBSA_SAIO_H_
+#define _LIBSA_SAIO_H_
+
 /* I/O block */
 struct iob {
 	int		i_flgs;			/* flags (see F_*) */
@@ -89,3 +92,5 @@ struct st {
 	short	*off;		/* partition offset table (cylinders) */
 };
 #endif
+
+#endif /* _LIBSA_SAIO_H_ */

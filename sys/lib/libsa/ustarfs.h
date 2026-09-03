@@ -35,9 +35,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _LIBSA_USTARFS_H_
+#define _LIBSA_USTARFS_H_
+
 int		ustarfs_open(char *, struct open_file *);
 int		ustarfs_close(struct open_file *);
 int		ustarfs_read(struct open_file *, char *, u_int, u_int *);
 int		ustarfs_write(struct open_file *, char *, u_int, u_int *);
 off_t	ustarfs_seek(struct open_file *, off_t, int);
 int		ustarfs_stat(struct open_file *, struct stat *);
+
+#endif /* _LIBSA_USTARFS_H_ */

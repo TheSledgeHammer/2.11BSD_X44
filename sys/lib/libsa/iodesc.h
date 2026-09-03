@@ -42,8 +42,8 @@
 #define _LIBSA_IODESC_H_
 
 struct iodesc {
-	struct	in_addr destip;		/* dest. ip addr, net order */
-	struct	in_addr myip;		/* local ip addr, net order */
+	struct in_addr 	destip;		/* dest. ip addr, net order */
+	struct in_addr 	myip;		/* local ip addr, net order */
 	u_short			destport;	/* dest. port, net order */
 	u_short			myport;		/* local port, net order */
 	u_long			xid;		/* transaction identification */
@@ -51,8 +51,8 @@ struct iodesc {
 	void			*io_netif;
 };
 
-struct iodesc	*socktodesc (int);
-ssize_t			netif_get (struct iodesc *, void *, size_t, time_t);
-ssize_t			netif_put (struct iodesc *, void *, size_t);
+struct iodesc	*socktodesc(int);
+ssize_t			netif_get(struct iodesc *, void *, size_t, time_t);
+ssize_t			netif_put(struct iodesc *, void *, size_t);
 
 #endif /* !_LIBSA_IODESC_H_ */

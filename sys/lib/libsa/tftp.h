@@ -58,6 +58,10 @@
  *
  *	@(#)tftp.h	8.1 (Berkeley) 6/2/93
  */
+
+#ifndef _LIBSA_TFTP_H_
+#define _LIBSA_TFTP_H_
+
 /*
  * Trivial File Transfer Protocol (IEN-133)
  */
@@ -106,3 +110,5 @@ int		tftp_write(struct open_file *, char *, u_int, u_int *);
 off_t	tftp_seek(struct open_file *, off_t, int);
 int		tftp_stat(struct open_file *, struct stat *);
 #define IPPORT_TFTP 69
+
+#endif /* _LIBSA_TFTP_H_ */

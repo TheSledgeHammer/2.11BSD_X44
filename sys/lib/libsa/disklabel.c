@@ -35,6 +35,7 @@
 
 #include <sys/param.h>
 #include <sys/disklabel.h>
+
 #include "stand.h"
 
 char *

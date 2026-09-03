@@ -38,6 +38,9 @@
  * SUCH DAMAGE.
  */
 
+#ifndef _LIBSA_NET_H_
+#define _LIBSA_NET_H_
+
 #ifndef _KERNEL	/* XXX - see <netinet/in.h> */
 #undef __IPADDR
 #define __IPADDR(x)	htonl((u_int32_t)(x))
@@ -103,3 +106,5 @@ int		in_cksum(void *, int);
 
 /* Machine-dependent functions: */
 time_t	getsecs(void);
+
+#endif /* _LIBSA_NET_H_ */

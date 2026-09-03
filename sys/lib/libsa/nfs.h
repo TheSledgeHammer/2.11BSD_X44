@@ -29,11 +29,15 @@
  * SUCH DAMAGE.
  */
 
+#ifndef _LIBSA_NFS_H_
+#define _LIBSA_NFS_H_
+
 int		nfs_open(char *, struct open_file *);
 int		nfs_close(struct open_file *);
 int		nfs_read(struct open_file *, char *, u_int, u_int *);
 int		nfs_write(struct open_file *, char *, u_int, u_int *);
 off_t	nfs_seek(struct open_file *, off_t, int);
 int		nfs_stat(struct open_file *, struct stat *);
+int 	nfs_mount(int, struct in_addr, char *);
 
-int nfs_mount(int, struct in_addr, char *);
+#endif /* _LIBSA_NFS_H_ */

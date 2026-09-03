@@ -36,6 +36,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _LIBSA_LOADFILE_H_
+#define _LIBSA_LOADFILE_H_
+
 /*
  * Array indices in the u_long position array
  */
@@ -99,3 +102,5 @@ int	loadfile_xcoff64(int, struct xcoff64_exechdr *, u_long *, int);
 #endif /* BOOT_XCOFF32 || BOOT_XCOFF64 */
 
 #include <machine/loadfile_machdep.h>
+
+#endif /* _LIBSA_LOADFILE_H_ */

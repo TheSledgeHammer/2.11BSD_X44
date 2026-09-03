@@ -95,5 +95,6 @@ int		wsmux_set_display(struct wsmux_softc *, struct device *);
 
 int		wskbd_add_mux(int, struct wsmux_softc *);
 int		wsmouse_add_mux(int, struct wsmux_softc *);
-
+int 	evdev_kbd_add_mux(int, struct wsmux_softc *);
+int 	evdev_mouse_add_mux(int, struct wsmux_softc *);
 #endif /* NWSMUX > 0 */

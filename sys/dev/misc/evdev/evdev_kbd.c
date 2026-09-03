@@ -114,7 +114,7 @@ evdev_kbd_activate(self, act)
 	enum devact act;
 {
 	struct evdev_kbd_softc *ksc;
-	struct evdev_softc		*sc;
+	struct evdev_softc *sc;
 
 	ksc = (struct evdev_kbd_softc *)self;
 	sc = &ksc->sc;
@@ -127,7 +127,7 @@ evdev_kbd_detach(self, flags)
 	int flags;
 {
 	struct evdev_kbd_softc *ksc;
-	struct evdev_softc		*sc;
+	struct evdev_softc *sc;
 
 	ksc = (struct evdev_kbd_softc *)self;
 	sc = &ksc->sc;
@@ -148,13 +148,13 @@ evdev_kbd_mux_open(me, evp)
 	struct wsevsrc *me;
 	struct wseventvar *evp;
 {
-	struct evdev_kbd_softc 	*ksc;
-    struct evdev_softc			*sc;
-	struct evdev_dev 			*evdev;
-	struct evdev_client			*client;
+	struct evdev_kbd_softc *ksc;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 
 	ksc = (struct evdev_kbd_softc *)me;
-    sc = &ksc->sc;
+	sc = &ksc->sc;
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
@@ -169,20 +169,19 @@ int
 evdev_kbd_mux_close(me)
 	struct wsevsrc *me;
 {
-	struct evdev_kbd_softc 	*ksc;
-    struct evdev_softc		*sc;
-	struct evdev_dev 		*evdev;
-	struct evdev_client		*client;
+	struct evdev_kbd_softc *ksc;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 
 	ksc = (struct evdev_kbd_softc *)me;
-    sc = &ksc->sc;
+	sc = &ksc->sc;
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	client->ec_base->me_evp = NULL;
 	(void)evdev_kbd_enable(ksc, 0);
-
-	return (0);
+	return (evdev_doclose(evdev));
 }
 
 int
@@ -190,19 +189,19 @@ evdev_kbd_add_mux(unit, muxsc)
 	int unit;
 	struct wsmux_softc *muxsc;
 {
-	struct evdev_kbd_softc 	    *ksc;
-    struct evdev_softc			*sc;
-	struct evdev_dev 			*evdev;
-	struct evdev_client			*client;
+	struct evdev_kbd_softc *ksc;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 
 	ksc = evdev_cd.cd_devs[unit];
 	if (unit < 0 || unit >= evdev_cd.cd_ndevs || ksc == NULL) {
 		return (ENXIO);
 	}
-    sc = &ksc->sc;
+
+	sc = &ksc->sc;
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
-
 	if (client->ec_base->me_parent != NULL || client->ec_base->me_evp != NULL) {
 		return (EBUSY);
 	}

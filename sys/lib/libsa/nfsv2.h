@@ -38,6 +38,8 @@
  * nfs definitions as per the version 2 specs
  */
 
+#ifndef _LIBSA_NFSV2_H_
+#define _LIBSA_NFSV2_H_
 /*
  * Constants as defined in the Sun NFS Version 2 spec.
  * "NFS: Network File System Protocol Specification" RFC1094
@@ -160,3 +162,5 @@ struct nfsv2_statfs {
 	n_long	sf_bfree;
 	n_long	sf_bavail;
 };
+
+#endif /* _LIBSA_NFSV2_H_ */

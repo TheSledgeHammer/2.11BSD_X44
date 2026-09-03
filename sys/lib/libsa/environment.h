@@ -61,7 +61,7 @@
 #ifndef _LIBSA_ENVIRONMENT_H_
 #define _LIBSA_ENVIRONMENT_H_
 
-#include <lib/libsa/stand.h>
+//#include <lib/libsa/stand.h>
 
 /* stand/boot/common/environment.c */
 #define EV_DYNAMIC		(1<<0)		/* value was dynamically allocated, free if changed/unset */
@@ -69,9 +69,9 @@
 #define EV_NOHOOK		(1<<2)		/* don't call hook when setting */
 
 struct env_var;
-typedef char			*(ev_format_t)(struct env_var *ev);
-typedef int				(ev_sethook_t)(struct env_var *ev, int flags, const void *value);
-typedef int				(ev_unsethook_t)(struct env_var *ev);
+typedef char			*(ev_format_t)(struct env_var *);
+typedef int				(ev_sethook_t)(struct env_var *, int, const void *);
+typedef int				(ev_unsethook_t)(struct env_var *);
 
 struct env_var {
     char				*ev_name;
@@ -83,12 +83,12 @@ struct env_var {
 };
 extern struct env_var	*environ;
 
-extern struct env_var	*env_getenv(const char *name);
-extern int				env_setenv(const char *name, int flags, const void *value, ev_sethook_t sethook, ev_unsethook_t unsethook);
-extern char				*getenv(const char *name);
-extern int				setenv(const char *name, const char *value, int overwrite);
-extern int				putenv(const char *string);
-extern int				unsetenv(const char *name);
+extern struct env_var	*env_getenv(const char *);
+extern int				env_setenv(const char *, int, const void *, ev_sethook_t, ev_unsethook_t);
+extern char				*getenv(const char *);
+extern int				setenv(const char *, const char *, int);
+extern int				putenv(const char *);
+extern int				unsetenv(const char *);
 
 extern ev_sethook_t		env_noset;			/* refuse set operation */
 extern ev_unsethook_t	env_nounset;		/* refuse unset operation */

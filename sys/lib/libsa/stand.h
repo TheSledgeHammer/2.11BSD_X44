@@ -32,6 +32,7 @@
  *
  *	@(#)stand.h	8.1 (Berkeley) 6/11/93
  */
+
 #ifndef	_LIBSA_STAND_H
 #define	_LIBSA_STAND_H
 
@@ -39,19 +40,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/dirent.h>
-#include <sys/errno.h>
-#include <sys/stat.h>
 #include <sys/user.h>
+
+#include <lib/libkern/libkern.h>
 
 #include "saioctl.h"
 #include "saerrno.h"
-
-#include <lib/libsa/saioctl.h>
-#include <lib/libsa/environment.h>
-#include <lib/libkern/libkern.h>
-
-/* this header intentionally exports NULL from <string.h> */
-#include <string.h>
+#include "environment.h"
 
 #define	UNIX	"/vmunix"
 
@@ -59,20 +54,7 @@
 #define	NULL	0
 #endif
 
-extern int errno;
-
 struct open_file;
-
-/* special stand error codes */
-#define	EADAPT			(ELAST+1)	/* bad adaptor */
-#define	ECTLR			(ELAST+2)	/* bad controller */
-#define	EUNIT			(ELAST+3)	/* bad unit */
-#define ESLICE			(ELAST+4)	/* bad slice */
-#define	EPART			(ELAST+5)	/* bad partition */
-#define	ERDLAB			(ELAST+6)	/* can't read disk label */
-#define	EUNLAB			(ELAST+7)	/* unlabeled disk */
-#define	EOFFSET			(ELAST+8)	/* relative seek not supported */
-#define	ESALAST			(ELAST+8)	/* */
 
 /*
  * This structure is used to define file system operations in a file system
@@ -234,7 +216,7 @@ int     				write(int, char *, u_int);
 /* getopt.c */
 extern char				*optarg;			/* getopt(3) external variables */
 extern int				optind, opterr, optopt, optreset;
-extern int				getopt(int, char * const[], const char *);
+extern int				getopt(int, char * const *, const char *);
 
 /* pager.c */
 extern void				pager_open(void);

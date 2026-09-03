@@ -33,6 +33,9 @@
  *	@(#)saioctl.h	8.1 (Berkeley) 6/11/93
  */
 
+#ifndef _LIBSA_SAIOCTL_H_
+#define _LIBSA_SAIOCTL_H_
+
 /* ioctl's -- for disks just now */
 #define	SAIOHDR			(('d'<<8)|1)	/* next i/o includes header */
 #define	SAIOCHECK		(('d'<<8)|2)	/* next i/o checks data */
@@ -48,3 +51,5 @@
 #define	SAIOSSDEV		(('d'<<8)|12)	/* is device skip sector type? */
 #define	SAIODEBUG		(('d'<<8)|13)	/* enable/disable debugging */
 #define	SAIOGBADINFO	(('d'<<8)|14)	/* get bad-sector table */
+
+#endif /* _LIBSA_SAIOCTL_H_ */

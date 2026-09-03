@@ -29,8 +29,8 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/console.c,v 1.6 2003/08/25 23:30:41 obrien Exp $"); */
 
-#include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
+#include <lib/libsa/loadfile.h>
 #include <lib/libsa/stand.h>
 #include "bootstrap.h"
 
@@ -43,6 +43,12 @@ static int	cons_find(const char *name);
 static int	cons_check(const char *string);
 static int	cons_change(const char *string);
 static int	twiddle_set(struct env_var *ev, int flags, const void *value);
+static void 	twiddle_divisor(u_int gdiv);
+
+
+/* Extra functions from NetBSD standalone printf.c */
+
+static u_int globaldiv = 16;
 
 /*
  * Detect possible console(s) to use.  The first probed console
@@ -281,8 +287,8 @@ cons_change(const char *string)
 static int
 twiddle_set(struct env_var *ev, int flags, const void *value)
 {
-    u_long tdiv;
-    char * eptr;
+    	u_long tdiv;
+    	char * eptr;
 
 	tdiv = strtoul(value, &eptr, 0);
 	if (*(const char*) value == 0 || *eptr != 0) {
@@ -293,4 +299,10 @@ twiddle_set(struct env_var *ev, int flags, const void *value)
 	env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
 
 	return (CMD_OK);
+}
+
+static void
+twiddle_divisor(u_int gdiv)
+{
+	globaldiv = gdiv;
 }

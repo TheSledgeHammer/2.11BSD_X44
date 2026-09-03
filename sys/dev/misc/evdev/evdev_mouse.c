@@ -113,7 +113,7 @@ evdev_mouse_activate(self, act)
 	enum devact act;
 {
 	struct evdev_mouse_softc *msc;
-	struct evdev_softc		*sc;
+	struct evdev_softc *sc;
 
 	msc = (struct evdev_mouse_softc *)self;
 	sc = &msc->sc;
@@ -126,7 +126,7 @@ evdev_mouse_detach(self, flags)
 	int flags;
 {
 	struct evdev_mouse_softc *msc;
-	struct evdev_softc		*sc;
+	struct evdev_softc *sc;
 
 	msc = (struct evdev_mouse_softc *)self;
 	sc = &msc->sc;
@@ -153,14 +153,14 @@ evdev_mouse_mux_open(me, evp)
 	struct wsevsrc *me;
 	struct wseventvar *evp;
 {
-	struct evdev_mouse_softc 	*msc;
-    struct evdev_softc          *sc;
-	struct evdev_dev 			*evdev;
-	struct evdev_client			*client;
+	struct evdev_mouse_softc *msc;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 
 	msc = (struct evdev_mouse_softc *)me;
 	sc = &msc->sc;
-    evdev = sc->sc_evdev;
+	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	if (client->ec_base->me_evp != NULL) {
@@ -174,20 +174,19 @@ int
 evdev_mouse_mux_close(me)
 	struct wsevsrc *me;
 {
-	struct evdev_mouse_softc 	*msc;
-    struct evdev_softc          *sc;
-	struct evdev_dev 			*evdev;
-	struct evdev_client			*client;
+	struct evdev_mouse_softc *msc;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 
 	msc = (struct evdev_mouse_softc *)me;
-    sc = &msc->sc;
+	sc = &msc->sc;
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
 	client->ec_base->me_evp = NULL;
 	evdev_mouse_disable(msc);
-
-	return (0);
+	return (evdev_doclose(evdev));
 }
 
 int
@@ -195,16 +194,16 @@ evdev_mouse_add_mux(unit, muxsc)
 	int unit;
 	struct wsmux_softc *muxsc;
 {
-	struct evdev_mouse_softc 	*msc;
-    struct evdev_softc          *sc;
-	struct evdev_dev 			*evdev;
-	struct evdev_client			*client;
+	struct evdev_mouse_softc *msc;
+	struct evdev_softc *sc;
+	struct evdev_dev *evdev;
+	struct evdev_client *client;
 
 	msc = evdev_cd.cd_devs[unit];
 	if (unit < 0 || unit >= evdev_cd.cd_ndevs || msc == NULL) {
 		return (ENXIO);
 	}
-    sc = &msc->sc;
+	sc = &msc->sc;
 	evdev = sc->sc_evdev;
 	client = evdev->ev_client;
 
