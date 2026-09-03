@@ -451,12 +451,12 @@ addlocs(const char **locs, int len)
 static int
 loclencmp(const void *a, const void *b)
 {
-	const struct devi *const *d1p = a, *d1 = *d1p;
-	const struct devi *const *d2p = b, *d2 = *d2p;
+	const struct devi * const *d1p = a, *d1 = *d1p;
+	const struct devi * const *d2p = b, *d2 = *d2p;
 	int l1, l2;
 
-	l1 = d1->i_atattr->a_loclen; //(*(struct devi **)a)->i_atattr->a_loclen;
-	l2 = d2->i_atattr->a_loclen; //(*(struct devi **)b)->i_atattr->a_loclen;
+	l1 = d1->i_atattr->a_loclen; //(*(const struct devi **)a)->i_atattr->a_loclen;
+	l2 = d2->i_atattr->a_loclen; //(*(const struct devi **)b)->i_atattr->a_loclen;
 	return (l2 - l1);
 }
 
@@ -466,9 +466,9 @@ loclencmp(const void *a, const void *b)
 static int
 samepv(const void *ptr, int off, int len)
 {
-	const short * const *p, * const *q;
+	const int * const *p, * const *q;
 
-	for (p = &parents.vec[off], q = (const short * const *)ptr; --len >= 0;)
+	for (p = &parents.vec[off], q = (const int * const *)ptr; --len >= 0;)
 		if (*p++ != *q++)
 			return (0); /* different */
 	return (1); 		/* same */
@@ -511,12 +511,12 @@ addpv(short *pv, int len)
 static int
 pvlencmp(const void *a, const void *b)
 {
-	const struct devi *const *d1p = a, *d1 = *d1p;
-	const struct devi *const *d2p = b, *d2 = *d2p;
+	const struct devi * const *d1p = a, *d1 = *d1p;
+	const struct devi * const *d2p = b, *d2 = *d2p;
 	int l1, l2;
 
-	l1 = d1->i_pvlen;//(*(struct devi **)a)->i_pvlen;
-	l2 = d2->i_pvlen;//(*(struct devi **)b)->i_pvlen;
+	l1 = d1->i_pvlen;//(*(const struct devi **)a)->i_pvlen;
+	l2 = d2->i_pvlen;//(*(const struct devi **)b)->i_pvlen;
 
 	return (l2 - l1);
 }
