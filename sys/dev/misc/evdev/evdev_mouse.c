@@ -66,7 +66,7 @@ int evdev_mouse_mux_open(struct wsevsrc *, struct wseventvar *);
 int evdev_mouse_mux_close(struct wsevsrc *);
 
 struct wssrcops evmouse_srcops = {
-		.type = WSMUX_EVDEV,
+		.type = WSMUX_EVDEV_MOUSE,
 		.dopen = evdev_mouse_mux_open,
 		.dclose = evdev_mouse_mux_close,
 		.dioctl = evdev_do_ioctl,
