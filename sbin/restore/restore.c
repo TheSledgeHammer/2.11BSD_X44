@@ -63,7 +63,7 @@ listfile(const char *name, ino_t ino, int type)
 	if (TSTINO(ino, dumpmap) == 0)
 		return (descend);
 	vprintf(stdout, "%s", type == LEAF ? "leaf" : "dir ");
-	fprintf(stdout, "%10d\t%s\n", ino, name);
+	fprintf(stdout, "%10ld\t%s\n", ino, name);
 	return (descend);
 }
 
@@ -85,7 +85,7 @@ addfile(const char *name, ino_t ino, int type)
 	if (ino == WINO && command == 'i' && !vflag)
 		return (descend);
 	if (!mflag) {
-		(void) snprintf(buf, sizeof(buf), "./%u", ino);
+		(void) snprintf(buf, sizeof(buf), "./%lu", ino);
 		name = buf;
 		if (type == NODE) {
 			(void) genliteraldir(name, ino);
@@ -460,7 +460,7 @@ nodeupdates(const char *name, ino_t ino, int type)
 	 * next incremental tape.
 	 */
 	case 0:
-		fprintf(stderr, "%s: (inode %d) not found on tape\n",
+		fprintf(stderr, "%s: (inode %ld) not found on tape\n",
 			name, ino);
 		break;
 
@@ -615,7 +615,7 @@ createleaves(const char *symtabfile)
 		while (first < curfile.ino) {
 			ep = lookupino(first);
 			if (ep == NULL)
-				panic("%d: bad first\n", first);
+				panic("%ld: bad first\n", first);
 			fprintf(stderr, "%s: not found on tape\n", myname(ep));
 			ep->e_flags &= ~(NEW|EXTRACT);
 			first = lowerbnd(first);
@@ -628,7 +628,7 @@ createleaves(const char *symtabfile)
 		 * on the next incremental tape.
 		 */
 		if (first != curfile.ino) {
-			fprintf(stderr, "expected next file %d, got %d\n",
+			fprintf(stderr, "expected next file %ld, got %ld\n",
 				first, curfile.ino);
 			skipfile();
 			goto next;
@@ -851,7 +851,7 @@ verifyfile(const char *name, ino_t ino, int type)
 		if (np == ep)
 			break;
 	if (np == NULL)
-		panic("missing inumber %d\n", ino);
+		panic("missing inumber %ld\n", ino);
 	if (ep->e_type == LEAF && type != LEAF)
 		badentry(ep, "type should be LEAF");
 	return (descend);
