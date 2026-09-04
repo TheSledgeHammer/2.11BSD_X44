@@ -159,12 +159,11 @@ ksched_attach(p)
 	return (0);
 }
 
-int
+void
 ksched_detach(p)
 	struct sched_posix *p;
 {
 	free(p, M_P31B);
-	return (0);
 }
 
 int

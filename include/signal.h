@@ -9,8 +9,8 @@
 #ifndef _SIGNAL_H_
 #define _SIGNAL_H_
 
-#include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <sys/signal.h>
 
 #if defined(__BSD_VISIBLE)
@@ -60,6 +60,7 @@ int		sigvec(int, struct sigvec *, struct sigvec *);
 void	psignal(unsigned int, const char *);
 #endif /* _XOPEN_SOURCE_EXTENDED || _XOPEN_SOURCE >= 500
 	   || _POSIX_C_SOURCE >= 200809L || __BSD_VISIBLE */
+
 __END_DECLS
 
 #endif	/* !_SIGNAL_H_ */

@@ -90,8 +90,10 @@ __RCSID("$NetBSD: util.c,v 1.29.18.1 2020/05/07 18:22:58 martin Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <utmp.h>
 
+#ifdef SUPPORT_UTMPX
+#include <lastlogx.h>
+#endif
 #include "utmpentry.h"
 
 #include "finger.h"
@@ -99,7 +101,7 @@ __RCSID("$NetBSD: util.c,v 1.29.18.1 2020/05/07 18:22:58 martin Exp $");
 
 static void	 find_idle_and_ttywrite(WHERE *);
 static void	 userinfo(PERSON *, struct passwd *);
-static WHERE	*walloc(PERSON *);
+static WHERE *walloc(PERSON *);
 
 int
 match(struct passwd *pw, char *user)

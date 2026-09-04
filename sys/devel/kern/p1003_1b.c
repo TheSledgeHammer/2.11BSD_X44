@@ -65,7 +65,7 @@
 
 /*
  * TODO:
- * - Change a thread's priority
+ * - Tweak setscheduler and getscheduler
  */
 
 #include <sys/param.h>
@@ -109,10 +109,10 @@ sched_posix_attach(void)
 	return (ksched_attach(&ksched));
 }
 
-int
+void
 sched_posix_detach(void)
 {
-	return (ksched_detach(ksched));
+	ksched_detach(ksched);
 }
 
 void
@@ -122,7 +122,7 @@ sched_posix_init(void)
 
 	error = sched_posix_attach();
 	if (error != 0) {
-		(void)sched_posix_detach();
+		sched_posix_detach();
 		panic("sched_posix_init: failed to start");
 	}
 }

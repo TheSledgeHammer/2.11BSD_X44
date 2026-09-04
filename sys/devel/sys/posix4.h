@@ -38,7 +38,7 @@ struct sched_posix {
 #define SCHED_PRIO_MAX 	31
 
 int ksched_attach(struct sched_posix **);
-int ksched_detach(struct sched_posix *);
+void ksched_detach(struct sched_posix *);
 int ksched_setparam(pid_t, int, struct sched_posix *, const struct sched_param *);
 int ksched_getparam(pid_t, int, struct sched_posix *, struct sched_param *);
 int ksched_setscheduler(pid_t, int, struct sched_posix *, const struct sched_param *);
