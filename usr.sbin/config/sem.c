@@ -1188,7 +1188,7 @@ void
 selectattr(struct attr *a)
 {
 
-	(void)ht_insert(selecttab, a->a_name, (void *)a->a_name);
+	(void)ht_insert(selecttab, a->a_name, __UNCONST(a->a_name));
 }
 
 /*
@@ -1201,13 +1201,13 @@ selectbase(struct devbase *d, struct deva *da)
 	struct attr *a;
 	struct nvlist *nv;
 
-	(void)ht_insert(selecttab, d->d_name, (void *)d->d_name);
+	(void)ht_insert(selecttab, d->d_name, __UNCONST(d->d_name));
 	for (nv = d->d_attrs; nv != NULL; nv = nv->nv_next) {
 		a = nv->nv_ptr;
 		expandattr(a, selectattr);
 	}
 	if (da != NULL) {
-		(void)ht_insert(selecttab, da->d_name, (void *)da->d_name);
+		(void)ht_insert(selecttab, da->d_name, __UNCONST(da->d_name));
 		for (nv = da->d_attrs; nv != NULL; nv = nv->nv_next) {
 			a = nv->nv_ptr;
 			expandattr(a, selectattr);

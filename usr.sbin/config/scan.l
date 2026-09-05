@@ -235,7 +235,7 @@ curdir_pop(void)
 		panic("curdirs is empty");
 	/* LINTED cast away const (pf_prefix is malloc'd for curdirs) */
 	free((void *)pf->pf_prefix);
-	free(pf);
+	free(__UNCONST(pf));
 }
 
 /*
