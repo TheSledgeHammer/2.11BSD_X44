@@ -58,7 +58,7 @@ SRCS+=	byteorder.c
 .if (${SA_LOADER_INTERP} == "yes")
 SRCS+= interp_backslash.c interp_parse.c interp.c   # still in stand/boot/common
 SRCS+= interp_${SA_LOADER_INTERP_NAME}.c            # still in stand/boot/common
-.if (${SA_LOADER_INTERP_NAME} != "dloader")
+.if (${SA_LOADER_INTERP_NAME} == "dloader")
 # include interpreter related files if any ??
 .else
 .error Unknown interpreter ${SA_LOADER_INTERP_NAME}
