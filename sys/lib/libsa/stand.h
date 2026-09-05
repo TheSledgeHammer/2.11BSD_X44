@@ -255,6 +255,9 @@ void					pager_close(void);
 int						pager_output(const char *);
 int						pager_file(const char *);
 
+/* panic.c */
+void                    panic(const char *,...);
+
 /* strdup.c */
 extern char 			*strdup(const char *);
 
