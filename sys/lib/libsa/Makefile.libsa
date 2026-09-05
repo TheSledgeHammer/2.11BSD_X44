@@ -2,7 +2,15 @@
 
 .include <bsd.own.mk>
 
+# Temporary location (Will be defined in stand for each machine arch)
+SA_LOADER_INTERP_NAME= dloader  # Bootloader Interpreter name (Options: dloader only atm)
+SA_LOADER_INTERP= no            # Use Bootloader Interpreter (Will likely default to yes)
+SA_USE_BCACHE= no               # Machine-dependent: use bcache
+SA_USE_ISABUS= no               # Machine-dependent: use isabus plug-in play
+SA_USE_PNP= no                  # Machine-dependent: use plug-in play
+
 SAMISCMAKEFLAGS+= ${SA_INCLUDE_NET} ${SA_USE_LOADFILE} ${SA_ENABLE_BIENDIAN}
+SAMISCMAKEFLAGS+= ${SA_LOADER_INTERP} ${SA_USE_BCACHE} ${SA_USE_ISABUS} ${SA_USE_PNP}
 CPPFLAGS=	-I${SADIR} ${SACPPFLAGS} ${SAMISCCPPFLAGS} -DCOMPAT_UFS ${DEBUGCPPFLAGS}
 
 .PATH.c: 	${SADIR} \
@@ -45,6 +53,28 @@ SRCS+=	nfs.c tftp.c
 .if (${SA_ENABLE_BIENDIAN} == "yes")
 CPPFLAGS+=	-DLIBSA_BIENDIAN_SUPPORT
 SRCS+=	byteorder.c
+.endif
+
+.if (${SA_LOADER_INTERP} == "yes")
+SRCS+= interp_backslash.c interp_parse.c interp.c   # still in stand/boot/common
+SRCS+= interp_${SA_LOADER_INTERP_NAME}.c            # still in stand/boot/common
+.if (${SA_LOADER_INTERP_NAME} != "dloader")
+# include interpreter related files if any ??
+.else
+.error Unknown interpreter ${SA_LOADER_INTERP_NAME}
+.endif
+.endif
+
+.if (${SA_USE_BCACHE} == "yes")
+SRCS+= bcache.c # still in stand/boot/common
+.endif
+
+.if (${SA_USE_ISABUS} == "yes")
+SRCS+= isapnp.c # still in stand/boot/common
+.endif
+
+.if (${SA_USE_PNP} == "yes")
+SRCS+= pnp.c    # still in stand/boot/common
 .endif
 
 #.include <bsd.lib.mk>
