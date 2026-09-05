@@ -69,9 +69,7 @@ int main(int, char *[]);
 int eval = 0;
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch;
 	FILE *fp;
@@ -122,9 +120,7 @@ main(argc, argv)
 }
 
 void
-head(fp, cnt)
-	FILE *fp;
-	long cnt;
+head(FILE *fp, long cnt)
 {
 	int ch;
 
@@ -138,8 +134,7 @@ head(fp, cnt)
 }
 
 void
-obsolete(argv)
-	char *argv[];
+obsolete(char *argv[])
 {
 	char *ap;
 
@@ -158,7 +153,7 @@ obsolete(argv)
 }
 
 void
-usage()
+usage(void)
 {
 
 	(void)fprintf(stderr, "usage: %s [-n lines] [file ...]\n",
