@@ -381,10 +381,10 @@ defdev(struct devbase *dev, struct nvlist *loclist, struct nvlist *attrs,
 struct devbase *
 getdevbase(const char *name)
 {
-	u_char *p;
+	const u_char *p;
 	struct devbase *dev;
 
-	p = (u_char *)name;
+	p = (const u_char *)name;
 	if (!isalpha(*p))
 		goto badname;
 	while (*++p) {
@@ -510,10 +510,10 @@ defdevattach(struct deva *deva, struct devbase *dev, struct nvlist *atlist, stru
 struct deva *
 getdevattach(const char *name)
 {
-	u_char *p;
+	const u_char *p;
 	struct deva *deva;
 
-	p = (u_char *)name;
+	p = (const u_char *)name;
 	if (!isalpha(*p))
 		goto badname;
 	while (*++p) {
@@ -596,7 +596,7 @@ void
 setmajor(struct devbase *d, int n)
 {
 
-	if (d != &errdev && d->d_major != NODEV)
+	if (d != &errdev && d->d_major != (int)NODEV)
 		error("device `%s' is already major %d",
 		    d->d_name, d->d_major);
 	else
@@ -643,7 +643,7 @@ resolve(struct nvlist **nvp, const char *name, const char *what,
 	int unit;
 	char buf[NAMESIZE];
 
-	if ((u_int)(part -= 'a') >= maxpartitions)
+	if ((u_int)(part -= 'a') >= (u_int)maxpartitions)
 		panic("resolve");
 	if ((nv = *nvp) == NULL) {
 		dev_t	d = NODEV;
@@ -651,7 +651,7 @@ resolve(struct nvlist **nvp, const char *name, const char *what,
 		 * Apply default.  Easiest to do this by number.
 		 * Make sure to retain NODEVness, if this is dflt's disposition.
 		 */
-		if (dflt->nv_int != NODEV) {
+		if (dflt->nv_int != (int)NODEV) {
 			maj = major(dflt->nv_int);
 			min = ((minor(dflt->nv_int) / maxpartitions) *
 			    maxpartitions) + part;
@@ -661,7 +661,7 @@ resolve(struct nvlist **nvp, const char *name, const char *what,
 			cp = NULL;
 		*nvp = nv = newnv(NULL, cp, NULL, d, NULL);
 	}
-	if (nv->nv_int != NODEV) {
+	if (nv->nv_int != (int)NODEV) {
 		/*
 		 * By the numbers.  Find the appropriate major number
 		 * to make a name.
@@ -709,7 +709,7 @@ resolve(struct nvlist **nvp, const char *name, const char *what,
 		nv->nv_int = NODEV;
 		nv->nv_ifunit = unit;	/* XXX XXX XXX */
 	} else {
-		if (dev->d_major == NODEV) {
+		if (dev->d_major == (int)NODEV) {
 			error("%s: can't make %s device from `%s'",
 			    name, what, nv->nv_str);
 			return (1);
@@ -1127,7 +1127,7 @@ concat(const char *name, int c)
 	char buf[NAMESIZE];
 
 	len = strlen(name);
-	if (len + 2 > sizeof(buf)) {
+	if (len + 2 > (int)sizeof(buf)) {
 		error("device name `%s%c' too long", name, c);
 		len = sizeof(buf) - 2;
 	}
@@ -1163,7 +1163,7 @@ split(const char *name, size_t nlen, char *base, size_t bsize, int *aunit)
 	int c, l;
 
 	l = nlen;
-	if (l < 2 || l >= bsize || isdigit(*name))
+	if (l < 2 || (size_t)l >= bsize || isdigit(*name))
 		return (1);
 	c = (u_char)name[--l];
 	if (!isdigit(c)) {
@@ -1188,7 +1188,7 @@ void
 selectattr(struct attr *a)
 {
 
-	(void)ht_insert(selecttab, a->a_name, (char *)a->a_name);
+	(void)ht_insert(selecttab, a->a_name, (void *)a->a_name);
 }
 
 /*
@@ -1201,13 +1201,13 @@ selectbase(struct devbase *d, struct deva *da)
 	struct attr *a;
 	struct nvlist *nv;
 
-	(void)ht_insert(selecttab, d->d_name, (char *)d->d_name);
+	(void)ht_insert(selecttab, d->d_name, (void *)d->d_name);
 	for (nv = d->d_attrs; nv != NULL; nv = nv->nv_next) {
 		a = nv->nv_ptr;
 		expandattr(a, selectattr);
 	}
 	if (da != NULL) {
-		(void)ht_insert(selecttab, da->d_name, (char *)da->d_name);
+		(void)ht_insert(selecttab, da->d_name, (void *)da->d_name);
 		for (nv = da->d_attrs; nv != NULL; nv = nv->nv_next) {
 			a = nv->nv_ptr;
 			expandattr(a, selectattr);
