@@ -7,10 +7,12 @@ CPPFLAGS=	-I${SADIR} ${SACPPFLAGS} ${SAMISCCPPFLAGS} -DCOMPAT_UFS ${DEBUGCPPFLAG
 .PATH.c: 	${SADIR} ${.PARSEDIR}/../../../lib/libc/string
 
 # stand routines
-SRCS+=	alloc.c bcopy.c bzero.c errno.c getfile.c 			\ 
+SRCS+=	alloc.c bcopy.c bzero.c getfile.c 			\ 
 		gets.c globals.c panic.c printf.c snprintf.c 		\
 		strdup.c strspn.c strtol.c twiddle.c 			\
 		zalloc_malloc.c zalloc.c
+
+SRCS+= environment.c pager.c
 
 # io routines
 SRCS+= 	closeall.c dev.c disklabel.c ioctl.c ls.c stat.c

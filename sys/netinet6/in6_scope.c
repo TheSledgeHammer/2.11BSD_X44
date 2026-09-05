@@ -147,22 +147,32 @@ in6_addr2scopeid(ifp, addr)
 	struct ifnet *ifp;	/* must not be NULL */
 	struct in6_addr *addr;	/* must not be NULL */
 {
-	int scope = in6_addrscope(addr);
+	int scope;
+	int scopeid;
 
+	scope = in6_addrscope(addr);
 	switch (scope) {
 	case IPV6_ADDR_SCOPE_NODELOCAL:
-		return (-1);	/* XXX: is this an appropriate value? */
+		/* XXX: is this an appropriate value? */
+		scopeid = -1;
+		break;
 
 	case IPV6_ADDR_SCOPE_LINKLOCAL:
 		/* XXX: we do not distinguish between a link and an I/F. */
-		return (ifp->if_index);
+		scopeid = ifp->if_index;
+		break;
 
 	case IPV6_ADDR_SCOPE_SITELOCAL:
-		return (0);	/* XXX: invalid. */
+		/* XXX: invalid. */
+		scopeid = 0;
+		break;
 
 	default:
-		return (0);	/* XXX: treat as global. */
+		/* XXX: treat as global. */
+		scopeid = 0;
+		break;
 	}
+	return (scopeid);
 }
 
 /*

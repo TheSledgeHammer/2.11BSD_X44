@@ -62,13 +62,10 @@
  * rights to redistribute these changes.
  */
 
-#include <libsa/stand.h>
+#include <lib/libsa/stand.h>
 
 int
-read(fd, dest, bcount)
-	int fd;
-	char *dest;
-	u_int bcount;
+read(int fd, char *dest, u_int bcount)
 {
 	register struct open_file *f = &files[fd];
 	u_int resid;
@@ -88,4 +85,26 @@ read(fd, dest, bcount)
 	if (errno == (f->f_ops->read)(f, dest, bcount, &resid))
 		return (-1);
 	return (bcount - resid);
+}
+
+struct dirent *
+readdirfd(int fd)
+{
+	static struct dirent dir;		/* XXX not thread safe. eh ??? */
+	struct open_file *f = &files[fd];
+
+	if ((unsigned)fd >= SOPEN_MAX) {
+		errno = EBADF;
+		return (NULL);
+	}
+	if (f->f_flags & F_RAW) {
+		errno = EIO;
+		return (NULL);
+	}
+
+	errno = (f->f_ops->readdir)(f, &dir);
+
+	if (errno)
+		return (NULL);
+	return (&dir);
 }

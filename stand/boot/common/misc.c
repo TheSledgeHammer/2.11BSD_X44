@@ -49,21 +49,21 @@ unargv(int argc, char *argv[])
     int		i;
     char	*cp;
 
-    for (hlong = 0, i = 0, hlong = 0; i < argc; i++)
-	hlong += strlen(argv[i]) + 2;
+	for (hlong = 0, i = 0, hlong = 0; i < argc; i++)
+		hlong += strlen(argv[i]) + 2;
 
-    if(hlong == 0)
-	return(NULL);
+	if (hlong == 0)
+		return (NULL);
 
-    cp = alloc(hlong);
-    cp[0] = 0;
-    for (i = 0; i < argc; i++) {
-	strcat(cp, argv[i]);
-	if (i < (argc - 1))
-	  strcat(cp, " ");
-    }
+	cp = alloc(hlong);
+	cp[0] = 0;
+	for (i = 0; i < argc; i++) {
+		strcat(cp, argv[i]);
+		if (i < (argc - 1))
+			strcat(cp, " ");
+	}
 
-    return(cp);
+	return (cp);
 }
 
 /*
@@ -75,12 +75,12 @@ strlenout(caddr_t src)
     char	c;
     size_t	len;
 
-    for (len = 0; ; len++) {
-	archsw.arch_copyout(src++, &c, 1);
-	if (c == 0)
-	    break;
-    }
-    return(len);
+	for (len = 0;; len++) {
+		archsw.arch_copyout(src++, &c, 1);
+		if (c == 0)
+			break;
+	}
+	return (len);
 }
 
 /*
@@ -91,13 +91,13 @@ strdupout(caddr_t str)
 {
     char	*result, *cp;
 
-    result = alloc(strlenout(str) + 1);
-    for (cp = result; ;cp++) {
-	archsw.arch_copyout(str++, cp, 1);
-	if (*cp == 0)
-	    break;
-    }
-    return(result);
+	result = alloc(strlenout(str) + 1);
+	for (cp = result;; cp++) {
+		archsw.arch_copyout(str++, cp, 1);
+		if (*cp == 0)
+			break;
+	}
+	return (result);
 }
 
 /* Zero a region in kernel space. */

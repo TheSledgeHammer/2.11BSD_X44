@@ -34,15 +34,50 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-#include "stand.h"
+#include <lib/libsa/stand.h>
 
 #define TWIDDLE_CHARS	"|/-\\"
 
+/* Extra functions from NetBSD standalone printf.c */
+
+static u_int globaldiv = 16;
+
 void
-twiddle()
+twiddle(void)
 {
 	static int pos;
 
 	putchar(TWIDDLE_CHARS[pos++ & 3]);
 	putchar('\b');
+}
+
+void
+twiddle_divisor(u_int gdiv)
+{
+	globaldiv = gdiv;
+}
+
+/*
+ * Change the twiddle divisor.
+ *
+ * The user can set the twiddle_divisor variable to directly control how fast
+ * the progress twiddle spins, useful for folks with slow serial consoles.  The
+ * code to monitor changes to the variable and propagate them to the twiddle
+ * routines has to live somewhere.  Twiddling is console-related so it's here.
+ */
+int
+twiddle_set(struct env_var *ev, int flags, const void *value)
+{
+	u_long tdiv;
+	char *eptr;
+
+	tdiv = strtoul(value, &eptr, 0);
+	if (*(const char *) value == 0 || *eptr != 0) {
+		printf("invalid twiddle_divisor '%s'\n", (const char *)value);
+		return (2);
+	}
+	twiddle_divisor((u_int) tdiv);
+	env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
+
+	return (0);
 }

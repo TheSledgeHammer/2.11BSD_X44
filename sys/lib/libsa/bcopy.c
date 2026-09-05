@@ -32,6 +32,7 @@
  */
 
 #include <sys/types.h>
+
 #include "stand.h"
 
 #undef bcopy			/* in case of LIBSA_USE_MEMCPY */

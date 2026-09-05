@@ -347,6 +347,7 @@ tdb_keysetsaval(sav, satype)
 	int satype;
 {
 	int error;
+
 	switch (satype) {
 	case SADB_SATYPE_AH:
 		error = xform_init(sav, XF_AH);
@@ -360,9 +361,10 @@ tdb_keysetsaval(sav, satype)
 	default:
 		ipseclog((LOG_DEBUG, "key_setsaval: invalid SA type.\n"));
 		error = EINVAL;
+		satype = SADB_SATYPE_UNSPEC;
 		break;
 	}
-	if (error) {
+	if (error != 0 && satype != SADB_SATYPE_UNSPEC) {
 		ipseclog(
 				(LOG_DEBUG, "key_setsaval: unable to initialize SA type %u.\n", satype));
 	}

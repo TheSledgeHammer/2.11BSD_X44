@@ -42,13 +42,6 @@ static int	cons_set(struct env_var *ev, int flags, const void *value);
 static int	cons_find(const char *name);
 static int	cons_check(const char *string);
 static int	cons_change(const char *string);
-static int	twiddle_set(struct env_var *ev, int flags, const void *value);
-static void 	twiddle_divisor(u_int gdiv);
-
-
-/* Extra functions from NetBSD standalone printf.c */
-
-static u_int globaldiv = 16;
 
 /*
  * Detect possible console(s) to use.  The first probed console
@@ -274,35 +267,4 @@ cons_change(const char *string)
 	}
 
 	return (CMD_OK);
-}
-
-/*
- * Change the twiddle divisor.
- *
- * The user can set the twiddle_divisor variable to directly control how fast
- * the progress twiddle spins, useful for folks with slow serial consoles.  The
- * code to monitor changes to the variable and propagate them to the twiddle
- * routines has to live somewhere.  Twiddling is console-related so it's here.
- */
-static int
-twiddle_set(struct env_var *ev, int flags, const void *value)
-{
-    	u_long tdiv;
-    	char * eptr;
-
-	tdiv = strtoul(value, &eptr, 0);
-	if (*(const char*) value == 0 || *eptr != 0) {
-		printf("invalid twiddle_divisor '%s'\n", (const char*) value);
-		return (CMD_ERROR);
-	}
-	twiddle_divisor((u_int) tdiv);
-	env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
-
-	return (CMD_OK);
-}
-
-static void
-twiddle_divisor(u_int gdiv)
-{
-	globaldiv = gdiv;
 }

@@ -46,7 +46,6 @@
 
 #include "saioctl.h"
 #include "saerrno.h"
-#include "environment.h"
 
 #define	UNIX	"/vmunix"
 
@@ -147,8 +146,6 @@ extern struct open_file files[SOPEN_MAX];
 #define O_RDWR			0x2
 #define O_ACCMODE		0x3
 
-struct					disklabel;
-
 /* alloc.c */
 void    				*alloc(size_t);
 void    				free(void *, size_t);
@@ -165,8 +162,39 @@ int     				nodev(struct iob *);
 int    	 				noioctl(struct iob *, int, caddr_t);
 
 /* disklabel.c */
+struct disklabel;
 char    				*getdisklabel(const char *, struct disklabel *);
 u_short 				dkcksum(struct disklabel *);
+
+/* environment.c */
+#define EV_DYNAMIC		(1<<0)		/* value was dynamically allocated, free if changed/unset */
+#define EV_VOLATILE		(1<<1)		/* value is volatile, make a copy of it */
+#define EV_NOHOOK		(1<<2)		/* don't call hook when setting */
+
+struct env_var;
+typedef char *(ev_format_t)(struct env_var *);
+typedef int (ev_sethook_t)(struct env_var *, int, const void *);
+typedef int (ev_unsethook_t)(struct env_var *);
+
+struct env_var {
+    char				*ev_name;
+    int					ev_flags;
+    void				*ev_value;
+    ev_sethook_t		*ev_sethook;
+    ev_unsethook_t		*ev_unsethook;
+    struct env_var		*ev_next, *ev_prev;
+};
+
+extern struct env_var 	*environ;
+extern ev_sethook_t		env_noset;			/* refuse set operation */
+extern ev_unsethook_t 	env_nounset;		/* refuse unset operation */
+
+struct env_var 			*env_getenv(const char *);
+int 					env_setenv(const char *, int, const void *, ev_sethook_t, ev_unsethook_t);
+char 					*getenv(const char *);
+int 					setenv(const char *, const char *, int);
+int 					putenv(const char *);
+int 					unsetenv(const char *);
 
 /* getfile.c */
 int     				getfile(char *, int);
@@ -194,6 +222,7 @@ void    				kprintn(u_long, int);
 
 /* read.c */
 int     				read(int, char *, u_int);
+struct dirent 			*readdirfd(int);
 
 /* sbrk.c */
 void    				setheap(void *, void *);
@@ -209,6 +238,8 @@ int     				stat(const char *, struct stat *);
 
 /* twiddle.c */
 void    				twiddle(void);
+int						twiddle_set(struct env_var *, int, const void *);
+void 					twiddle_divisor(u_int);
 
 /* write.c */
 int     				write(int, char *, u_int);
@@ -216,16 +247,13 @@ int     				write(int, char *, u_int);
 /* getopt.c */
 extern char				*optarg;			/* getopt(3) external variables */
 extern int				optind, opterr, optopt, optreset;
-extern int				getopt(int, char * const *, const char *);
+int						getopt(int, char * const *, const char *);
 
 /* pager.c */
-extern void				pager_open(void);
-extern void				pager_close(void);
-extern int				pager_output(const char *);
-extern int				pager_file(const char *);
-
-/* readdir.c */
-extern struct dirent 	*readdirfd(int);
+void					pager_open(void);
+void					pager_close(void);
+int						pager_output(const char *);
+int						pager_file(const char *);
 
 /* strdup.c */
 extern char 			*strdup(const char *);

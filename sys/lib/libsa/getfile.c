@@ -33,7 +33,7 @@
  *	@(#)getfile.c	8.1 (Berkeley) 6/11/93
  */
 
-#include "stand.h"
+#include <lib/libsa/stand.h>
 
 #define CTRL(x) (x&037)
 

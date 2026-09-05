@@ -53,8 +53,8 @@
 #include <string.h>
 #endif
 
-#include "stand.h"
-#include "net.h"
+#include <lib/libsa/stand.h>
+#include <lib/libsa/net.h>
 
 /*
  * Ethernet Address Resolution Protocol.
