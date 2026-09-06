@@ -51,15 +51,14 @@ i386_getdev(void **vdev, const char *devspec, const char **path)
      * If it looks like this is just a path and no
      * device, go with the current device.
      */
-    if ((devspec == NULL) || 
-	(devspec[0] == '/') || 
-	(strchr(devspec, ':') == NULL)) {
+	if ((devspec == NULL) || (devspec[0] == '/')
+			|| (strchr(devspec, ':') == NULL)) {
 
-	if (((rv = i386_parsedev(dev, getenv("currdev"), NULL)) == 0) &&
-	    (path != NULL))
-		*path = devspec;
-	return(rv);
-    }
+		if (((rv = i386_parsedev(dev, getenv("currdev"), NULL)) == 0)
+				&& (path != NULL))
+			*path = devspec;
+		return (rv);
+	}
     
     /*
      * Try to parse the device name off the beginning of the devspec
@@ -196,11 +195,11 @@ fail:
 char *
 i386_fmtdev(void *vdev)
 {
-    struct i386_devdesc	*dev = (struct i386_devdesc *)vdev;
-    static char		buf[128];	/* XXX device length constant? */
-    char		*cp;
+	struct i386_devdesc *dev = (struct i386_devdesc *)vdev;
+	static char buf[128]; /* XXX device length constant? */
+	char *cp;
 
-    switch (dev->d_type) {
+	switch (dev->d_type) {
 	case DEVT_NONE:
 		strcpy(buf, "(no device)");
 		break;
@@ -234,8 +233,8 @@ i386_fmtdev(void *vdev)
 int
 i386_setcurrdev(struct env_var *ev, int flags, void *value)
 {
-    struct i386_devdesc	*ncurr;
-    int			rv;
+	struct i386_devdesc *ncurr;
+	int rv;
 
 	if ((rv = i386_parsedev(&ncurr, value, NULL)) != 0)
 		return (rv);

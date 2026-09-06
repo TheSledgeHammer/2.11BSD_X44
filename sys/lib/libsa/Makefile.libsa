@@ -18,7 +18,7 @@ CPPFLAGS=	-I${SADIR} ${SACPPFLAGS} ${SAMISCCPPFLAGS} -DCOMPAT_UFS ${DEBUGCPPFLAG
             ${.PARSEDIR}/../../../lib/libc/string
 
 # stand routines
-SRCS+=	alloc.c bcopy.c bzero.c errno.c getfile.c 		\
+SRCS+=	alloc.c bcmp.c bcopy.c bzero.c errno.c getfile.c 		\
 		gets.c globals.c panic.c printf.c snprintf.c 	\
 		strdup.c strspn.c strtol.c twiddle.c 			\
 		zalloc_malloc.c zalloc.c
@@ -33,7 +33,7 @@ SRCS+=	close.c lseek.c open.c read.c write.c
 SRCS+=	lfs.c ufs.c cd9660.c ustarfs.c dosfs.c
 
 .if (${SA_USE_LOADFILE} == "yes")
-SRCS+=	loadfile.c loadfile_ecoff.c loadfile_elf32.c loadfile_elf64.c lookup_elf32.c loadfile_xcoff32.c loadfile_xcoff64.c
+SRCS+= loadfile.c loadfile_ecoff.c loadfile_elf32.c loadfile_elf64.c lookup_elf32.c loadfile_xcoff32.c loadfile_xcoff64.c
 .if (${MACHINE_CPU} != "mips")
 SRCS+=	loadfile_aout.c
 .endif
@@ -66,7 +66,7 @@ SRCS+= interp_${SA_LOADER_INTERP_NAME}.c            # still in stand/boot/common
 .endif
 
 .if (${SA_USE_BCACHE} == "yes")
-SRCS+= bcache.c # still in stand/boot/common
+SRCS+= bcache.c
 .endif
 
 .if (${SA_USE_ISABUS} == "yes")

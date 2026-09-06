@@ -1,7 +1,6 @@
-/*	$NetBSD: readdir.c,v 1.4 2012/12/27 20:21:51 martin Exp $	*/
-
 /*-
- * Copyright (c) 1999,2000 Jonathan Lemon <jlemon@freebsd.org>
+ * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
+ * Copyright 2015 Toomas Soome <tsoome@me.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,34 +25,23 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#ifndef _LIBSA_BCACHE_H_
+#define _LIBSA_BCACHE_H_
 
-#include <sys/param.h>
-#include <sys/dirent.h>
+/*
+ * Disk block cache
+ */
+struct bcache_devdata {
+    int     (*dv_strategy)(void *, int, daddr_t, size_t, char *, size_t *);
+    void	*dv_devdata;
+    void	*dv_cache;
+};
 
-#include <lib/libsa/stand.h>
-#include <lib/libsa/loadfile.h>
-
-#include <bootstrap.h>
-
-struct dirent *
-readdirfd(int fd)
-{
-	static struct dirent dir;		/* XXX not thread safe. eh ??? */
-	struct open_file *f = &files[fd];
-
-	if ((unsigned)fd >= SOPEN_MAX) {
-		errno = EBADF;
-		return (NULL);
-	}
-	if (f->f_flags & F_RAW) {
-		errno = EIO;
-		return (NULL);
-	}
-
-	errno = (f->f_ops->readdir)(f, &dir);
-
-	if (errno)
-		return (NULL);
-	return (&dir);
-}
+/* bcache.c */
+void	bcache_init(size_t nblks, size_t bsize);
+void	bcache_add_dev(int);
+void	*bcache_allocate(void);
+void	bcache_free(void *);
+int		bcache_strategy(void *, int, daddr_t, size_t, char *, size_t *);
+void	bcache_stats(void);
+#endif /* _LIBSA_BCACHE_H_ */

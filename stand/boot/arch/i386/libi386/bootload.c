@@ -51,10 +51,10 @@
 static int
 bi_checkcpu(void)
 {
-	char 			*cpu_vendor;
-	int 			vendor[3];
-	int 			eflags;
-	unsigned int 	regs[4];
+	char *cpu_vendor;
+	int vendor[3];
+	int eflags;
+	unsigned int regs[4];
 
 	/* Check for presence of "cpuid". */
 	eflags = read_eflags();
@@ -67,7 +67,7 @@ bi_checkcpu(void)
 	vendor[0] = regs[1];
 	vendor[1] = regs[3];
 	vendor[2] = regs[2];
-	cpu_vendor = (char*) vendor;
+	cpu_vendor = (char *)vendor;
 
 	/* Check for vendors that support AMD features. */
 	if (strncmp(cpu_vendor, INTEL_VENDOR_ID, 12) != 0

@@ -264,6 +264,7 @@ void	delay(int delay);
 void	dev_cleanup(void);
 time_t	time(time_t *tloc);
 
+/* kerneltype names */
 #define AOUT_KERNELTYPE 	"aout kernel"
 #define ECOFF_KERNELTYPE 	"ecoff kernel"
 #define ELF32_KERNELTYPE 	"elf32 kernel"
@@ -271,12 +272,21 @@ time_t	time(time_t *tloc);
 #define XCOFF32_KERNELTYPE 	"xcoff32 kernel"
 #define XCOFF64_KERNELTYPE 	"xcoff64 kernel"
 
-int	aout_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
-int	ecoff_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
-int	elf32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
-int	elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
-int	xcoff32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
-int	xcoff64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+static const char *kerneltype[] = {
+		AOUT_KERNELTYPE,
+		ECOFF_KERNELTYPE,
+		ELF32_KERNELTYPE,
+		ELF64_KERNELTYPE,
+		XCOFF32_KERNELTYPE,
+		XCOFF64_KERNELTYPE
+};
+
+int	aout_loadfile(char *, u_int64_t, struct preloaded_file **);
+int	ecoff_loadfile(char *, u_int64_t, struct preloaded_file **);
+int	elf32_loadfile(char *, u_int64_t, struct preloaded_file **);
+int	elf64_loadfile(char *, u_int64_t, struct preloaded_file **);
+int	xcoff32_loadfile(char *, u_int64_t, struct preloaded_file **);
+int	xcoff64_loadfile(char *, u_int64_t, struct preloaded_file **);
 
 /* ksyms.c: elf objects */
 void 	ksyms_addr_set(void *ehdr, void *shdr, void *symbase);

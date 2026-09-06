@@ -30,7 +30,7 @@
 #include <dev/core/pci/pcireg.h>
 
 #include <lib/libsa/stand.h>
-#include <dev/core/ic/comreg.h>
+#include <dev/core/io/com/comreg.h>
 #include "bootstrap.h"
 #include "libi386.h"
 

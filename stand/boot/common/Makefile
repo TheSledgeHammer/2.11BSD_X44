@@ -4,11 +4,10 @@
 
 INCSDIR=    /usr/include/mdec
 
-SRCS+=		boot.c commands.c console.c devopen.c environment.c 	\
-			fileload.c getopt.c install.c interp_backslash.c 		\
-			interp_parse.c interp.c load_exec.c load_ksyms.c ls.c 	\
-			misc.c pager.c panic.c readdir.c smbios.c ufsread.c		\
-			uuid_from_string.c uuid_to_string.c 
+SRCS+=		boot.c commands.c console.c devopen.c fileload.c install.c \
+			interp_backslash.c interp_parse.c interp.c load_exec.c \
+			load_ksyms.c ls.c misc.c smbios.c ufsread.c uuid_from_string.c \
+			uuid_to_string.c 
 			
 .if ${LOADER_INTERP} == "dloader"
 SRCS+=	interp_dloader.c

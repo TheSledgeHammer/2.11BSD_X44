@@ -104,9 +104,6 @@
 
 #include <machine/bootinfo.h>
 
-int			preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp);
-void 		ksyms_addr_set(void *ehdr, void *shdr, void *symbase);
-
 void
 ksyms_addr_set(void *ehdr, void *shdr, void *symbase)
 {
@@ -116,15 +113,15 @@ ksyms_addr_set(void *ehdr, void *shdr, void *symbase)
 	uint64_t shnum;
 	int i;
 
-	class = ((Elf_Ehdr*) ehdr)->e_ident[EI_CLASS];
+	class = ((Elf_Ehdr *)ehdr)->e_ident[EI_CLASS];
 
 	switch (class) {
 	case ELFCLASS32:
-		ehdr32 = (Elf32_Ehdr*) ehdr;
+		ehdr32 = (Elf32_Ehdr *)ehdr;
 		shnum = ehdr32->e_shnum;
 		break;
 	case ELFCLASS64:
-		ehdr64 = (Elf64_Ehdr*) ehdr;
+		ehdr64 = (Elf64_Ehdr *)ehdr;
 		shnum = ehdr64->e_shnum;
 		break;
 	default:
@@ -139,14 +136,14 @@ ksyms_addr_set(void *ehdr, void *shdr, void *symbase)
 
 		switch (class) {
 		case ELFCLASS64:
-			shdrp64 = &((Elf64_Shdr*) shdr)[i];
+			shdrp64 = &((Elf64_Shdr *)shdr)[i];
 			shtype = shdrp64->sh_type;
 			shaddr = shdrp64->sh_addr;
 			shsize = shdrp64->sh_size;
 			shoffset = shdrp64->sh_offset;
 			break;
 		case ELFCLASS32:
-			shdrp32 = &((Elf32_Shdr*) shdr)[i];
+			shdrp32 = &((Elf32_Shdr *)shdr)[i];
 			shtype = shdrp32->sh_type;
 			shaddr = shdrp32->sh_addr;
 			shsize = shdrp32->sh_size;
@@ -163,7 +160,7 @@ ksyms_addr_set(void *ehdr, void *shdr, void *symbase)
 		if (shaddr != 0 || shsize == 0)
 			continue;
 
-		shaddr = (uint64_t) (uintptr_t) (symbase + shoffset);
+		shaddr = (uint64_t)(uintptr_t)(symbase + shoffset);
 
 		switch (class) {
 		case ELFCLASS64:
@@ -195,7 +192,7 @@ preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
 		size_t shlen;
 		u_long shaddr;
 
-		bcopy((void*) fp->f_marks[MARK_SYM], &ehdr, sizeof(ehdr));
+		bcopy((void *)fp->f_marks[MARK_SYM], &ehdr, sizeof(ehdr));
 
 		if (memcmp(&ehdr.e_ident, ELFMAG, SELFMAG) != 0)
 			goto skip_ksyms;
@@ -205,9 +202,9 @@ preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
 		shlen = ehdr.e_shnum * ehdr.e_shentsize;
 		shbuf = alloc(shlen);
 
-		bcopy((void*) shaddr, shbuf, shlen);
-		ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + fp->f_marks[MARK_SYM]));
-		bcopy(shbuf, (void*) shaddr, shlen);
+		bcopy((void *)shaddr, shbuf, shlen);
+		ksyms_addr_set(&ehdr, shbuf, (void *)(KERNBASE + fp->f_marks[MARK_SYM]));
+		bcopy(shbuf, (void *)shaddr, shlen);
 
 		free(shbuf, shlen);
 

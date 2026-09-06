@@ -1,7 +1,7 @@
-/*	$NetBSD: twiddle.c,v 1.5 2003/08/07 16:32:31 agc Exp $	*/
+/*	$NetBSD: bcmp.c,v 1.1 1999/04/01 05:12:20 simonb Exp $	*/
 
-/*-
- * Copyright (c) 1993
+/*
+ * Copyright (c) 1987, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,7 +12,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -27,56 +31,29 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)printf.c	8.1 (Berkeley) 6/11/93
  */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
 
-#include <lib/libsa/stand.h>
+#include "stand.h"
 
-#define TWIDDLE_CHARS	"|/-\\"
-
-/* Extra functions from NetBSD standalone printf.c */
-
-static u_int globaldiv = 16;
-
-void
-twiddle(void)
-{
-	static int pos;
-
-	putchar(TWIDDLE_CHARS[pos++ & 3]);
-	putchar('\b');
-}
-
-void
-twiddle_divisor(u_int gdiv)
-{
-	globaldiv = gdiv;
-}
+#undef bcmp			/* in case of LIBSA_USE_MEMCMP */
 
 /*
- * Change the twiddle divisor.
- *
- * The user can set the twiddle_divisor variable to directly control how fast
- * the progress twiddle spins, useful for folks with slow serial consoles.  The
- * code to monitor changes to the variable and propagate them to the twiddle
- * routines has to live somewhere.  Twiddling is console-related so it's here.
+ * bcmp -- vax cmpc3 instruction
  */
 int
-twiddle_set(struct env_var *ev, int flags, const void *value)
+bcmp(b1, b2, length)
+	const void *b1, *b2;
+	size_t length;
 {
-	u_long tdiv;
-	char *eptr;
+	const char *p1 = b1, *p2 = b2;
 
-	tdiv = strtoul(value, &eptr, 0);
-	if (*(const char *) value == 0 || *eptr != 0) {
-		printf("invalid twiddle_divisor '%s'\n", (const char *)value);
-		return (2);
-	}
-	twiddle_divisor((u_int) tdiv);
-	env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
-	return (0);
+	if (length == 0)
+		return (0);
+	do {
+		if (*p1++ != *p2++)
+			break;
+	} while (--length);
+	return (length);
 }

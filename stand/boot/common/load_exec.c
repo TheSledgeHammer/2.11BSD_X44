@@ -40,6 +40,9 @@
 
 #include <machine/loadfile_machdep.h>
 
+static int exec_loadfile(const char *, const char *, u_long, struct preloaded_file **);
+static int loadfile_header(const char *, const char *);
+
 /*
  * Attempts to load the file (file) as an module defined by the parameter 'kerneltype'.
  * Kernel types include aout, ecoff, elf32, elf64, xcoff32 & xcoff64.
@@ -47,17 +50,17 @@
  * will be saved in (result).
  * The functions for the different files it can load as a module are below.
  */
-int
-exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_file **result)
+static int
+exec_loadfile(const char *filename, const char *kerneltype, u_long dest, struct preloaded_file **result)
 {
-    	struct preloaded_file	*fp;
-    	u_long                  *marks;
-    	int			err;
-    	u_int			pad;
-    	ssize_t			bytes_read;
-    	int                     fd;
+	struct preloaded_file *fp;
+	u_long *marks;
+	int err;
+	u_int pad;
+	ssize_t bytes_read;
+	int fd;
 
-	err = loadfile_header(kerneltype, filename);
+	err = loadfile_header(filename, kerneltype);
 	if (err != 0)
 		goto out;
 
@@ -66,8 +69,8 @@ exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_fi
 	fp->f_type = strdup(kerneltype);
 
 	marks[MARK_START] = dest;
-
-	if ((fd = loadfile(filename, marks, LOAD_KERNEL)) == -1) {
+	fd = loadfile(filename, marks, LOAD_KERNEL);
+	if (fd == -1) {
 		err = EPERM;
 		goto oerr;
 	}
@@ -75,7 +78,7 @@ exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_fi
 
 	dest = marks[MARK_ENTRY];
 
-	printf("%s entry at 0x%lx\n", filename, (uintmax_t) dest);
+	printf("%s entry at 0x%lx\n", filename, (uintmax_t)dest);
 
 	fp->f_size = marks[MARK_END] - marks[MARK_START];
 	fp->f_addr = marks[MARK_START];
@@ -91,81 +94,81 @@ exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_fi
 ioerr:
 	err = EIO;
 oerr:
-    	file_discard(fp);
+	file_discard(fp);
 out:
-	return(err);
+	return (err);
 }
 
-int
-loadfile_header(char *kerneltype, char *filename)
+static int
+loadfile_header(const char *filename, const char *kerneltype)
 {
-	struct preloaded_file	*fp;
-	int						err;
+	struct preloaded_file *fp;
+	int err;
 
-    	/*
-     	* Open the image, read and validate header
-     	*/
-	 if (filename == NULL) {	/* can't handle nameless */
-		 return(EFTYPE);
-	 }
+	/*
+	 * Open the image, read and validate header
+	 */
+	if (filename == NULL || kerneltype == NULL) { /* can't handle nameless */
+		return (EFTYPE);
+	}
 
-	 fp = file_alloc();
-	 if (fp == NULL) {
+	fp = file_alloc();
+	if (fp == NULL) {
 #ifdef BOOT_AOUT
-	    printf("aout_loadfile: cannot allocate module info\n");
+		printf("aout_loadfile: cannot allocate info\n");
 #endif
 #ifdef BOOT_ECOFF
-	    printf("ecoff_loadfile: cannot allocate module info\n");
+		printf("ecoff_loadfile: cannot allocate info\n");
 #endif
 #ifdef BOOT_ELF32
-	    printf("elf32_loadfile: cannot allocate module info\n");
+		printf("elf32_loadfile: cannot allocate info\n");
 #endif
 #ifdef BOOT_ELF64
-	    printf("elf64_loadfile: cannot allocate module info\n");
+		printf("elf64_loadfile: cannot allocate info\n");
 #endif
 #ifdef BOOT_XCOFF32
-	    printf("xcoff32_loadfile: cannot allocate module info\n");
+		printf("xcoff32_loadfile: cannot allocate info\n");
 #endif
 #ifdef BOOT_XCOFF64
-	    printf("xcoff64_loadfile: cannot allocate module info\n");
+		printf("xcoff64_loadfile: cannot allocate info\n");
 #endif
-		 err = EPERM;
-	 }
-	 return (err);
+		err = EPERM;
+	}
+	return (err);
 }
 
 int
 aout_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
-	return (exec_loadfile(AOUT_KERNELTYPE, filename, dest, result));
+	return (exec_loadfile(filename, AOUT_KERNELTYPE, dest, result));
 }
 
 int
 ecoff_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
-	return (exec_loadfile(ECOFF_KERNELTYPE, filename, dest, result));
+	return (exec_loadfile(filename, ECOFF_KERNELTYPE, dest, result));
 }
 
 int
 elf32_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
-	return (exec_loadfile(ELF32_KERNELTYPE, filename, dest, result));
+	return (exec_loadfile(filename, ELF32_KERNELTYPE, dest, result));
 }
 
 int
 elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
 {
-	return (exec_loadfile(ELF64_KERNELTYPE, filename, dest, result));
+	return (exec_loadfile(filename, ELF64_KERNELTYPE, dest, result));
 }
 
 int
 xcoff32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
 {
-	return (exec_loadfile(XCOFF32_KERNELTYPE, filename, dest, result));
+	return (exec_loadfile(filename, XCOFF32_KERNELTYPE, dest, result));
 }
 
 int
 xcoff64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
 {
-	return (exec_loadfile(XCOFF64_KERNELTYPE, filename, dest, result));
+	return (exec_loadfile(filename, XCOFF64_KERNELTYPE, dest, result));
 }

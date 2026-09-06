@@ -1,4 +1,4 @@
-/*	$NetBSD: twiddle.c,v 1.5 2003/08/07 16:32:31 agc Exp $	*/
+/*	$NetBSD: errno.c,v 1.3 2005/12/11 12:24:46 christos Exp $	*/
 
 /*-
  * Copyright (c) 1993
@@ -28,55 +28,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)printf.c	8.1 (Berkeley) 6/11/93
+ *	@(#)dev.c	8.1 (Berkeley) 6/11/93
  */
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
+#include "stand.h"
 
-#include <lib/libsa/stand.h>
-
-#define TWIDDLE_CHARS	"|/-\\"
-
-/* Extra functions from NetBSD standalone printf.c */
-
-static u_int globaldiv = 16;
-
-void
-twiddle(void)
-{
-	static int pos;
-
-	putchar(TWIDDLE_CHARS[pos++ & 3]);
-	putchar('\b');
-}
-
-void
-twiddle_divisor(u_int gdiv)
-{
-	globaldiv = gdiv;
-}
-
-/*
- * Change the twiddle divisor.
- *
- * The user can set the twiddle_divisor variable to directly control how fast
- * the progress twiddle spins, useful for folks with slow serial consoles.  The
- * code to monitor changes to the variable and propagate them to the twiddle
- * routines has to live somewhere.  Twiddling is console-related so it's here.
- */
-int
-twiddle_set(struct env_var *ev, int flags, const void *value)
-{
-	u_long tdiv;
-	char *eptr;
-
-	tdiv = strtoul(value, &eptr, 0);
-	if (*(const char *) value == 0 || *eptr != 0) {
-		printf("invalid twiddle_divisor '%s'\n", (const char *)value);
-		return (2);
-	}
-	twiddle_divisor((u_int) tdiv);
-	env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
-	return (0);
-}
+int errno;

@@ -95,7 +95,7 @@ struct devsw {
 	int					(*dv_open)(struct open_file *, ...);
 	int					(*dv_close)(struct open_file *);
 	int					(*dv_ioctl)(struct open_file *, int, void *);
-    int					(*dv_print)(int);			/* print device information */
+    int					(*dv_print)(int);					/* print device information */
 	void				(*dv_cleanup)(void);
 };
 #define DEVT_NONE		0
@@ -151,6 +151,12 @@ void    				*alloc(size_t);
 void    				free(void *, size_t);
 void    				*calloc(size_t, size_t);
 
+/* bcmp.c */
+int 					bcmp(const void *, const void *, size_t);
+
+/* bcopy.c */
+void					bcopy(const void *, void *, size_t);
+
 /* bzero.c */
 void    				bzero(void *, size_t);
 
@@ -182,7 +188,8 @@ struct env_var {
     void				*ev_value;
     ev_sethook_t		*ev_sethook;
     ev_unsethook_t		*ev_unsethook;
-    struct env_var		*ev_next, *ev_prev;
+    struct env_var		*ev_next;
+    struct env_var		*ev_prev;
 };
 
 extern struct env_var 	*environ;
@@ -259,12 +266,12 @@ int						pager_file(const char *);
 void                    panic(const char *,...);
 
 /* strdup.c */
-extern char 			*strdup(const char *);
+char 					*strdup(const char *);
 
 /* strspn.c */
-extern size_t 			strspn(const char *, const char *);
+size_t 					strspn(const char *, const char *);
 
 /* strtol.c */
-extern long				strtol(const char *, char **, int);
+long					strtol(const char *, char **, int);
 
 #endif	/* _LIBSA_STAND_H */

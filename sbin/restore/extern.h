@@ -35,7 +35,7 @@ struct entry	*addentry(const char *, ino_t, int);
 long		 addfile(const char *, ino_t, int);
 int		 addwhiteout(char *);
 void		 badentry(struct entry *, const char *);
-void	 	 canon(char *, char *);
+void	 	 canon(const char *, char *);
 void		 checkrestore(void);
 void 		 cleanup(void);
 void		 closemt(void);
