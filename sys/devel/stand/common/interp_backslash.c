@@ -19,10 +19,9 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/interp_backslash.c,v 1.6 2003/08/25 23:30:41 obrien Exp $"); */
 
-#include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <lib/libsa/stand.h>
-#include "bootstrap.h"
+#include "interp.h"
 
 #define DIGIT(x) (isdigit(x) ? (x) - '0' : islower(x) ? (x) + 10 - 'a' : (x) + 10 - 'A')
 
@@ -33,7 +32,7 @@
 char *
 backslash(char *str)
 {
-	/*
+    /*
 	 * Remove backslashes from the strings. Turn \040 etc. into a single
 	 * character (we allow eight bit values). Currently NUL is not
 	 * allowed.
@@ -46,7 +45,7 @@ backslash(char *str)
 	int i = 0;
 
 	if ((new_str = strdup(str)) == NULL)
-		return (NULL);
+		return NULL;
 
 	while (*str) {
 		if (seenbs) {

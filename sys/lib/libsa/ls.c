@@ -53,7 +53,8 @@ main()
 	int fd;
 
 	for (;;) {
-		if ((fd = getfile("ls", 0)) == -1)
+		fd = getfile("ls", 0);
+		if (fd == -1)
 			exit();
 		ip = &iob[fd - 3].i_ino;
 		if ((ip->di_mode & IFMT) != IFDIR) {
@@ -71,9 +72,7 @@ main()
 #define CTRL(x)	(x&037)
 
 int
-getfile(prompt, mode)
-	char *prompt;
-	int mode;
+getfile(char *prompt, int mode)
 {
 	int fd;
 	char buf[100];
@@ -90,15 +89,14 @@ getfile(prompt, mode)
 typedef struct direct	DP;
 
 static void
-ls(fd)
-	register int fd;
+ls(int fd)
 {
 	register int size;
 	register char *dp;
 	char dirbuf[DIRBLKSIZ];
 
 	printf("\ninode\tname\n");
-	while ((size = read(fd, dirbuf, DIRBLKSIZ)) == DIRBLKSIZ)
+	while ((size = read(fd, dirbuf, DIRBLKSIZ)) == DIRBLKSIZ) {
 		for (dp = dirbuf; (dp < (dirbuf + size)) &&
 		    (dp + ((DP *)dp)->d_reclen) < (dirbuf + size);
 		    dp += ((DP *)dp)->d_reclen) {
@@ -111,4 +109,5 @@ ls(fd)
 			printf("%d\t%s\n", ((DP *)dp)->d_ino,
 			    ((DP *)dp)->d_name);
 		}
+	}
 }

@@ -154,7 +154,7 @@ extern char bootprog_info[];
  */
 extern const char bootprog_interp[];
 #define	INTERP_DEFINE(interpstr) \
-const char bootprog_interp[] = "$Interpreter:" interpstr
+	const char bootprog_interp[] = "$Interpreter:" interpstr
 
 /*
  * Preloaded file metadata header.

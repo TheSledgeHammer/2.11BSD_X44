@@ -1,0 +1,12 @@
+# $FreeBSD$
+
+.include <bsd.own.mk>
+
+INTERP_CONF= loader.conf
+INTERP_MENU= dloader.menu
+
+SRCS+=	subs.c dcommands.c dlogo.c logo_beastie.c logo_fred.c
+
+FILES+=  ${INTERP_MENU} ${INTERP_CONF}
+
+.include <bsd.kinc.mk>

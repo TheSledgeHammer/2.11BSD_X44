@@ -44,11 +44,10 @@ extern char	command_errbuf[COMMAND_ERRBUFSZ];
 #define CMD_CRIT	3
 #define CMD_FATAL	4
 
-typedef int	(bootblk_cmd_t)(int argc, char *argv[]);
-
 /*
  * Support for commands
  */
+typedef int	(bootblk_cmd_t)(int argc, char *argv[]);
 struct bootblk_command {
     const char			*c_name;
     const char			*c_desc;
