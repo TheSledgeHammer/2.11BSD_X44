@@ -294,6 +294,7 @@ main(void)
 void
 exit(int x)
 {
+
 }
 
 static void

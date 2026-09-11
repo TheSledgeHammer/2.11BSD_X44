@@ -77,9 +77,7 @@ struct fs_ops file_system[] = {
 struct open_file files[SOPEN_MAX];
 
 int
-open(fname, mode)
-	char *fname;
-	int mode;
+open(char *fname, int mode)
 {
 	register struct open_file *f;
 	register int fd, i, error;

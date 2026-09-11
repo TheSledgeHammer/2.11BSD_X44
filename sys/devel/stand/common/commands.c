@@ -457,12 +457,90 @@ command_lsdev(int argc, char *argv[])
 
 	for (i = 0; i < ndevs; i++) {
 		snprintf(line, sizeof(line), "%s\n", devsw[i].dv_name);
-		if (pager_output(line))
+		if (pager_output(line)) {
 			break;
+		}
 	}
-
 	pager_close();
 	return (CMD_OK);
+}
+
+static char typestr[] = "?fc?d?b? ?l?s?w";
+
+int
+command_ls(int argc, char *argv[])
+{
+	struct stat sb;
+	struct dirent *d;
+	char *buf, *path;
+	char lbuf[128]; /* one line */
+	int result, ch;
+	int verbose, fd;
+
+	result = CMD_OK;
+	fd = -1;
+	verbose = 0;
+	optind = 1;
+	optreset = 1;
+	while ((ch = getopt(argc, argv, "l")) != -1) {
+		switch (ch) {
+		case 'l':
+			verbose = 1;
+			break;
+		case '?':
+		default:
+			/* getopt has already reported an error */
+			return (CMD_OK);
+		}
+	}
+	argv += (optind - 1);
+	argc -= (optind - 1);
+
+	if (argc < 2) {
+		path = "";
+	} else {
+		path = argv[1];
+	}
+
+	lsfd(&fd, path);
+	if (fd == -1) {
+		result = CMD_ERROR;
+		goto out;
+	}
+
+	pager_open();
+	pager_output(path);
+	pager_output("\n");
+
+	while ((d = readdirfd(fd)) != NULL) {
+		/*	if (strcmp(d->d_name, ".") && strcmp(d->d_name, "..")) { */
+		if (verbose) {
+			size_t buflen;
+			/* stat the file, if possible */
+			sb.st_size = 0;
+			buflen = strlen(path) + strlen(d->d_name) + 2;
+			buf = alloc(buflen);
+			snprintf(buf, buflen, "%s/%s", path, d->d_name);
+			/* ignore return, could be symlink, etc. */
+			if (stat(buf, &sb))
+				sb.st_size = 0;
+			free(buf);
+			snprintf(lbuf, sizeof(lbuf), " %c %8d %s\n", typestr[d->d_type],
+					(int) sb.st_size, d->d_name);
+		} else {
+			snprintf(lbuf, sizeof(lbuf), " %c  %s\n", typestr[d->d_type],
+					d->d_name);
+		}
+		if (pager_output(lbuf))
+			goto out;
+		/*	} */
+	}
+out:
+	pager_close();
+	if (path != NULL) {
+		free(path);
+	}
+	return (result);
 }
 
 static int

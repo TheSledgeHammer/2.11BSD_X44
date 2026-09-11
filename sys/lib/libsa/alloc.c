@@ -80,8 +80,7 @@ extern char end[];
 static char *top = end;
 
 void *
-alloc(size)
-	size_t size;
+alloc(size_t size)
 {
 	register struct fl *f = freelist, **prev;
 
@@ -93,15 +92,14 @@ alloc(size)
 	if (f == (struct fl *)0) {
 		f = (struct fl *)top;
 		top += (size + 3) & ~3;
-	} else
+	} else {
 		*prev = f->next;
+	}
 	return ((void *)f);
 }
 
 void
-free(ptr, size)
-	void *ptr;
-	size_t size;
+free(void *ptr, size_t size)
 {
 	register struct fl *f = (struct fl *)ptr;
 
@@ -111,13 +109,13 @@ free(ptr, size)
 }
 
 void *
-calloc(size1, size2)
-	size_t size1, size2;
+calloc(size_t size1, size_t size2)
 {
 	size_t total_size = size1 * size2;
 	void *ptr;
 
-	if(( (ptr = alloc(total_size)) != NULL)) {
+	ptr = alloc(total_size);
+	if (ptr != NULL) {
 		memset(ptr, 0, total_size);
 	}
 

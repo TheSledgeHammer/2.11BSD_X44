@@ -90,13 +90,13 @@ bi_checkcpu(void)
 int
 bi_load_stage0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 {
-	char 					*rootdevname;
-	struct i386_devdesc 	*rootdev;
-	struct preloaded_file 	*xp;
-	caddr_t 				addr, bootinfo_addr;
-	char 					*kernelname;
-	caddr_t 				ssym, esym, nsym;
-	int 					bootdevnr;
+	char *rootdevname;
+	struct i386_devdesc *rootdev;
+	struct preloaded_file *xp;
+	caddr_t addr, bootinfo_addr;
+	char *kernelname;
+	caddr_t ssym, esym, nsym;
+	int bootdevnr;
 
 	/* Check long mode support */
 	if (!bi_checkcpu()) {
@@ -202,9 +202,9 @@ bi_load_stage1(struct bootinfo bi, struct preloaded_file *fp, char *args, vm_off
 void
 bi_load_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
 {
-	int						bootdevnr, i, howto;
-    char					*kernelname;
-    const char				*kernelpath;
+	int bootdevnr, i, howto;
+	char *kernelname;
+	const char *kernelpath;
 
 	/* legacy bootinfo structure */
 	kernelname = getenv("kernelname");

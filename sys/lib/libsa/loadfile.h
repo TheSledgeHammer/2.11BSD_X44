@@ -44,10 +44,11 @@
  */
 #define MARK_START	0
 #define MARK_ENTRY	1
-#define	MARK_NSYM	2
-#define MARK_SYM	3
-#define	MARK_END	4
-#define	MARK_MAX	5
+#define MARK_DATA	2
+#define	MARK_NSYM	3
+#define MARK_SYM	4
+#define	MARK_END	5
+#define	MARK_MAX	6
 
 /*
  * Bit flags for sections to load
@@ -58,7 +59,11 @@
 #define	LOAD_BSS	0x0008
 #define	LOAD_SYM	0x0010
 #define	LOAD_HDR	0x0020
+#define LOAD_NOTE	0x0040
 #define LOAD_ALL	0x003f
+#define LOAD_MINIMAL	0x002f
+#define LOAD_BACKWARDS	0x0050
+#define LOAD_DYN	0x4000
 
 #define	COUNT_TEXT	0x0100
 #define	COUNT_TEXTA	0x0200

@@ -215,7 +215,9 @@ int						fgetstr(char *, int, int );
 int     				ioctl(int, int, char *);
 
 /* ls.c */
-void    				ls(int);
+void    				lsfd(int *, const char *);
+void    				ls(const char *);
+
 
 /* lseek.c */
 off_t   				lseek(int, off_t, int);

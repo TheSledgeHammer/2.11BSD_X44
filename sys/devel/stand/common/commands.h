@@ -115,7 +115,7 @@ int command_biosmem(int, char **);
 	{ "read", "read input from the terminal", command_read }, \
 	{ "more", "show contents of a file", command_more }, \
 	{ "lsdev", "list all devices", command_lsdev },	\
-	{ "bcachestat", "get disk block cache stats", command_bcache },
+	{ "bcachestat", "get disk block cache stats", command_bcache }, \
 	{ "boot", "boot a file or loaded kernel", command_boot }, \
 	{ "autoboot", "boot automatically after a delay", command_autoboot}, \
 	{ "load", "load a kernel", command_load }, \
@@ -125,7 +125,7 @@ int command_biosmem(int, char **);
 	{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
 	{ "ls", "list files", command_ls }, \
 	{ "install",  "install software package", command_install },
-#else
+#else /* !USE_BCACHE */
 #define COMMON_COMMANDS \
 	{ "help", "detailed help", command_help }, \
 	{ "commandlist", "list commands", command_commandlist }, \
@@ -145,5 +145,5 @@ int command_biosmem(int, char **);
 	{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
 	{ "ls", "list files", command_ls }, \
 	{ "install",  "install software package", command_install },
-#endif
+#endif /* !USE_BCACHE */
 #endif /* _COMMANDS_H_ */

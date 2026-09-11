@@ -39,16 +39,20 @@
 #include <lib/libsa/stand.h>
 
 #include "bootstrap.h"
-/*
-static int	file_load(char *filename, vaddr_t dest, struct preloaded_file **result);
-static int	file_havepath(const char *name);
-static void file_insert_tail(struct preloaded_file *mp);
+
+
+static int	file_load(const char *, vaddr_t, struct preloaded_file **);
+static int	file_havepath(const char *);
+static void file_insert_tail(struct preloaded_file *);
 static void	file_remove(struct preloaded_file *fp);
-static char *file_lookup(const char *path, const char *name, int namelen, char **extlist);
-*/
+static void	file_remove_tail(struct preloaded_file *fp);
+static char *file_lookup(const char *, const char *, int, char **);
+static char *file_search(const char *, const char *, char **);
 
 /* load address should be tweaked by first module loaded (kernel) */
-static vaddr_t	loadaddr = 0;
+static vaddr_t loadaddr = 0;
+
+static const char *default_searchpath = "/boot/kernel;";
 
 struct preloaded_file *preloaded_files = NULL;
 
@@ -100,7 +104,6 @@ command_load(int argc, char *argv[])
 	return CMD_OK;
 }
 
-
 int
 command_unload(int argc, char *argv[])
 {
@@ -116,13 +119,12 @@ command_unload(int argc, char *argv[])
     return(CMD_OK);
 }
 
-
 int
 command_lskern(int argc, char *argv[])
 {
-    struct preloaded_file	*fp;
-    char					lbuf[80];
-    int						ch, verbose;
+	struct preloaded_file *fp;
+	char lbuf[80];
+	int ch, verbose;
 
     verbose = 0;
     optind = 1;
@@ -140,7 +142,7 @@ command_lskern(int argc, char *argv[])
     	}
     }
     pager_close();
-    return(CMD_OK);
+    return (CMD_OK);
 }
 
 /*
@@ -179,36 +181,36 @@ file_load(char *filename, vaddr_t dest, struct preloaded_file **result)
 int
 file_loadkernel(char *filename, int argc, char *argv[])
 {
-    struct preloaded_file	*fp, *last_file;
-    int						err;
+	struct preloaded_file *fp, *last_file;
+	int err;
 
-    /*
-     * Check if KLD already loaded
-     */
-    fp = file_findfile(filename, NULL);
-    if (fp) {
-    	command_seterr("warning: KLD '%s' already loaded", filename);
-    	free(filename);
-    	return (0);
-    }
-    for (last_file = preloaded_files;
-    		last_file != NULL && last_file->f_next != NULL;
-    		last_file = last_file->f_next)
-    	;
-    do {
-    	err = file_load(filename, loadaddr, &fp);
-    	if (err)
-    		break;
-    	fp->f_args = unargv(argc, argv);
-    	loadaddr = fp->f_addr + fp->f_size;
-    	file_insert_tail(fp);		/* Add to the list of loaded files */
-    } while(0);
-    if (err == EFTYPE)
-    	command_seterr("don't know how to load module '%s'", filename);
-    if (err && fp)
-    	file_discard(fp);
-    	free(filename);
-    return (err);
+	/*
+	 * Check if KLD already loaded
+	 */
+	fp = file_findfile(filename, NULL);
+	if (fp) {
+		command_seterr("warning: KLD '%s' already loaded", filename);
+		free(filename);
+		return (0);
+	}
+	for (last_file = preloaded_files;
+			last_file != NULL && last_file->f_next != NULL; last_file =
+					last_file->f_next)
+		;
+	do {
+		err = file_load(filename, loadaddr, &fp);
+		if (err)
+			break;
+		fp->f_args = unargv(argc, argv);
+		loadaddr = fp->f_addr + fp->f_size;
+		file_insert_tail(fp); /* Add to the list of loaded files */
+	} while (0);
+	if (err == EFTYPE)
+		command_seterr("don't know how to load module '%s'", filename);
+	if (err && fp)
+		file_discard(fp);
+	free(filename);
+	return (err);
 }
 
 #define VECTX_HANDLE(fd) fd
@@ -220,10 +222,10 @@ file_loadkernel(char *filename, int argc, char *argv[])
 struct preloaded_file *
 file_loadraw(const char *fname, char *type, int insert)
 {
-	struct preloaded_file	*fp;
-	char					*name;
-	int						fd, got;
-	vm_offset_t				laddr;
+	struct preloaded_file *fp;
+	char *name;
+	int fd, got;
+	vm_offset_t laddr;
 
 	/* We can't load first */
 	if ((file_findfile(NULL, NULL)) == NULL) {
@@ -232,7 +234,7 @@ file_loadraw(const char *fname, char *type, int insert)
 	}
 
 	/* locate the file on the load path */
-	name = file_search(fname, NULL);
+	name = file_search(NULL, fname, NULL);
 	if (name == NULL) {
 		snprintf(command_errbuf, sizeof(command_errbuf), "can't find '%s'",
 				fname);
@@ -307,7 +309,7 @@ file_loadraw(const char *fname, char *type, int insert)
  * NULL may be passed as a wildcard to either.
  */
 struct preloaded_file *
-file_findfile(char *name, char *type)
+file_findfile(const char *name, const char *type)
 {
     struct preloaded_file *fp;
 
@@ -329,6 +331,81 @@ file_havepath(const char *name)
 
     archsw.arch_getdev(NULL, name, &cp);
     return (cp != name || strchr(name, '/') != NULL);
+}
+
+static char *emptyextlist[] = { "", NULL };
+
+/*
+ * Check if the given file is in place and return full path to it.
+ */
+static char *
+file_lookup(const char *path, const char *name, int namelen, char **extlist)
+{
+	struct stat st;
+	char *result, *cp, **cpp;
+	int pathlen, extlen, len;
+
+	pathlen = strlen(path);
+	extlen = 0;
+	if (extlist == NULL) {
+		extlist = emptyextlist;
+	}
+	for (cpp = extlist; *cpp; cpp++) {
+		len = strlen(*cpp);
+		if (len > extlen) {
+			extlen = len;
+		}
+	}
+	result = malloc(pathlen + namelen + extlen + 2);
+	if (result == NULL) {
+		return (NULL);
+	}
+	bcopy(path, result, pathlen);
+	if (pathlen > 0 && result[pathlen - 1] != '/') {
+		result[pathlen++] = '/';
+	}
+	cp = result + pathlen;
+	bcopy(name, cp, namelen);
+	cp += namelen;
+	for (cpp = extlist; *cpp; cpp++) {
+		strcpy(cp, *cpp);
+		if (stat(result, &st) == 0 && (st.st_mode & S_IFMT) == S_IFREG) {
+			return (result);
+		}
+	}
+	free(result);
+	return (NULL);
+}
+
+static char *
+file_search(const char *path, const char *name, char **extlist)
+{
+	struct stat sb;
+	char *result;
+	int namelen;
+
+	/* Don't look for nothing */
+	if (name == NULL)
+		return (NULL);
+
+	if (*name == 0) {
+		return (strdup(name));
+	}
+
+	if (file_havepath(name)) {
+		/* Qualified, so just see if it exists */
+		if (stat(name, &sb) == 0) {
+			return (strdup(name));
+		}
+		return (NULL);
+	}
+	if (path == NULL) {
+		path = default_searchpath;
+	}
+	result = NULL;
+	namelen = strlen(name);
+	result = file_lookup(path, name, namelen, extlist);
+	return (result);
 }
 
 /*
@@ -384,6 +461,49 @@ file_insert_tail(struct preloaded_file *fp)
     }
 }
 
+
+/*
+ * Remove module from the chain
+ */
+static void
+file_remove_impl(struct preloaded_file *fp, bool_t keep_tail)
+{
+	struct preloaded_file *cm, *next;
+
+	if (preloaded_files == NULL)
+		return;
+
+	if (keep_tail)
+		next = fp->f_next;
+	else
+		next = NULL;
+
+	if (preloaded_files == fp) {
+		preloaded_files = next;
+		return;
+	}
+
+	for (cm = preloaded_files; cm->f_next != NULL; cm = cm->f_next) {
+		if (cm->f_next == fp) {
+			cm->f_next = next;
+			return;
+		}
+	}
+}
+
+
+static void
+file_remove(struct preloaded_file *fp)
+{
+	file_remove_impl(fp, TRUE);
+}
+
+static void
+file_remove_tail(struct preloaded_file *fp)
+{
+	file_remove_impl(fp, FALSE);
+}
+
 /*
  * Make a copy of (size) bytes of data from (p), and associate them as
  * metadata of (type) to the module (mp).
@@ -407,7 +527,8 @@ file_addmetadata(struct preloaded_file *fp, int type, size_t size, void *p)
  * Find a metadata object of (type) associated with the file (fp)
  */
 struct file_metadata*
-file_findmetadata(struct preloaded_file *fp, int type) {
+file_findmetadata(struct preloaded_file *fp, int type)
+{
 	struct file_metadata *md;
 
 	for (md = fp->f_metadata; md != NULL; md = md->md_next) {
@@ -422,7 +543,8 @@ file_findmetadata(struct preloaded_file *fp, int type) {
  * Remove all metadata from the file.
  */
 void 
-file_removemetadata(struct preloaded_file *fp) {
+file_removemetadata(struct preloaded_file *fp)
+{
 	struct file_metadata *md, *next;
 
 	for (md = fp->f_metadata; md != NULL; md = next) {
@@ -433,11 +555,12 @@ file_removemetadata(struct preloaded_file *fp) {
 }
 
 struct file_metadata*
-metadata_next(struct file_metadata *md, int type) {
-
+metadata_next(struct file_metadata *md, int type)
+{
 	if (md == NULL) {
 		return (NULL);
 	}
+
 	while ((md = md->md_next) != NULL) {
 		if (md->md_type == type) {
 			break;

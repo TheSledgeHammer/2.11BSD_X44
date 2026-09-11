@@ -65,10 +65,7 @@
 #include <libsa/stand.h>
 
 off_t
-lseek(fd, offset, where)
-	int fd;
-	off_t offset;
-	int where;
+lseek(int fd, off_t offset, int where)
 {
 	register struct open_file *f = &files[fd];
 
