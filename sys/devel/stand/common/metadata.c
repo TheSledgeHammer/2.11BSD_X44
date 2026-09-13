@@ -79,10 +79,11 @@ md_setboothowto(int howto)
 }
 
 int
-md_load(int howto, vm_offset_t kernend, vm_offset_t addr, vm_offset_t envp, const char *kerntype, char *args)
+md_load(int howto, vm_offset_t kernend, vm_offset_t envp, const char *kerntype, char *args)
 {
 	struct preloaded_file *fp, *xp;
 	struct devdesc *rootdev;
+	vm_offset_t addr;
 	char *rootdevname;
 	int error;
 

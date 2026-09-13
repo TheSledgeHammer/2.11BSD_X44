@@ -151,7 +151,7 @@ void ksyms_addr_set(void *, void *, void *);
 /* metadata.c */
 int md_getboothowto(char *);
 void md_setboothowto(int);
-int md_load(int, vm_offset_t, vm_offset_t, vm_offset_t, const char *, char *);
+int md_load(int, vm_offset_t, vm_offset_t, const char *, char *);
 vm_offset_t md_copyenv(vm_offset_t);
 vm_offset_t md_align(vm_offset_t);
 
