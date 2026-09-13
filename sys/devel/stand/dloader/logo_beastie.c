@@ -51,8 +51,7 @@ static char *beastie_mono[BEASTIE_LINES] =  {
 };
 
 void
-display_beastie(logo_left, separated)
-	int logo_left, separated;
+display_beastie(int logo_left, int separated)
 {
 	dvar_t dvar;
 	int i;

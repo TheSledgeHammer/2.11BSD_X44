@@ -98,6 +98,9 @@ struct devsw {
     int					(*dv_print)(int);					/* print device information */
 	void				(*dv_cleanup)(void);
 };
+extern struct devsw 	devsw[];		/* device array */
+extern int 				ndevs;			/* number of elements in devsw[] */
+
 #define DEVT_NONE		0
 #define DEVT_DISK		1
 #define DEVT_NET		2
@@ -105,18 +108,20 @@ struct devsw {
 #define DEVT_ZFS		4
 #define DEVT_FD			5
 
-extern struct devsw 	devsw[];		/* device array */
-extern int 				ndevs;			/* number of elements in devsw[] */
-
 /*
  * Generic device specifier; architecture-dependent
  * versions may be larger, but should be allowed to
  * overlap.
  */
 struct devdesc {
-    struct devsw		*d_dev;
-    int					d_unit;
-    void				*d_opendata;
+	struct devsw 		*d_dev;
+	int					d_type;
+	int 				d_unit;
+	int 				d_adaptor;
+	int 				d_controller;
+	int 				d_slice;
+	int 				d_partition;
+	void 				*d_opendata;
 };
 
 struct open_file {

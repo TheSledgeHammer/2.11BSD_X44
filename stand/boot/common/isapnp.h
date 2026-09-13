@@ -261,8 +261,8 @@ struct pnp_cinfo {
 
 struct pnp_device {
     char 	*pd_name;
-    char 	*(*pd_probe ) (u_long csn, u_long vendor_id);
-    void 	(*pd_attach ) (u_long csn, u_long vend_id, char * name,	struct isa_device *dev);
+    char 	*(*pd_probe)(u_long csn, u_long vendor_id);
+    void 	(*pd_attach)(u_long csn, u_long vend_id, char *name, struct isa_device *dev);
     u_long	*pd_count;
     u_int 	*imask ;
 };

@@ -52,7 +52,7 @@ static char *file_search(const char *, const char *, char **);
 /* load address should be tweaked by first module loaded (kernel) */
 static vaddr_t loadaddr = 0;
 
-static const char *default_searchpath = "/boot/kernel;";
+static const char *default_searchpath = "/boot/kernel;/usr/mdec;";
 
 struct preloaded_file *preloaded_files = NULL;
 

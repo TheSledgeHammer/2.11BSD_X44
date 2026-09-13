@@ -91,7 +91,7 @@ net_open(struct open_file *f, ...)
 	int error = 0;
 
 	va_start(ap, f);
-	devname = va_arg(ap, char*);
+	devname = va_arg(ap, char *);
 	va_end(ap);
 
 #ifdef	NETIF_DEBUG

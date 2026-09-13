@@ -32,8 +32,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _DCOMMANDS_H_
-#define _DCOMMANDS_H_
+#ifndef _CMDS_H_
+#define _CMDS_H_
 
 /* dcommands.c */
 int	command_local(int, char **);
@@ -55,4 +55,4 @@ int	command_menu(int, char **);
     { "menuadd", "Add script line for bullet", command_menuadd }, \
     { "menu", "Run menu system", command_menu },
 
-#endif /* _DCOMMANDS_H_ */
+#endif /* _CMDS_H_ */

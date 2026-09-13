@@ -171,7 +171,7 @@ bd_init(void)
 		for (unit = base; (nbdinfo < MAXBDDEV); unit++) {
 			/* check the BIOS equipment list for number of fixed disks */
 			if ((base == 0x80)
-					&& (nfd >= *(unsigned char*) PTOV(BIOS_NUMDRIVES))) {
+					&& (nfd >= *(unsigned char *)PTOV(BIOS_NUMDRIVES))) {
 				break;
 			}
 
@@ -447,7 +447,7 @@ bd_open(struct open_file *f, ...)
 	/*
 	 * Save our context
 	 */
-	((struct i386_devdesc*) (f->f_devdata))->d_kind.biosdisk.data = od;
+	((struct i386_devdesc *)(f->f_devdata))->d_kind.biosdisk.data = od;
 	DEBUG("open_disk %p, partition at 0x%x", od, od->od_boff);
 	return (0);
 }
@@ -1207,12 +1207,12 @@ bd_getbigeom(int bunit)
 int
 bd_getdev(struct i386_devdesc *dev)
 {
-    struct open_disk		*od;
-    int				biosdev;
-    int 			major;
-    int				rootdev;
-    char			*nip, *cp;
-    int				unitofs = 0, i, unit;
+	struct open_disk *od;
+	int biosdev;
+	int major;
+	int rootdev;
+	char *nip, *cp;
+	int unitofs = 0, i, unit;
 
 	biosdev = bd_unit2bios(dev->d_kind.biosdisk.unit);
 	DEBUG("unit %d BIOS device %d", dev->d_kind.biosdisk.unit, biosdev);

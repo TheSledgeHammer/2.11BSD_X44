@@ -44,8 +44,8 @@ static int	i386_parsedev(struct i386_devdesc **dev, const char *devspec, const c
 int
 i386_getdev(void **vdev, const char *devspec, const char **path)
 {
-    struct i386_devdesc **dev = (struct i386_devdesc **)vdev;
-    int				rv;
+	struct i386_devdesc **dev = (struct i386_devdesc **)vdev;
+	int rv;
     
     /*
      * If it looks like this is just a path and no
@@ -63,7 +63,7 @@ i386_getdev(void **vdev, const char *devspec, const char **path)
     /*
      * Try to parse the device name off the beginning of the devspec
      */
-    return(i386_parsedev(dev, devspec, path));
+	return (i386_parsedev(dev, devspec, path));
 }
 
 /*
@@ -83,11 +83,11 @@ i386_getdev(void **vdev, const char *devspec, const char **path)
 static int
 i386_parsedev(struct i386_devdesc **dev, const char *devspec, const char **path)
 {
-    struct i386_devdesc *idev;
-    struct devsw		*dv;
-    int					i, unit, slice, partition, err;
-    char				*cp;
-    const char			*np;
+	struct i386_devdesc *idev;
+	struct devsw *dv;
+	int i, unit, slice, partition, err;
+	char *cp;
+	const char *np;
 
 	/* minimum length check */
 	if (strlen(devspec) < 2)

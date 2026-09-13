@@ -35,8 +35,8 @@
 #include <lib/libsa/stand.h>
 #include <stand/common/commands.h>
 
-#include "dcommands.h"
-#include "dloader.h"
+#include <cmds.h>
+#include <dloader.h>
 
 static void menu_display(void);
 static int menu_execute(int);
@@ -96,7 +96,7 @@ static char *kenv_vars[] = {
  *  - Set:  var=val
  */
 int
-command_local(int ac, char **av)
+command_local(int ac, char *argv[])
 {
 	char *name;
 	char *data;
@@ -107,11 +107,11 @@ command_local(int ac, char **av)
 	/*
 	 * local command executed directly.
 	 */
-	if (strcmp(av[0], "local") == 0) {
+	if (strcmp(argv[0], "local") == 0) {
 		pager_open();
 		for (dvar = dvar_first(); dvar; dvar = dvar_next(dvar)) {
 			for (j = 1; j < ac; ++j) {
-				if (!strncmp(dvar->name, av[j], strlen(av[j])))
+				if (!strncmp(dvar->name, argv[j], strlen(argv[j])))
 					break;
 			}
 			if (ac > 1 && j == ac)
@@ -135,7 +135,7 @@ command_local(int ac, char **av)
 	/*
 	 * local command intercept for 'var=val'
 	 */
-	name = av[0];
+	name = argv[0];
 	data = strchr(name, '=');
 	if (data == NULL) {
 		sprintf(command_errbuf, "Bad variable syntax");
@@ -170,17 +170,17 @@ command_local(int ac, char **av)
  * Unset local variables
  */
 int
-command_lunset(int ac, char **av)
+command_lunset(int ac, char *argv[])
 {
 	int i;
 
 	for (i = 1; i < ac; ++i)
-		dvar_unset(av[i]);
+		dvar_unset(argv[i]);
 	return (0);
 }
 
 int
-command_lunsetif(int ac, char **av)
+command_lunsetif(int ac, char *argv[])
 {
 	char *envdata;
 
@@ -188,10 +188,10 @@ command_lunsetif(int ac, char **av)
 		sprintf(command_errbuf, "syntax error use lunsetif lname envname");
 		return (CMD_ERROR);
 	}
-	envdata = getenv(av[2]);
+	envdata = getenv(argv[2]);
 	if (strcmp(envdata, "yes") == 0 || strcmp(envdata, "YES") == 0
 			|| strtol(envdata, NULL, 0)) {
-		dvar_unset(av[1]);
+		dvar_unset(argv[1]);
 	}
 	return (CMD_OK);
 }
@@ -200,9 +200,8 @@ command_lunsetif(int ac, char **av)
  * Load the kernel + all modules specified with MODULE_load="YES"
  */
 int
-command_loadall(int ac, char **av)
+command_loadall(int ac, char *argv[])
 {
-	char *argv[4];
 	char *mod_name;
 	char *mod_fname;
 	char *mod_type;
@@ -310,7 +309,7 @@ command_loadall(int ac, char **av)
  * Clear all menus
  */
 int
-command_menuclear(int ac, char **av)
+command_menuclear(int ac, char *argv[])
 {
 	dvar_unset("menu_*");
 	dvar_unset("item_*");
@@ -323,7 +322,7 @@ command_menuclear(int ac, char **av)
  * Add menu bullet
  */
 int
-command_menuitem(int ac, char **av)
+command_menuitem(int ac, char *argv[])
 {
 	char namebuf[32];
 
@@ -331,13 +330,13 @@ command_menuitem(int ac, char **av)
 		sprintf(command_errbuf, "Bad menuitem syntax");
 		return (CMD_ERROR);
 	}
-	curitem = (unsigned char) av[1][0];
+	curitem = (unsigned char) argv[1][0];
 	if (curitem == 0) {
 		sprintf(command_errbuf, "Bad menuitem syntax");
 		return (CMD_ERROR);
 	}
 	snprintf(namebuf, sizeof(namebuf), "menu_%c", curitem);
-	dvar_set(namebuf, &av[2], 1);
+	dvar_set(namebuf, &argv[2], 1);
 	curadd = 0;
 
 	return (CMD_OK);
@@ -347,7 +346,7 @@ command_menuitem(int ac, char **av)
  * Add execution item
  */
 int
-command_menuadd(int ac, char **av)
+command_menuadd(int ac, char *argv[])
 {
 	char namebuf[32];
 
@@ -358,7 +357,7 @@ command_menuadd(int ac, char **av)
 		return (CMD_ERROR);
 	}
 	snprintf(namebuf, sizeof(namebuf), "item_%c_%d", curitem, curadd);
-	dvar_set(namebuf, &av[1], ac - 1);
+	dvar_set(namebuf, &argv[1], ac - 1);
 	++curadd;
 	return (CMD_OK);
 }
@@ -367,7 +366,7 @@ command_menuadd(int ac, char **av)
  * Execute menu system
  */
 int
-command_menu(int ac, char **av)
+command_menu(int ac, char *argv[])
 {
 	int timeout = -1;
 	time_t time_target;

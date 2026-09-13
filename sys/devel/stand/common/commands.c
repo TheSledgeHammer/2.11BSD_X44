@@ -30,7 +30,7 @@
 #ifdef USE_BCACHE
 #include <lib/libsa/bcache.h>
 #endif
-#include "commands.h"
+#include <commands.h>
 
 static char command_errbuf[256];
 

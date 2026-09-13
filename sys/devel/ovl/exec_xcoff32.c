@@ -55,10 +55,10 @@
  * are also setup based around OMAGIC.
  */
 
-static int exec_ecoff_prep_common(struct proc *, struct exec_linker *, struct exec_ovdata *, xcoff_exechdr *, xcoff_aouthdr *, struct vnode *);
+static int exec_xcoff_prep_common(struct proc *, struct exec_linker *, struct exec_ovdata *, xcoff_exechdr *, xcoff_aouthdr *, struct vnode *);
 
 int
-exec_ecoff_prep_magic3(p, elp, xcoff, vp)
+exec_xcoff_prep_magic3(p, elp, xcoff, vp)
 	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;
@@ -78,7 +78,7 @@ exec_ecoff_prep_magic3(p, elp, xcoff, vp)
 }
 
 int
-exec_ecoff_prep_magic4(p, elp, xcoff, vp)
+exec_xcoff_prep_magic4(p, elp, xcoff, vp)
 	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;
@@ -98,7 +98,7 @@ exec_ecoff_prep_magic4(p, elp, xcoff, vp)
 }
 
 int
-exec_ecoff_prep_magic5(p, elp, xcoff, vp)
+exec_xcoff_prep_magic5(p, elp, xcoff, vp)
 	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;
@@ -118,7 +118,7 @@ exec_ecoff_prep_magic5(p, elp, xcoff, vp)
 }
 
 int
-exec_ecoff_prep_magic6(p, elp, xcoff, vp)
+exec_xcoff_prep_magic6(p, elp, xcoff, vp)
 	struct proc *p;
 	struct exec_linker *elp;
 	xcoff_exechdr *xcoff;

@@ -33,7 +33,8 @@
  */
 
 #include <lib/libsa/stand.h>
-#include "dloader.h"
+
+#include <dloader.h>
 
 dvar_t dvbase;
 dvar_t *dvlastp = &dvbase;
@@ -45,7 +46,7 @@ dvar_get(const char *name)
 
 	for (var = dvbase; var; var = var->next) {
 		if (strcmp(name, var->name) == 0)
-			return(var);
+			return (var);
 	}
 	return (NULL);
 }
@@ -140,13 +141,13 @@ dvar_next(dvar_t var)
 dvar_t *
 dvar_firstp(void)
 {
-	return(&dvbase);
+	return (&dvbase);
 }
 
 dvar_t *
 dvar_nextp(dvar_t var)
 {
-	return(&var->next);
+	return (&var->next);
 }
 
 void

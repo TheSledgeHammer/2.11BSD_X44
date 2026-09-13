@@ -345,11 +345,11 @@ vm_kspace_restore(kspace, addr, size, maptype, flags)
 	if (kspace->idspace_i != NULL) {
 		switch (maptype) {
 		case KISA:
-			error = vm_idspace_save(kspace->idspace_i, &kspace->kisa_space,
+			error = vm_idspace_restore(kspace->idspace_i, &kspace->kisa_space,
 					addr, size, flags);
 			break;
 		case KISD:
-			error = vm_idspace_save(kspace->idspace_i, &kspace->kisd_space,
+			error = vm_idspace_restore(kspace->idspace_i, &kspace->kisd_space,
 					addr, size, flags);
 			break;
 		default:

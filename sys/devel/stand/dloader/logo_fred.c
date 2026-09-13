@@ -93,8 +93,7 @@ static char *fred_mono[FRED_LINES] =  {
 	"                                 " };
 
 void
-display_fred(logo_left, separated)
-	int logo_left, separated;
+display_fred(int logo_left, int separated)
 {
 	dvar_t dvar;
 	int i;

@@ -6,7 +6,9 @@
 CPPFLAGS+= -DUSE_BCACHE
 .endif
 
-SRCS+= console.c commands.c disks.c interp_backslash.c interp_parse.c interp.c
+SRCS+= boot.c console.c commands.c disk.c fileload.c \
+SRCS+= interp_backslash.c interp_parse.c interp.c
 SRCS+= interp_${SA_LOADER_INTERP_NAME}.c
+SRCS+= load_exec.c load_ksyms.c metadata.c misc.c
 
 .include <bsd.kinc.mk>

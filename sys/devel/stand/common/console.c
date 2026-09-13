@@ -30,8 +30,8 @@
 /* __FBSDID("$FreeBSD: src/sys/boot/common/console.c,v 1.6 2003/08/25 23:30:41 obrien Exp $"); */
 
 #include <lib/libsa/stand.h>
-#include "commands.h"
-#include "console.h"
+#include <commands.h>
+#include <console.h>
 
 /*
  * Core console support

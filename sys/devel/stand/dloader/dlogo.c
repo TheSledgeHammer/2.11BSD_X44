@@ -34,8 +34,8 @@
 
 #include <lib/libsa/stand.h>
 
-#include "dloader.h"
-#include "dlogo.h"
+#include <dloader.h>
+#include <dlogo.h>
 
 char *
 logo_get_blank_lines(lineLen)
@@ -49,7 +49,7 @@ logo_get_blank_lines(lineLen)
     } else if (lineLen >= MAX_BLANK_LINES) {
         lineLen = MAX_BLANK_LINES;
     } else {
-        for(i = 0; i < lineLen; i++) {
+        for (i = 0; i < lineLen; i++) {
             blank[i] = logo_blank_line[i];
         }
     }
