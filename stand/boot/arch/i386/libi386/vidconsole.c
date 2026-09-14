@@ -50,7 +50,6 @@ static int	vidc_ischar(void);
 
 static int	vidc_started;
 
-
 #ifdef TERM_EMU
 #define MAXARGS		8
 #define DEFAULT_FGCOLOR	7
@@ -72,16 +71,15 @@ static int	fg_c, bg_c, curx, cury;
 static int	esc;
 #endif
 
-
-struct console vidconsole = {
-    "vidconsole",
-    "internal video/keyboard",
-    0,
-    vidc_probe,
-    vidc_init,
-    vidc_putchar,
-    vidc_getchar,
-    vidc_ischar
+struct console spinconsole = {
+	.c_name = "vidconsole",
+	.c_desc = "internal video/keyboard",
+	.c_flags = 0,
+	.c_probe = vidc_probe,
+	.c_init = vidc_init,
+	.c_out = vidc_putchar,
+	.c_in = vidc_getchar,
+	.c_ready = vidc_ischar
 };
 
 static void

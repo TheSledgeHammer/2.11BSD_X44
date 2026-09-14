@@ -59,8 +59,7 @@
 #define	FREEENV(v)
 #endif
 
-static struct
-{
+static struct {
 	const char		*ev;
 	int		      	mask;
 } howto_names[] = {

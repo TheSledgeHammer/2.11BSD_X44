@@ -75,8 +75,8 @@ unargv(int argc, char *argv[])
 size_t
 strlenout(caddr_t src)
 {
-    char	c;
-    size_t	len;
+	char c;
+	size_t len;
 
 	for (len = 0;; len++) {
 		archsw.arch_copyout(src++, &c, 1);
@@ -156,7 +156,7 @@ alloc_pread(int fd, off_t off, size_t len)
 
 	buf = alloc(len);
 	if (buf == NULL) {
-		printf("\nalloc(%d) failed\n", (int) len);
+		printf("\nalloc(%d) failed\n", (int)len);
 		return (NULL);
 	}
 	if (lseek(fd, off, SEEK_SET) == -1) {

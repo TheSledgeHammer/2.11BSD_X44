@@ -80,24 +80,24 @@ struct file_format {
  * actual configuration of the target system.
  */
 struct arch_switch {
-    /* Automatically load modules as required by detected hardware */
-    int		(*arch_autoload)(void);
+	/* Automatically load modules as required by detected hardware */
+	int (*arch_autoload)(void);
 
-    /* Locate the device for (name), return pointer to tail in (*path) */
-    int		(*arch_getdev)(void **, const char *, const char **);
+	/* Locate the device for (name), return pointer to tail in (*path) */
+	int (*arch_getdev)(void **, const char *, const char **);
 
-    /* Copy from local address space to module address space, similar to bcopy() */
-    ssize_t	(*arch_copyin)(const void *, vm_offset_t, const size_t);
+	/* Copy from local address space to module address space, similar to bcopy() */
+	ssize_t (*arch_copyin)(const void *, vm_offset_t, const size_t);
 
-    /* Copy to local address space from module address space, similar to bcopy() */
-    ssize_t	(*arch_copyout)(const vm_offset_t, void *, const size_t);
+	/* Copy to local address space from module address space, similar to bcopy() */
+	ssize_t (*arch_copyout)(const vm_offset_t, void *, const size_t);
 
-    /* Read from file to module address space, same semantics as read() */
-    ssize_t	(*arch_readin)(const int, vm_offset_t, const size_t);
+	/* Read from file to module address space, same semantics as read() */
+	ssize_t (*arch_readin)(const int, vm_offset_t, const size_t);
 
-    /* Perform ISA byte port I/O (only for systems with ISA) */
-    int		(*arch_isainb)(int);
-    void	(*arch_isaoutb)(int, int);
+	/* Perform ISA byte port I/O (only for systems with ISA) */
+	int (*arch_isainb)(int);
+	void (*arch_isaoutb)(int, int);
 };
 
 /* kerneltype names */
@@ -113,9 +113,9 @@ extern struct preloaded_file *preloaded_files;
 extern struct arch_switch archsw;
 
 /* boot.c */
-int	autoboot(int, char *);
+int autoboot(int, char *);
 void autoboot_maybe(void);
-int getrootmount(char *);
+int getrootmount(char*);
 
 /* disk.c */
 void disk_setbootdev(struct devdesc *, uint32_t);
@@ -127,23 +127,18 @@ int disk_device_slice(uint32_t);
 int disk_device_partition(uint32_t);
 void disk_format(uint32_t, int, int, int, int, int);
 int disk_getdev(struct devdesc **, const char *, const char **);
-char *disk_fmtdev(struct devdesc *);
+char* disk_fmtdev(struct devdesc *);
 int disk_parsedev(struct devdesc **, const char *, const char **);
 int disk_setcurrdev(struct env_var *, int, void *);
 
 /* fileload.c */
-struct preloaded_file *file_alloc(void);
-struct preloaded_file *file_findfile(char *, char *);
+struct preloaded_file* file_alloc(void);
+struct preloaded_file* file_findfile(char *, char *);
 int file_loadkernel(char *, int, char **);
-void file_discard(struct preloaded_file *);
+void file_discard(struct preloaded_file*);
 
 /* load_exec.c */
-int	aout_loadfile(char *, u_int64_t, int, struct preloaded_file **);
-int	ecoff_loadfile(char *, u_int64_t, int, struct preloaded_file **);
-int	elf32_loadfile(char *, u_int64_t, int, struct preloaded_file **);
-int	elf64_loadfile(char *, u_int64_t, int, struct preloaded_file **);
-int	xcoff32_loadfile(char *, u_int64_t, int, struct preloaded_file **);
-int	xcoff64_loadfile(char *, u_int64_t, int, struct preloaded_file **);
+int exec_loadfile(char *, char *, u_int64_t, int, struct preloaded_file **);
 
 /* load_ksyms.c */
 void ksyms_addr_set(void *, void *, void *);
@@ -151,18 +146,18 @@ void ksyms_addr_set(void *, void *, void *);
 /* metadata.c */
 int md_getboothowto(char *);
 void md_setboothowto(int);
-int md_load(int, vm_offset_t, vm_offset_t, const char *, char *);
+int md_load(int, vm_offset_t, vm_offset_t, caddr_t, caddr_t, caddr_t, struct preloaded_file *, char *);
 vm_offset_t md_copyenv(vm_offset_t);
 vm_offset_t md_align(vm_offset_t);
 
 /* misc.c */
-char *unargv(int, char **);
+char* unargv(int, char **);
 void hexdump(caddr_t, size_t);
 size_t strlenout(vm_offset_t);
-char *strdupout(vm_offset_t);
+char* strdupout(vm_offset_t);
 void kern_bzero(vm_offset_t, size_t);
-int	kern_pread(int, vm_offset_t, size_t, off_t);
-void *alloc_pread(int, off_t, size_t);
+int kern_pread(int, vm_offset_t, size_t, off_t);
+void* alloc_pread(int, off_t, size_t);
 /* This must be provided by the MD code, but should it be in the archsw? */
 void delay(int);
 void dev_cleanup(void);

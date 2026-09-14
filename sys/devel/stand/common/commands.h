@@ -72,6 +72,9 @@ int command_echo(int, char **);
 int command_read(int, char **);
 int command_more(int, char **);
 int command_lsdev(int, char **);
+int command_ls(int, char **);
+int command_reboot(int, char **);
+int command_heap(int, char **);
 
 #ifdef USE_BCACHE
 /*	bcache.c		*/
@@ -94,13 +97,6 @@ int command_install(int, char **);
 int command_include(int, char **);
 int command_optinclude(int, char **);
 
-/*	ls.c */
-int command_ls(int, char **);
-
-/* i386/main.c */
-int command_reboot(int, char **);
-int command_heap(int, char **);
-
 /*  i386/libi386/biosmem.c	*/
 int command_biosmem(int, char **);
 
@@ -121,9 +117,11 @@ int command_biosmem(int, char **);
 	{ "load", "load a kernel", command_load }, \
 	{ "unload", "unload all modules", command_unload },	\
 	{ "lskern", "list loaded kernel", command_lskern }, \
+	{ "ls", "list files", command_ls }, \
+	{ "reboot", "reboot the system", command_reboot }, \
+	{ "heap", "show heap usage", command_heap }, \
 	{ "include", "read commands from a file", command_include }, \
 	{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
-	{ "ls", "list files", command_ls }, \
 	{ "install",  "install software package", command_install },
 #else /* !USE_BCACHE */
 #define COMMON_COMMANDS \
@@ -141,9 +139,11 @@ int command_biosmem(int, char **);
 	{ "load", "load a kernel", command_load }, \
 	{ "unload", "unload all modules", command_unload },	\
 	{ "lskern", "list loaded kernel", command_lskern }, \
+	{ "ls", "list files", command_ls }, \
+	{ "reboot", "reboot the system", command_reboot }, \
+	{ "heap", "show heap usage", command_heap }, \
 	{ "include", "read commands from a file", command_include }, \
 	{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
-	{ "ls", "list files", command_ls }, \
 	{ "install",  "install software package", command_install },
 #endif /* !USE_BCACHE */
 #endif /* _COMMANDS_H_ */

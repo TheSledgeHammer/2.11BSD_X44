@@ -119,7 +119,7 @@ struct context {
 	int	mtime_nsec;	/* modified time nanoseconds */
 	int	birthtime_nsec;	/* creation time nanoseconds */
 	off_t	size;		/* size of file */
-	char	*name;		/* name of file */
+	const char	*name;		/* name of file */
 } curfile;
 /* actions */
 #define	USING	1	/* extracting from the tape */

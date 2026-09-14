@@ -62,15 +62,17 @@
 
 #include <bootstrap.h>
 
-static int disk_makebootdev1(struct devdesc *, int);
 #if DISK_SLICES
 static int disk_makebootdev2(struct devdesc *, int);
+#else
+static int disk_makebootdev1(struct devdesc *, int);
 #endif
 
 void
 disk_setbootdev(struct devdesc *dev, uint32_t bootdev)
 {
-	disk_format(bootdev, dev->d_type, dev->d_adaptor, dev->d_controller, dev->d_slice, dev->d_partition);
+	disk_format(bootdev, dev->d_type, dev->d_adaptor, dev->d_controller,
+			dev->d_slice, dev->d_partition);
 }
 
 int
@@ -83,15 +85,6 @@ disk_makebootdev(struct devdesc *dev, int major)
 #endif
 }
 
-static int
-disk_makebootdev1(struct devdesc *dev, int major)
-{
-	if (dev == NULL) {
-		return (-1);
-	}
-	return (MAKEBOOTDEV1(major, dev->d_adaptor, dev->d_controller, dev->d_unit, dev->d_partition));
-}
-
 #if DISK_SLICES
 static int
 disk_makebootdev2(struct devdesc *dev, int major)
@@ -100,6 +93,16 @@ disk_makebootdev2(struct devdesc *dev, int major)
 		return (-1);
 	}
 	return (MAKEBOOTDEV2(major, dev->d_slice, dev->d_unit, dev->d_partition));
+}
+#else
+static int
+disk_makebootdev1(struct devdesc *dev, int major)
+{
+	if (dev == NULL) {
+		return (-1);
+	}
+	return (MAKEBOOTDEV1(major, dev->d_adaptor, dev->d_controller, dev->d_unit,
+			dev->d_partition));
 }
 #endif
 
@@ -189,7 +192,7 @@ disk_getdev(struct devdesc **dev, const char *devspec, const char **path)
 char *
 disk_fmtdev(struct devdesc *dev)
 {
-	static char	buf[128];	/* XXX device length constant? */
+	static char buf[128]; /* XXX device length constant? */
 	size_t len, buflen = sizeof(buf);
 
 	len = snprintf(buf, buflen, "%s%d", dev->d_dev->dv_name, dev->d_unit);
@@ -268,12 +271,12 @@ disk_parsedev(struct devdesc **dev, const char *devspec, const char **path)
 	slice = -1;
 	partition = -1;
 	if (*np && (*np != ':')) {
-		unit = strtol(np, &cp, 10);	/* next comes the unit number */
+		unit = strtol(np, &cp, 10); /* next comes the unit number */
 		if (cp == np) {
 			err = EUNIT;
 			goto fail;
 		}
-		if (*cp == 's') {		/* got a slice number */
+		if (*cp == 's') { /* got a slice number */
 			np = cp + 1;
 			slice = strtol(np, &cp, 10);
 			if (cp == np) {
@@ -282,7 +285,7 @@ disk_parsedev(struct devdesc **dev, const char *devspec, const char **path)
 			}
 		}
 		if (*cp && (*cp != ':')) {
-			partition = *cp - 'a';		/* get a partition number */
+			partition = *cp - 'a'; /* get a partition number */
 			if ((partition < 0) || (partition >= MAXPARTITIONS)) {
 				err = EPART;
 				goto fail;

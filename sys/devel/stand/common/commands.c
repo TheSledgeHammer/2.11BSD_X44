@@ -49,7 +49,7 @@ command_search(struct bootblk_command cmdp[], const char *name)
 	cmds = &cmdp[0];
 	for (i = 0; i < arraycount(cmdp); i++) {
 		cmds = &cmdp[i];
-		if ((cmds != NULL) && (name != NULL) ) {
+		if ((cmds != NULL) && (name != NULL)) {
 			if (strcmp(name, cmds->c_name) == 0) {
 				return (cmds);
 			}
@@ -96,6 +96,7 @@ int
 command_seterr(const char *fmt, ...)
 {
 	int len;
+
 	va_list ap;
 	va_start(ap, fmt);
 	len = vsnprintf(command_errbuf, sizeof(command_errbuf), fmt, ap);
@@ -242,8 +243,8 @@ command_commandlist(int argc, char *argv[])
 int
 command_show(int argc, char *argv[])
 {
-    struct env_var	*ev;
-    char		*cp;
+	struct env_var *ev;
+	char *cp;
 
 	if (argc < 2) {
 		/*
@@ -275,7 +276,7 @@ command_show(int argc, char *argv[])
 int
 command_set(int argc, char *argv[])
 {
-    int		err;
+	int err;
 
 	if (argc != 2) {
 		command_seterr("wrong number of arguments");
@@ -292,7 +293,7 @@ command_set(int argc, char *argv[])
 int
 command_unset(int argc, char *argv[])
 {
-    int		err;
+	int err;
 
 	if (argc != 2) {
 		command_seterr("wrong number of arguments");
@@ -543,10 +544,31 @@ out:
 	return (result);
 }
 
+int
+command_reboot(int argc, char *argv[])
+{
+	dev_cleanup();
+	printf("Rebooting...\n");
+	delay(1000000);
+	__exit(0);
+}
+
+int
+command_heap(int argc, char *argv[])
+{
+    char *base;
+    size_t bytes;
+
+    base = getheap(&bytes);
+    printf("heap %p-%p (%d)\n", base, base + bytes, (int)bytes);
+    printf("stack at %p\n", &argc);
+    return (CMD_OK);
+}
+
 static int
 page_file(char *filename)
 {
-    int result;
+	int result;
 
 	result = pager_file(filename);
 

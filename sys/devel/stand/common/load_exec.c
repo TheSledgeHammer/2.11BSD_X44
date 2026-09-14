@@ -36,9 +36,8 @@
 #include <lib/libsa/loadfile.h>
 #include <lib/libsa/stand.h>
 
-#include "bootstrap.h"
+#include <bootstrap.h>
 
-static int exec_loadfile(char *, char *, uint64_t, struct preloaded_file **);
 static int loadfile_header(char *, char *);
 
 /*
@@ -48,7 +47,7 @@ static int loadfile_header(char *, char *);
  * will be saved in (result).
  * The functions for the different files it can load as a module are below.
  */
-static int
+int
 exec_loadfile(char *filename, char *kerneltype, uint64_t dest, int flags, struct preloaded_file **result)
 {
 	struct preloaded_file *fp;
@@ -83,7 +82,8 @@ exec_loadfile(char *filename, char *kerneltype, uint64_t dest, int flags, struct
 	fp->f_addr = marks[MARK_START];
 
 	if (fp->f_size == 0 || fp->f_addr == 0) {
-		goto ioerr;
+		err = EIO;
+		goto oerr;
 	}
 
 	/* Load OK, return module pointer */
@@ -91,8 +91,6 @@ exec_loadfile(char *filename, char *kerneltype, uint64_t dest, int flags, struct
 	err = 0;
 	goto out;
 
-ioerr:
-	err = EIO;
 oerr:
 	file_discard(fp);
 out:
@@ -118,50 +116,3 @@ loadfile_header(char *filename, char *kerneltype)
 	}
 	return (0);
 }
-
-#ifdef BOOT_AOUT
-int
-aout_loadfile(char *filename, uint64_t dest, int flags, struct preloaded_file **result)
-{
-	return (exec_loadfile(filename, AOUT_KERNELTYPE, dest, flags, result));
-}
-#endif
-
-#ifdef BOOT_ECOFF
-int
-ecoff_loadfile(char *filename, uint64_t dest, int flags, struct preloaded_file **result)
-{
-	return (exec_loadfile(filename, ECOFF_KERNELTYPE, dest, flags, result));
-}
-#endif
-
-#ifdef BOOT_ELF32
-int
-elf32_loadfile(char *filename, uint64_t dest, int flags, struct preloaded_file **result)
-{
-	return (exec_loadfile(filename, ELF32_KERNELTYPE, dest, flags, result));
-}
-#endif
-
-#ifdef BOOT_ELF64
-int
-elf64_loadfile(char *filename, u_int64_t dest, int flags, struct preloaded_file **result)
-{
-	return (exec_loadfile(filename, ELF64_KERNELTYPE, dest, flags, result));
-}
-
-#ifdef BOOT_XCOFF32
-int
-xcoff32_loadfile(char *filename, u_int64_t dest, int flags, struct preloaded_file **result)
-{
-	return (exec_loadfile(filename, XCOFF32_KERNELTYPE, dest, flags, result));
-}
-#endif
-
-#ifdef BOOT_XCOFF64
-int
-xcoff64_loadfile(char *filename, u_int64_t dest, int flags, struct preloaded_file **result)
-{
-	return (exec_loadfile(filename, XCOFF64_KERNELTYPE, dest, flags, result));
-}
-#endif

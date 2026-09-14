@@ -31,6 +31,7 @@
 #include <sys/reboot.h>
 
 #include <lib/libsa/stand.h>
+#include <lib/libsa/loadfile.h>
 
 #include <bootstrap.h>
 
@@ -43,32 +44,32 @@ md_getboothowto(char *kargs)
 	/* Parse kargs */
 	howto = boot_parse_cmdline(kargs);
 	howto |= boot_env_to_howto();
-    string = next = strdup(getenv("console"));
-    vidconsole = 0;
-    while (next != NULL) {
-    	curpos = strsep(&next, " ,");
-    	if (!strcmp(curpos, "vidconsole")) {
-    		vidconsole = 1;
-    	} else if (!strcmp(curpos, "comconsole")) {
-    		howto |= RB_SERIAL;
-    	} else if (!strcmp(curpos, "nullconsole")) {
-    		howto |= RB_MUTE;
-    	}
-    }
+	string = next = strdup(getenv("console"));
+	vidconsole = 0;
+	while (next != NULL) {
+		curpos = strsep(&next, " ,");
+		if (!strcmp(curpos, "vidconsole")) {
+			vidconsole = 1;
+		} else if (!strcmp(curpos, "comconsole")) {
+			howto |= RB_SERIAL;
+		} else if (!strcmp(curpos, "nullconsole")) {
+			howto |= RB_MUTE;
+		}
+	}
 
-    if (vidconsole && (howto & RB_SERIAL)) {
-    	howto |= RB_MULTIPLE;
-    }
+	if (vidconsole && (howto & RB_SERIAL)) {
+		howto |= RB_MULTIPLE;
+	}
 
-    /*
-     * XXX: Note that until the kernel is ready to respect multiple consoles
-     * for the boot messages, the first named console is the primary console
-     */
-    if (!strcmp(string, "vidconsole")) {
-    	howto &= ~RB_SERIAL;
-    }
+	/*
+	 * XXX: Note that until the kernel is ready to respect multiple consoles
+	 * for the boot messages, the first named console is the primary console
+	 */
+	if (!strcmp(string, "vidconsole")) {
+		howto &= ~RB_SERIAL;
+	}
 
-    free(string);
+	free(string);
 	return (howto);
 }
 
@@ -79,14 +80,17 @@ md_setboothowto(int howto)
 }
 
 int
-md_load(int howto, vm_offset_t kernend, vm_offset_t envp, const char *kerntype, char *args)
+md_load(int howto, vm_offset_t kernend, vm_offset_t envp, caddr_t nsym, caddr_t ssym, caddr_t esym, struct preloaded_file *fp, char *args)
 {
-	struct preloaded_file *fp, *xp;
+	struct preloaded_file *xp;
 	struct devdesc *rootdev;
 	vm_offset_t addr;
 	char *rootdevname;
 	int error;
 
+    /*
+     * Calculate boothowto.
+     */
 	howto = md_getboothowto(args);
 
 	/*
@@ -100,7 +104,11 @@ md_load(int howto, vm_offset_t kernend, vm_offset_t envp, const char *kerntype, 
 	}
 
 	error = disk_getdev(&rootdev, rootdevname, NULL);
-	if (error != 0 || rootdev == NULL) {
+	if (rootdev == NULL) { /* bad $rootdev/$currdev */
+		printf("can't determine root device\n");
+		return (EINVAL);
+	}
+	if (error != 0) {
 		return (error);
 	}
 
@@ -111,6 +119,15 @@ md_load(int howto, vm_offset_t kernend, vm_offset_t envp, const char *kerntype, 
 		getrootmount(rootdevname);
 	}
 	free(rootdev);
+
+	nsym = ssym = esym = 0;
+	nsym = fp->f_marks[MARK_NSYM];
+	ssym = fp->f_marks[MARK_SYM];
+	esym = fp->f_marks[MARK_END];
+
+	if (nsym == 0 || ssym == 0 || esym == 0) {
+		nsym = ssym = esym = 0; /* sanity */
+	}
 
 	/* Find the last module in the chain */
 	addr = 0;
@@ -129,11 +146,6 @@ md_load(int howto, vm_offset_t kernend, vm_offset_t envp, const char *kerntype, 
 	/* Pad to a page boundary */
 	addr = md_align(addr);
 
-	fp = file_findfile(NULL, kerntype);
-	if (fp == NULL) {
-		return (EINVAL);
-	}
-
 	/* all done copying stuff in, save end of loaded object space */
 	kernend = addr;
 	return (0);
@@ -147,23 +159,23 @@ md_load(int howto, vm_offset_t kernend, vm_offset_t envp, const char *kerntype, 
 vm_offset_t
 md_copyenv(vm_offset_t addr)
 {
-    struct env_var	*ep;
+	struct env_var *ep;
 
-    /* traverse the environment */
-    for (ep = environ; ep != NULL; ep = ep->ev_next) {
-    	archsw.arch_copyin(ep->ev_name, addr, strlen(ep->ev_name));
-    	addr += strlen(ep->ev_name);
-    	archsw.arch_copyin("=", addr, 1);
-    	addr++;
-    	if (ep->ev_value != NULL) {
-    		archsw.arch_copyin(ep->ev_value, addr, strlen(ep->ev_value));
-    		addr += strlen(ep->ev_value);
-    	}
-    	archsw.arch_copyin("", addr, 1);
-    	addr++;
-    }
-    archsw.arch_copyin("", addr, 1);
-    addr++;
+	/* traverse the environment */
+	for (ep = environ; ep != NULL; ep = ep->ev_next) {
+		archsw.arch_copyin(ep->ev_name, addr, strlen(ep->ev_name));
+		addr += strlen(ep->ev_name);
+		archsw.arch_copyin("=", addr, 1);
+		addr++;
+		if (ep->ev_value != NULL) {
+			archsw.arch_copyin(ep->ev_value, addr, strlen(ep->ev_value));
+			addr += strlen(ep->ev_value);
+		}
+		archsw.arch_copyin("", addr, 1);
+		addr++;
+	}
+	archsw.arch_copyin("", addr, 1);
+	addr++;
 	return (addr);
 }
 

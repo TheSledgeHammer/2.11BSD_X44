@@ -145,22 +145,22 @@ boot_exec(struct preloaded_file *fp)
 #ifdef DEBUG
     printf("Start @ 0x%lx ...\n", entry);
 #endif
-		&boot->bi_sym.bi_flags = fp->f_flags;
+		&boot.bi_flags = fp->f_flags;
 		dev_cleanup();
-		__exec((void *) entry,  &boot->bi_leg.bi_howtop, &boot->bi_leg.bi_bootdevp, 0, 0, 0, &boot->bi_leg.bi_bip, &boot->bi_envp.bi_kernend);
+		__exec((void *)entry,  &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0, &boot.bi_bip, &boot.bi_kernend);
 	} else if (!preload_ksyms(fp)) {
-		entry = &boot->bi_entry & 0xffffff;
+		entry = &boot.bi_entry & 0xffffff;
 #ifdef DEBUG
     printf("Start @ 0x%lx ...\n", entry);
 #endif
 		dev_cleanup();
-		__exec((void *) entry, &boot->bi_leg.bi_howtop, &boot->bi_leg.bi_bootdevp, 0, 0, 0, &boot->bi_leg.bi_bip, &boot->bi_envp.bi_kernend);
+		__exec((void *)entry, &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0, &boot.bi_bip, &boot.bi_kernend);
 	} else {
 #ifdef DEBUG
     printf("Start @ 0x%lx ...\n", &boot->bi_entry);
 #endif
 		dev_cleanup();
-		__exec((void *) &boot->bi_entry,  &boot->bi_leg.bi_howtop, &boot->bi_leg.bi_bootdevp, 0, 0, 0, &boot->bi_leg.bi_bip, &boot->bi_envp.bi_kernend);
+		__exec((void *)&boot.bi_entry,  &boot->bi_howtop, &boot->bi_bootdevp, 0, 0, 0, &boot.bi_bip, &boot.bi_kernend);
 	}
 
 error:

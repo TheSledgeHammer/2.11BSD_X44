@@ -123,16 +123,16 @@ struct odirect {
 	char	d_name[ODIRSIZ];
 };
 
-static struct inotab	*allocinotab(FILE *, struct context *, long);
-static void		 dcvt(struct odirect *, struct direct *);
-static void		 flushent(void);
-static struct inotab	*inotablookup(ino_t);
-static RST_DIR		*opendirfile(const char *);
-static void		 putdir(char *, long);
-static void		 putent(struct direct *);
-static void		 rst_seekdir(RST_DIR *, long, long);
-static long		 rst_telldir(RST_DIR *);
-static struct direct	*searchdir(ino_t, char *);
+static struct inotab *allocinotab(FILE *, struct context *, long);
+static void dcvt(struct odirect *, struct direct *);
+static void flushent(void);
+static struct inotab *inotablookup(ino_t);
+static RST_DIR *opendirfile(const char *);
+static void putdir(char *, long);
+static void putent(struct direct *);
+static void rst_seekdir(RST_DIR *, long, long);
+static long rst_telldir(RST_DIR *);
+static struct direct *searchdir(ino_t, char *);
 
 /*
  *	Extract directory contents, building up a directory structure
@@ -184,7 +184,7 @@ extractdirs(int genmode)
 	nulldir.d_type = DT_DIR;
 	nulldir.d_namlen = 1;
 	(void) strcpy(nulldir.d_name, "/");
-	nulldir.d_reclen = DIRSIZ(0, &nulldir, 0);
+	nulldir.d_reclen = DIRSIZ(0, &nulldir);
 	for (;;) {
 		curfile.name = "<directory file - name unknown>";
 		curfile.action = USING;
@@ -271,7 +271,7 @@ treescan(const char *pname, ino_t ino, long (*todo)(const char *, ino_t, int))
 	 */
 	while (dp != NULL) {
 		locname[namelen] = '\0';
-		if (namelen + dp->d_namlen >= sizeof(locname)) {
+		if ((u_int)(namelen + dp->d_namlen) >= sizeof(locname)) {
 			fprintf(stderr, "%s%s: name exceeds %lu char\n",
 			    locname, dp->d_name, (u_long)(sizeof(locname) - 1));
 		} else {
@@ -372,16 +372,16 @@ putdir(char *buf, long size)
 			i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
 			if ((dp->d_reclen & 0x3) != 0 ||
 			    dp->d_reclen > i ||
-			    dp->d_reclen < DIRSIZ(0, dp, 0) /* ||
+			    dp->d_reclen < DIRSIZ(0, dp) /* ||
 			    dp->d_namlen > NAME_MAX */) {
 				vprintf(stdout, "Mangled directory: ");
 				if ((dp->d_reclen & 0x3) != 0)
 					vprintf(stdout,
 					   "reclen not multiple of 4 ");
-				if (dp->d_reclen < DIRSIZ(0, dp, 0))
+				if (dp->d_reclen < DIRSIZ(0, dp))
 					vprintf(stdout,
 					   "reclen less than DIRSIZ (%d < %lu) ",
-					   dp->d_reclen, (u_long)DIRSIZ(0, dp, 0));
+					   dp->d_reclen, (u_long)DIRSIZ(0, dp));
 #if 0	/* dp->d_namlen is a uint8_t, always < NAME_MAX */
 				if (dp->d_namlen > NAME_MAX)
 					vprintf(stdout,
@@ -413,7 +413,7 @@ long prev = 0;
 static void
 putent(struct direct *dp)
 {
-	dp->d_reclen = DIRSIZ(0, dp, 0);
+	dp->d_reclen = DIRSIZ(0, dp);
 	if (dirloc + dp->d_reclen > DIRBLKSIZ) {
 		((struct direct *)(dirbuf + prev))->d_reclen =
 		    DIRBLKSIZ - prev;
@@ -448,7 +448,7 @@ dcvt(struct odirect *odp, struct direct *ndp)
 	ndp->d_type = DT_UNKNOWN;
 	(void) strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
 	ndp->d_namlen = strlen(ndp->d_name);
-	ndp->d_reclen = DIRSIZ(0, ndp, 0);
+	ndp->d_reclen = DIRSIZ(0, ndp);
 }
 
 /*
@@ -620,7 +620,7 @@ setdirmodes(int flags)
 				continue;
 		}
 		if (ep == NULL) {
-			panic("cannot find directory inode %d\n", node.ino);
+			panic("cannot find directory inode %ld\n", node.ino);
 		} else {
 			if (!Nflag) {
 				cp = myname(ep);
@@ -650,7 +650,7 @@ genliteraldir(const char *name, ino_t ino)
 
 	itp = inotablookup(ino);
 	if (itp == NULL)
-		panic("Cannot find directory inode %d named %s\n", ino, name);
+		panic("Cannot find directory inode %ld named %s\n", ino, name);
 	if ((ofile = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
 		fprintf(stderr, "%s: ", name);
 		(void) fflush(stderr);
@@ -663,14 +663,14 @@ genliteraldir(const char *name, ino_t ino)
 		size = i < BUFSIZ ? i : BUFSIZ;
 		if (read(dp, buf, (int) size) == -1) {
 			fprintf(stderr,
-				"write error extracting inode %d, name %s\n",
+				"write error extracting inode %ld, name %s\n",
 				curfile.ino, curfile.name);
 			fprintf(stderr, "read: %s\n", strerror(errno));
 			exit(1);
 		}
 		if (!Nflag && write(ofile, buf, (int) size) == -1) {
 			fprintf(stderr,
-				"write error extracting inode %d, name %s\n",
+				"write error extracting inode %ld, name %s\n",
 				curfile.ino, curfile.name);
 			fprintf(stderr, "write: %s\n", strerror(errno));
 			exit(1);

@@ -100,14 +100,14 @@ command_unload(int argc, char *argv[])
 {
 	struct preloaded_file *fp;
 
-    while (preloaded_files != NULL) {
-    	fp = preloaded_files;
-    	preloaded_files = preloaded_files->f_next;
-    	file_discard(fp);
-    }
-    loadaddr = 0;
-    unsetenv("kernelname");
-    return(CMD_OK);
+	while (preloaded_files != NULL) {
+		fp = preloaded_files;
+		preloaded_files = preloaded_files->f_next;
+		file_discard(fp);
+	}
+	loadaddr = 0;
+	unsetenv("kernelname");
+	return (CMD_OK);
 }
 
 int
@@ -117,23 +117,23 @@ command_lskern(int argc, char *argv[])
 	char lbuf[80];
 	int ch, verbose;
 
-    verbose = 0;
-    optind = 1;
-    optreset = 1;
+	verbose = 0;
+	optind = 1;
+	optreset = 1;
 
-    pager_open();
-    for (fp = preloaded_files; fp; fp = fp->f_next) {
-    	snprintf(lbuf, sizeof(lbuf), " %p: %s (%s, 0x%lx)\n",
-    			(void *)fp->f_addr, fp->f_name, fp->f_type, (long)fp->f_size);
-    	pager_output(lbuf);
-    	if (fp->f_args != NULL) {
-    		pager_output("    args: ");
-    		pager_output(fp->f_args);
-    		pager_output("\n");
-    	}
-    }
-    pager_close();
-    return (CMD_OK);
+	pager_open();
+	for (fp = preloaded_files; fp; fp = fp->f_next) {
+		snprintf(lbuf, sizeof(lbuf), " %p: %s (%s, 0x%lx)\n",
+				(void *)fp->f_addr, fp->f_name, fp->f_type, (long)fp->f_size);
+		pager_output(lbuf);
+		if (fp->f_args != NULL) {
+			pager_output("    args: ");
+			pager_output(fp->f_args);
+			pager_output("\n");
+		}
+	}
+	pager_close();
+	return (CMD_OK);
 }
 
 /*
@@ -142,27 +142,27 @@ command_lskern(int argc, char *argv[])
 int
 file_load(char *filename, vaddr_t dest, struct preloaded_file **result)
 {
-    struct preloaded_file *fp;
-    int error;
-    int i;
+	struct preloaded_file *fp;
+	int error;
+	int i;
 
-    error = EFTYPE;
-    for (i = 0, fp = NULL; file_formats[i] && fp == NULL; i++) {
-    	error = (file_formats[i]->l_load)(filename, dest, &fp);
-    	if (error == 0) {
-    		fp->f_loader = i;		/* remember the loader */
-    		*result = fp;
-    		break;
-    	}
-    	if (error == EFTYPE)
-    		continue;		/* Unknown to this handler? */
-    	if (error) {
-    		command_seterr("can't load file '%s': %s",
-    				filename, strerror(error));
-    		break;
-    	}
-    }
-    return (error);
+	error = EFTYPE;
+	for (i = 0, fp = NULL; file_formats[i] && fp == NULL; i++) {
+		error = (file_formats[i]->l_load)(filename, dest, &fp);
+		if (error == 0) {
+			fp->f_loader = i; /* remember the loader */
+			*result = fp;
+			break;
+		}
+		if (error == EFTYPE)
+			continue; /* Unknown to this handler? */
+		if (error) {
+			command_seterr("can't load file '%s': %s", filename,
+					strerror(error));
+			break;
+		}
+	}
+	return (error);
 }
 
 /*
@@ -175,9 +175,9 @@ file_loadkernel(char *filename, int argc, char *argv[])
 	struct preloaded_file *fp, *last_file;
 	int err;
 
-    /*
-     * Check if KLD already loaded
-     */
+	/*
+	 * Check if KLD already loaded
+	 */
 	fp = file_findfile(filename, NULL);
 	if (fp) {
 		command_seterr("warning: KLD '%s' already loaded", filename);
@@ -215,7 +215,7 @@ file_loadkernel(char *filename, int argc, char *argv[])
 struct preloaded_file *
 file_findfile(char *name, char *type)
 {
-    struct preloaded_file *fp;
+	struct preloaded_file *fp;
 
 	for (fp = preloaded_files; fp != NULL; fp = fp->f_next) {
 		if (((name == NULL) || !strcmp(name, fp->f_name))
@@ -223,7 +223,7 @@ file_findfile(char *name, char *type)
 			break;
 		}
 	}
-    return (fp);
+	return (fp);
 }
 
 /*
@@ -234,8 +234,8 @@ file_havepath(const char *name)
 {
 	const char *cp;
 
-    archsw.arch_getdev(NULL, name, &cp);
-    return (cp != name || strchr(name, '/') != NULL);
+	archsw.arch_getdev(NULL, name, &cp);
+	return (cp != name || strchr(name, '/') != NULL);
 }
 
 
@@ -257,8 +257,8 @@ file_discard(struct preloaded_file *fp)
 	if (fp->f_args != NULL) {
 		free(fp->f_args);
 	}
-	if (fp->marks != NULL) {
-		free(fp->marks);
+	if (fp->f_marks != NULL) {
+		free(fp->f_marks);
 	}
 	free(fp);
 }
@@ -272,11 +272,11 @@ file_alloc(void)
 {
 	struct preloaded_file *fp;
 
-    fp = alloc(sizeof(struct preloaded_file));
+	fp = alloc(sizeof(struct preloaded_file));
 	if (fp != NULL) {
 		memset(fp, 0, sizeof(struct preloaded_file));
-    }
-    return (fp);
+	}
+	return (fp);
 }
 
 /*
