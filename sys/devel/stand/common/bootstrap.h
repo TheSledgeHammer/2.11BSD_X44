@@ -119,7 +119,7 @@ int getrootmount(char*);
 
 /* disk.c */
 void disk_setbootdev(struct devdesc *, uint32_t);
-int disk_makebootdev(struct devdesc *, int);
+int disk_makebootdev(struct devdesc *);
 int disk_device_type(uint32_t);
 int disk_device_adaptor(uint32_t);
 int disk_device_controller(uint32_t);
@@ -146,7 +146,7 @@ void ksyms_addr_set(void *, void *, void *);
 /* metadata.c */
 int md_getboothowto(char *);
 void md_setboothowto(int);
-int md_load(int, vm_offset_t, vm_offset_t, caddr_t, caddr_t, caddr_t, struct preloaded_file *, char *);
+int md_load(vm_offset_t, vm_offset_t, caddr_t, caddr_t, caddr_t, struct preloaded_file *);
 vm_offset_t md_copyenv(vm_offset_t);
 vm_offset_t md_align(vm_offset_t);
 

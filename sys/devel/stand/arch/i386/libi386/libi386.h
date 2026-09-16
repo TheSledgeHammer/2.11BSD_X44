@@ -29,6 +29,12 @@
 #ifndef _LIBI386_H_
 #define _LIBI386_H_
 
+struct i386_devdesc {
+	union {
+		struct devdesc	dd;				/* Must be first. */
+	} d_kind;
+};
+
 extern struct devdesc currdev;	/* our current device */
 #define MAXDEV			31		/* maximum number of distinct devices */
 #define MAXBDDEV		MAXDEV
@@ -57,24 +63,55 @@ extern vm_offset_t	high_heap_base;	/* for use as the heap */
 void *bio_alloc(size_t);
 void bio_free(void*, size_t);
 
+/* bioscd.c */
+
+/* biosdisk.c */
+
+/* biosfd.c */
 
 /* biosmem.c */
+void bios_getmem(void);
 int command_biosmem(int, char **);
 
-/* biosmap.c */
+/* biospci.c */
+
+/* biospnp.c */
+
+/* biossmap.c */
+void bios_getsmap(void);
 int command_smap(int, char **);
 
-/* bootexec.c */
+/* bootinfo.c */
+int bi_load(struct bootinfo *, struct preloaded_file *, char *, char *);
+
+/* bootload.c */
 int boot_loadfile(char *, char *, uint64_t, struct preloaded_file **);
 int boot_exec(struct preloaded_file *, char *);
 
-/* bootload.c */
-int bi_load(struct bootinfo *, struct preloaded_file *, char *, char *);
+/* devicename.c */
+int i386_getdev(void **, const char *, const char *);
+char *i386_fmtdev(void *);
 
 /* i386_autoload.c */
+int i386_autoload(void);
+
+/* i386_copy.c */
+ssize_t i386_copyin(const void *, vm_offset_t, const size_t);
+ssize_t i386_copyout(const vm_offset_t, void *, const size_t);
+ssize_t i386_readin(const int, vm_offset_t, const size_t);
+
+/* i386_reboot.c */
+int command_reboot(int, char **);
+
+/* pread.c */
+int pread(int, vm_offset_t, size_t);
+
+/* time.c */
+time_t time(time_t *);
 
 /* i386 commands */
 #define I386_COMMANDS \
+	{ "reboot", "reboot the system", command_reboot }, \
 	{ "biosmem", "show BIOS memory setup", command_biosmem }, \
 	{  "smap", "show BIOS SMAP", command_smap },
 

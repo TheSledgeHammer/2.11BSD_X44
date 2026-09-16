@@ -1,5 +1,3 @@
-/*	$NetBSD: devopen.c,v 1.3 2009/07/20 04:59:03 kiyohara Exp $	*/
-
 /*-
  * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
  * All rights reserved.
@@ -27,39 +25,49 @@
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD: src/sys/boot/common/devopen.c,v 1.4 2003/08/25 23:30:41 obrien Exp $"); */
 
-#include <lib/libsa/loadfile.h>
 #include <lib/libsa/stand.h>
+/*
+ * MD primitives supporting placement of module data
+ *
+ * XXX should check load address/size against memory top.
+ */
+#include "libi386.h"
+#include "btxv86.h"
 
-#include "bootstrap.h"
-
-int
-devopen(struct open_file *f, const char *fname, char **file)
+ssize_t
+i386_copyin(const void *src, vm_offset_t dest, const size_t len)
 {
-	struct devdesc *dev;
-	int result;
-
-	result = archsw.arch_getdev((void *)&dev, fname, (const char **)file);
-	if (result == 0) { /* get the device */
-		/* point to device-specific data so that device open can use it */
-		f->f_devdata = dev;
-		result = (dev->d_dev->dv_open)(f, dev);
-		if (result == 0) { /* try to open it */
-			/* reference the devsw entry from the open_file structure */
-			f->f_dev = dev->d_dev;
-		} else {
-			free(dev); /* release the device descriptor */
-		}
+	if (dest + len >= memtop) {
+		errno = EFBIG;
+		return (-1);
 	}
-	return (result);
+
+	bcopy(src, PTOV(dest), len);
+	return (len);
 }
 
-int
-devclose(struct open_file *f)
+ssize_t
+i386_copyout(const vm_offset_t src, void *dest, const size_t len)
 {
-	if (f->f_devdata != NULL) {
-		free(f->f_devdata);
+	if (src + len >= memtop) {
+		errno = EFBIG;
+		return (-1);
 	}
-	return (0);
+
+	bcopy(PTOV(src), dest, len);
+	return (len);
+}
+
+
+ssize_t
+i386_readin(const int fd, vm_offset_t dest, const size_t len)
+{
+
+	if (dest + len >= memtop_copyin) {
+		errno = EFBIG;
+		return (-1);
+	}
+
+	return (read(fd, PTOV(dest), len));
 }

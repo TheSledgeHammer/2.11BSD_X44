@@ -63,45 +63,45 @@
 #include <bootstrap.h>
 
 #if DISK_SLICES
-static int disk_makebootdev2(struct devdesc *, int);
+static int disk_makebootdev2(struct devdesc *);
 #else
-static int disk_makebootdev1(struct devdesc *, int);
+static int disk_makebootdev1(struct devdesc *);
 #endif
 
 void
 disk_setbootdev(struct devdesc *dev, uint32_t bootdev)
 {
-	disk_format(bootdev, dev->d_type, dev->d_adaptor, dev->d_controller,
+	disk_format(bootdev, dev->d_major, dev->d_adaptor, dev->d_controller,
 			dev->d_slice, dev->d_partition);
 }
 
 int
-disk_makebootdev(struct devdesc *dev, int major)
+disk_makebootdev(struct devdesc *dev)
 {
 #if DISK_SLICES
-	return (disk_makebootdev2(dev, major));
+	return (disk_makebootdev2(dev));
 #else
-	return (disk_makebootdev1(dev, major));
+	return (disk_makebootdev1(dev));
 #endif
 }
 
 #if DISK_SLICES
 static int
-disk_makebootdev2(struct devdesc *dev, int major)
+disk_makebootdev2(struct devdesc *dev)
 {
 	if (dev == NULL) {
 		return (-1);
 	}
-	return (MAKEBOOTDEV2(major, dev->d_slice, dev->d_unit, dev->d_partition));
+	return (MAKEBOOTDEV2(dev->d_major, dev->d_slice, dev->d_unit, dev->d_partition));
 }
 #else
 static int
-disk_makebootdev1(struct devdesc *dev, int major)
+disk_makebootdev1(struct devdesc *dev)
 {
 	if (dev == NULL) {
 		return (-1);
 	}
-	return (MAKEBOOTDEV1(major, dev->d_adaptor, dev->d_controller, dev->d_unit,
+	return (MAKEBOOTDEV1(dev->d_major, dev->d_adaptor, dev->d_controller, dev->d_unit,
 			dev->d_partition));
 }
 #endif

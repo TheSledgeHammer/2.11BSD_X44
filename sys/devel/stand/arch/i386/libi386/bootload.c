@@ -1,5 +1,6 @@
-/*-
- * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
+/*
+ * The 3-Clause BSD License:
+ * Copyright (c) 2026 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,28 +11,24 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * $FreeBSD$
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-
 #include <sys/param.h>
-#include <sys/reboot.h>
-#include <sys/exec.h>
 #include <sys/boot.h>
+#include <sys/exec.h>
 
 #include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
@@ -41,110 +38,121 @@
 #include <btxv86.h>
 
 #include <machine/bootinfo.h>
-#include <machine/cpufunc.h>
-#include <machine/psl.h>
-#include <machine/specialreg.h>
 
-static int bi_checkcpu(void);
-static void bi_load_legacy(struct bootinfo, char *);
+struct bootinfo boot;
 
-/*
- * Check to see if this CPU supports long mode.
- */
-static int
-bi_checkcpu(void)
+#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
+static int preload_ksyms(struct bootinfo *, struct preloaded_file *);
+#endif
+
+int
+boot_loadfile(char *filename, char *kerntype, uint64_t dest, struct preloaded_file **fp)
 {
-	char *cpu_vendor;
-	int vendor[3];
-	int eflags;
-	unsigned int regs[4];
+	size_t size;
+	int error;
 
-	/* Check for presence of "cpuid". */
-	eflags = read_eflags();
-	write_eflags(eflags ^ PSL_ID);
-	if (!((eflags ^ read_eflags()) & PSL_ID))
-		return (0);
+	error = exec_loadfile(filename, kerntype, dest, LOAD_KERNEL, fp);
+	if (error != 0) {
+		printf("boot_loadfile failed: %d unable to load kernel\n", error);
+		goto out;
+	}
+	/*
+	 * f_addr is already aligned to PAGE_SIZE, make sure
+	 * f_size it's also aligned so when the modules are loaded
+	 * they are aligned to PAGE_SIZE.
+	 */
+	size = roundup((*fp)->f_size, PAGE_SIZE);
+	(*fp)->f_size = size;
 
-	/* Fetch the vendor string. */
-	do_cpuid(0, regs);
-	vendor[0] = regs[1];
-	vendor[1] = regs[3];
-	vendor[2] = regs[2];
-	cpu_vendor = (char *)vendor;
-
-	/* Check for vendors that support AMD features. */
-	if (strncmp(cpu_vendor, INTEL_VENDOR_ID, 12) != 0
-			&& strncmp(cpu_vendor, AMD_VENDOR_ID, 12) != 0
-			&& strncmp(cpu_vendor, HYGON_VENDOR_ID, 12) != 0
-			&& strncmp(cpu_vendor, CENTAUR_VENDOR_ID, 12) != 0)
-		return (0);
-
-	/* Has to support AMD features. */
-	do_cpuid(0x80000000, regs);
-	if (!(regs[0] >= 0x80000001))
-		return (0);
-
-	/* Check for long mode. */
-	do_cpuid(0x80000001, regs);
-
-	return (regs[3] & AMDID_LM);
+out:
+ 	return (error);
 }
 
 int
-bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *kerntype, char *args)
+boot_exec(struct preloaded_file *fp, char *kerntype)
 {
+	vm_offset_t entry;
 	int error;
 
-	/* Check long mode support */
-	if (!bi_checkcpu()) {
-		printf("CPU doesn't support long mode\n");
-		return (EINVAL);
-	}
-
-	/*
-	 * Version 1 bootinfo.
-	 */
-	bi->bi_version = 1;
-
-	fp = file_findfile(NULL, kerntype);
-	if (fp == NULL) {
-		return (EINVAL);
-	}
-
-	error = md_load(bi->bi_boothowto, bi->bi_kernend, bi->bi_environment,
-			bi->bi_nsymtab, bi->bi_symtab, bi->bi_esymtab, fp, args);
+	error = bi_load(&boot, fp, kerntype, fp->f_args);
 	if (error != 0) {
-		return (error);
+		printf("bi_load failed: %d\n", error);
+		goto out;
 	}
+
+#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
+	if (preload_ksyms(&boot, fp)) {
+		entry = preload_ksyms(&boot, fp);
+		&boot.bi_flags = fp->f_flags;
+	} else if (!preload_ksyms(&boot, fp)) {
+		entry = &boot.bi_entry & 0xffffff;
+	} else {
+		entry = &boot.bi_entry;
+	}
+#else /* !BOOT_ELF32 || !BOOT_ELF64 */
+	entry = &boot.bi_entry;
+#endif
+	__exec((void *)entry, &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0,
+			&boot.bi_bip, &boot.bi_kernend);
+
+out:
+	panic("exec returned");
+	return (error);
+}
+
+/*
+ * TODO: Fix preloaded_file elf symbols
+ */
+#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
+static int
+preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
+{
+	fp->f_flags = BOOTINFO_MEMORY;
+
+	fp->f_mem_upper = bi->bi_extmem;
+	fp->f_mem_lower = bi->bi_basemem;
+
+	if (fp->f_marks[MARK_SYM] != 0) {
+		Elf32_Ehdr ehdr;
+		void *shbuf, *basekern;
+		size_t shlen;
+		u_long shaddr;
+
+		bcopy((void *)fp->f_marks[MARK_SYM], &ehdr, sizeof(ehdr));
+
+		if (memcmp(&ehdr.e_ident, ELFMAG, SELFMAG) != 0) {
+			goto skip_ksyms;
+		}
+
+		shaddr = fp->f_marks[MARK_SYM] + ehdr.e_shoff;
+
+		shlen = ehdr.e_shnum * ehdr.e_shentsize;
+		shbuf = alloc(shlen);
+
+		basekern = (void *)(KERNBASE + fp->f_marks[MARK_SYM]);
+		bcopy((void *)shaddr, shbuf, shlen);
+		ksyms_addr_set(&ehdr, shbuf, basekern);
+		bcopy(shbuf, (void *)shaddr, shlen);
+
+		free(shbuf, shlen);
+
+		fp->f_elfshdr_num = ehdr.e_shnum;
+		fp->f_elfshdr_size = ehdr.e_shentsize;
+		fp->f_elfshdr_addr = shaddr;
+		fp->f_elfshdr_shndx = ehdr.e_shstrndx;
+
+		fp->f_flags |= BOOTINFO_ELF_SYMS;
+	}
+
+skip_ksyms:
+#ifdef DEBUG
+	printf("Start @ 0x%lx [%ld=0x%lx-0x%lx]...\n",
+			fp->f_marks[MARK_ENTRY],
+			fp->f_marks[MARK_NSYM],
+			fp->f_marks[MARK_SYM],
+			fp->f_marks[MARK_END]);
+#endif
+
 	return (0);
 }
-
-/* Needs fixing!! */
-static void
-bi_load_legacy(struct bootinfo bi, char *args)
-{
-	int bootdevnr, i, howto;
-	const char *kernelpath;
-	char *kernelname;
-
-	/* legacy bootinfo structure */
-	kernelname = getenv("kernelname");
-	i386_getdev(NULL, kernelname, &kernelpath);
-	bi.bi_version = BOOTINFO_VERSION;
-	bi.bi_kernelname = 0; 						/* XXX char * -> kernel name */
-	bi.bi_nfs_diskless = 0; 					/* struct nfs_diskless * */
-	bi.bi_n_bios_used = 0; 						/* XXX would have to hook biosdisk driver for these */
-	for (i = 0; i < N_BIOS_GEOM; i++) {
-		bi.bi_bios_geom[i] = bd_getbigeom(i);
-	}
-	bi.bi_size = sizeof(bi);
-	bi.bi_memsizes_valid = 1;
-	bi.bi_basemem = bios_basemem / 1024;
-	bi.bi_extmem = bios_extmem / 1024;
-	bi.bi_kernelname = VTOP(kernelpath);
-
-	/* legacy boot arguments */
-	bi.bi_howtop = howto | RB_BOOTINFO;
-	bi.bi_bootdevp = bootdevnr;
-	bi.bi_bip = VTOP(&bi);
-}
+#endif /* !BOOT_ELF32 || !BOOT_ELF64 */

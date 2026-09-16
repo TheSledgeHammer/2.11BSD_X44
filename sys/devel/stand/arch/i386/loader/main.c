@@ -37,13 +37,12 @@
 #include <stand/common/bootstrap.h>
 #include <stand/common/commands.h>
 #include <stand/common/console.h>
-
 #include <boot/common/smbios.h>
 
 #include <stand/dloader/cmds.h>
 
-#include <libi386/libi386.h>
-#include <btxv86.h>
+#include "libi386.h"
+#include "btxv86.h"
 
 struct bootblk_command commands[] = {
 		COMMON_COMMANDS
@@ -56,7 +55,7 @@ static uint32_t				initial_howto;
 static uint32_t				initial_bootdev;
 static struct bootinfo		*initial_bootinfo;
 
-static void extract_currdev(struct devdesc *, struct bootargs *, struct bootinfo *, uint32_t);
+static void extract_currdev(struct bootargs *, struct bootinfo *, uint32_t);
 static int isa_inb(int);
 static void isa_outb(int, int);
 
@@ -163,7 +162,7 @@ main(void)
 
     printf("\n%s", bootprog_info);
 
-	extract_currdev(&currdev, kargs, initial_bootinfo, initial_bootdev);
+	extract_currdev(kargs, initial_bootinfo, initial_bootdev);
     setenv("LINES", "24", 1);		/* optional */
 
     bios_getsmap();
@@ -175,10 +174,11 @@ main(void)
 }
 
 static void
-extract_currdev(struct devdesc *dev, struct bootargs *ba, struct bootinfo *bi, uint32_t bootdev)
+extract_currdev(struct bootargs *ba, struct bootinfo *bi, uint32_t bootdev)
 {
+	struct i386_devdesc	currdev;
 	struct devsw *dv;
-	int major, biosdev = -1;
+	int biosdev = -1;
 
 	dv = &biosdisk;
 	 /* new-style boot loaders such as pxeldr and cdldr */
@@ -186,27 +186,27 @@ extract_currdev(struct devdesc *dev, struct bootargs *ba, struct bootinfo *bi, u
 		if ((ba->bootflags & KARGS_FLAGS_CD) != 0) {
 			/* we are booting from a CD with cdboot */
 			dv = &bioscd;
-			dev->d_unit = bc_bios2unit(bootdev);
+			currdev.d_kind.dd.d_unit = bc_bios2unit(bootdev);
 		} else if ((ba->bootflags & KARGS_FLAGS_PXE) != 0) {
 			 /* we are booting from pxeldr */
 			dv = &pxedisk;
-			dev->d_unit = 0;
+			currdev.d_kind.dd.d_unit = 0;
 		} else {
 		    /* we don't know what our boot device is */
-			dev->d_slice = -1;
-			dev->d_adaptor = -1;
-			dev->d_controller = -1;
-			dev->d_partition = 0;
+			currdev.d_kind.dd.d_slice = -1;
+			currdev.d_kind.dd.d_adaptor = -1;
+			currdev.d_kind.dd.d_controller = -1;
+			currdev.d_kind.dd.d_partition = 0;
 		    biosdev = -1;
 		}
 		/* ZFS SUPPORT Belongs Here */
 	} else if ((bootdev & B_MAGICMASK) != B_DEVMAGIC) {
 		/* The passed-in boot device is bad */
-		dev->d_slice = -1;
-	    dev->d_adaptor = -1;
-	    dev->d_controller = -1;
-	    dev->d_partition = 0;
-		biosdev = -1;
+		currdev.d_kind.dd.d_slice = -1;
+		currdev.d_kind.dd.d_adaptor = -1;
+		currdev.d_kind.dd.d_controller = -1;
+		currdev.d_kind.dd.d_partition = 0;
+		currdev = -1;
 	} else {
 		biosdev = bi->bi_bios_dev;
 		disk_setbootdev(dev, biosdev);
@@ -221,22 +221,23 @@ extract_currdev(struct devdesc *dev, struct bootargs *ba, struct bootinfo *bi, u
 			biosdev = 0x80 + B_UNIT(bootdev);			/* assume harddisk */
 		}
 	}
-	dev->d_dev = dv;
-	dev->d_type = dev->d_dev->dv_type;
+	currdev.d_kind.dd.d_dev = dv;
+	currdev.d_kind.dd.d_type = currdev.d_kind.dd->d_dev->dv_type;
 
 	/*
 	 * If we are booting off of a BIOS disk and we didn't succeed in determining
 	 * which one we booted off of, just use disk0: as a reasonable default.
 	 */
-	if ((dev->d_type == biosdisk.dv_type) &&
-		((dev->d_unit = bd_bios2unit(biosdev)) == -1)) {
+	if ((currdev.d_kind.dd.d_type == biosdisk.dv_type) &&
+		((currdev.d_kind.dd.d_unit = bd_bios2unit(biosdev)) == -1)) {
 		printf("Can't work out which disk we are booting from.\n"
 		       "Guessed BIOS device 0x%x not found by probes, defaulting to disk0:\n", biosdev);
-		dev->d_unit = 0;
+		currdev.d_kind.dd.d_unit = 0;
 	}
 
-	env_setenv("currdev", EV_VOLATILE, disk_fmtdev(dev), (ev_sethook_t *)disk_setcurrdev, env_nounset);
-	env_setenv("loaddev", EV_VOLATILE, disk_fmtdev(dev), env_noset, env_nounset);
+	disk_setcurrdev(disk_fmtdev(&currdev.d_kind.dd));
+	env_setenv("currdev", EV_VOLATILE, disk_fmtdev(&currdev.d_kind.dd), (ev_sethook_t *)disk_setcurrdev, env_nounset);
+	env_setenv("loaddev", EV_VOLATILE, disk_fmtdev(&currdev.d_kind.dd), env_noset, env_nounset);
 }
 
 /* provide this for panic, as it's not in the startup code */

@@ -1,5 +1,3 @@
-/*	$NetBSD: devopen.c,v 1.3 2009/07/20 04:59:03 kiyohara Exp $	*/
-
 /*-
  * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
  * All rights reserved.
@@ -24,42 +22,32 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
-#include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD: src/sys/boot/common/devopen.c,v 1.4 2003/08/25 23:30:41 obrien Exp $"); */
-
-#include <lib/libsa/loadfile.h>
 #include <lib/libsa/stand.h>
 
-#include "bootstrap.h"
+#include <common/bootstrap.h>
+#include "libi386.h"
 
+/*
+ * Point (dev) at an allocated device specifier for the device matching the
+ * path in (devspec). If it contains an explicit device specification,
+ * use that.  If not, use the default device.
+ */
 int
-devopen(struct open_file *f, const char *fname, char **file)
+i386_getdev(void **vdev, const char *devspec, const char **path)
 {
-	struct devdesc *dev;
-	int result;
+	struct devdesc **dev = (struct devdesc **)vdev;
 
-	result = archsw.arch_getdev((void *)&dev, fname, (const char **)file);
-	if (result == 0) { /* get the device */
-		/* point to device-specific data so that device open can use it */
-		f->f_devdata = dev;
-		result = (dev->d_dev->dv_open)(f, dev);
-		if (result == 0) { /* try to open it */
-			/* reference the devsw entry from the open_file structure */
-			f->f_dev = dev->d_dev;
-		} else {
-			free(dev); /* release the device descriptor */
-		}
-	}
-	return (result);
+	return (disk_getdev(dev, devspec, path));
 }
 
-int
-devclose(struct open_file *f)
+char *
+i386_fmtdev(void *vdev)
 {
-	if (f->f_devdata != NULL) {
-		free(f->f_devdata);
-	}
-	return (0);
+	struct devdesc *dev = (struct devdesc *)vdev;
+
+	return (disk_fmtdev(dev));
 }

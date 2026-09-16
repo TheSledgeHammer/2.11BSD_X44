@@ -80,53 +80,25 @@ md_setboothowto(int howto)
 }
 
 int
-md_load(int howto, vm_offset_t kernend, vm_offset_t envp, caddr_t nsym, caddr_t ssym, caddr_t esym, struct preloaded_file *fp, char *args)
+md_load(vm_offset_t kernend, vm_offset_t envp, caddr_t nsym, caddr_t ssym, caddr_t esym, struct preloaded_file *fp)
 {
 	struct preloaded_file *xp;
-	struct devdesc *rootdev;
 	vm_offset_t addr;
-	char *rootdevname;
-	int error;
-
-    /*
-     * Calculate boothowto.
-     */
-	howto = md_getboothowto(args);
-
-	/*
-	 * Allow the environment variable 'rootdev' to override the supplied device
-	 * This should perhaps go to MI code and/or have $rootdev tested/set by
-	 * MI code before launching the kernel.
-	 */
-	rootdevname = getenv("rootdev");
-	if (rootdevname == NULL || *rootdevname == '\0') {
-		rootdevname = getenv("currdev");
-	}
-
-	error = disk_getdev(&rootdev, rootdevname, NULL);
-	if (rootdev == NULL) { /* bad $rootdev/$currdev */
-		printf("can't determine root device\n");
-		return (EINVAL);
-	}
-	if (error != 0) {
-		return (error);
-	}
-
-	/* Try reading the /etc/fstab file to select the root device */
-	if (strcmp(rootdevname, disk_fmtdev(rootdev)) == 0) {
-		getrootmount(disk_fmtdev(rootdev));
-	} else {
-		getrootmount(rootdevname);
-	}
-	free(rootdev);
 
 	nsym = ssym = esym = 0;
 	nsym = fp->f_marks[MARK_NSYM];
 	ssym = fp->f_marks[MARK_SYM];
 	esym = fp->f_marks[MARK_END];
 
+	/*
+	 * Changes:
+	 * - return an error and then set in arch's load function.
+	 * - As not all arch's use all symbols (i.e. nsym, ssym and esym).
+	 * 	Hence setting all to 0 is a critical mistake for all arch's.
+	 */
 	if (nsym == 0 || ssym == 0 || esym == 0) {
-		nsym = ssym = esym = 0; /* sanity */
+		//nsym = ssym = esym = 0; /* sanity */
+		return (EFAULT);
 	}
 
 	/* Find the last module in the chain */

@@ -26,8 +26,9 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
 
-#include <sys/user.h>
 #include <lib/libsa/stand.h>
+
+#include "smbios.h"
 
 #define PTOV(x)		ptov(x)
 

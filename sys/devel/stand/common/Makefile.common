@@ -2,13 +2,16 @@
 
 .include <bsd.own.mk>
 
-.if (${SA_USE_BCACHE} == "yes")
-CPPFLAGS+= -DUSE_BCACHE
-.endif
-
-SRCS+= boot.c console.c commands.c disk.c fileload.c \
+SRCS+= boot.c console.c commands.c disk.c fileload.c
 SRCS+= interp_backslash.c interp_parse.c interp.c
-SRCS+= interp_${SA_LOADER_INTERP_NAME}.c
 SRCS+= load_exec.c load_ksyms.c metadata.c misc.c
+
+.if ${LOADER_INTERP} == "dloader"
+SRCS+= interp_dloader.c
+.elif ${LOADER_INTERP} == "simp"
+SRCS+=	interp_simple.c
+.else
+.error Unknown interpreter ${LOADER_INTERP}
+.endif
 
 .include <bsd.kinc.mk>

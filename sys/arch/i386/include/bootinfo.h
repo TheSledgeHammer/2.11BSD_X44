@@ -58,7 +58,7 @@ struct bootinfo {
 #define	bi_endcommon		bi_n_bios_used
 	u_int32_t				bi_size;
 	u_int8_t				bi_memsizes_valid;
-	u_int8_t				bi_bios_dev;		/* bootdev BIOS unit number */
+	u_int8_t				bi_bios_dev;		/* bootdev BIOS unit number (bi_biosdev??) */
 	u_int8_t				bi_pad[2];
 	u_int32_t				bi_basemem;
 	u_int32_t				bi_extmem;
@@ -87,7 +87,7 @@ struct bootinfo {
 		u_int16_t 			checksum;
 		char 				packname[16];
 	} bi_label;
-	int 					bi_biosdev;
+	int 					bi_biosdev;			/* same as bi_bios_dev?? (unused) */
 	int 					bi_partition;
 	u_int32_t				bi_nfs_diskless;	/* struct nfs_diskless */
 

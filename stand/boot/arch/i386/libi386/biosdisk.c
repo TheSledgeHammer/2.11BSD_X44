@@ -38,16 +38,17 @@
  */
 
 #include <sys/disk.h>
+#include <sys/diskmbr.h>
 #include <sys/queue.h>
 #include <sys/reboot.h>
+
+#include <lib/libsa/stand.h>
 
 #include <machine/bootinfo.h>
 
 #include <bootstrap.h>
 #include <btxv86.h>
 #include <edd.h>
-#include <lib/libsa/stand.h>
-#include "disk.h"
 #include "libi386.h"
 
 #define	BIOS_NUMDRIVES		0x475
@@ -95,7 +96,7 @@ static struct bdinfo {
     int						bd_unit;		/* BIOS unit number */
     int						bd_flags;
     int						bd_type;		/* BIOS 'drive type' (floppy only) */
-} bdinfo [MAXBDDEV];
+} bdinfo[MAXBDDEV];
 static int nbdinfo = 0;
 
 static int	bd_getgeom(struct open_disk *od);
@@ -295,7 +296,7 @@ bd_printslice(struct open_disk *od, struct dos_partition *dp, char *prefix,
 
 	switch (dp->dp_typ) {
 	case DOSPTYP_386BSD:
-		bd_printbsdslice(od, (daddr_t) dp->dp_start, prefix, verbose);
+		bd_printbsdslice(od, (daddr_t)dp->dp_start, prefix, verbose);
 		return;
 	case DOSPTYP_LINSWP:
 		if (verbose) {
@@ -660,7 +661,7 @@ bd_checkextended(struct open_disk *od, int slicenum)
 	if (dp->dp_typ != DOSPTYP_EXT) {
 		goto done;
 	}
-	if (bd_read(od, (daddr_t) dp->dp_start, 1, buf)) {
+	if (bd_read(od, (daddr_t)dp->dp_start, 1, buf)) {
 		goto done;
 	}
 	if (((u_char) buf[0x1fe] != 0x55) || ((u_char) buf[0x1ff] != 0xaa)) {

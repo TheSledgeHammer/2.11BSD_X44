@@ -41,6 +41,7 @@ struct i386_devdesc {
 			int		partition;
 			void	*data;
 		} biosdisk;
+
 		struct {
 		    int		unit;
 		    void	*data;

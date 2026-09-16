@@ -129,7 +129,7 @@ int
 bc_unit2bios(int unit)
 {
 	if ((unit >= 0) && (unit < nbcinfo))
-		return(bcinfo[unit].bc_unit);
+		return (bcinfo[unit].bc_unit);
 	return (-1);
 }
 

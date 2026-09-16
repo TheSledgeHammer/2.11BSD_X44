@@ -545,15 +545,6 @@ out:
 }
 
 int
-command_reboot(int argc, char *argv[])
-{
-	dev_cleanup();
-	printf("Rebooting...\n");
-	delay(1000000);
-	__exit(0);
-}
-
-int
 command_heap(int argc, char *argv[])
 {
     char *base;

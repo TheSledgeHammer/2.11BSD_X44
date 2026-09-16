@@ -6,8 +6,8 @@
 LIB=	i386
 
 SRCS=	bio.c bioscd.c biosdisk.c biosmem.c biospci.c 	\
-		biospnp.c biossmap.c bootexec.c bootload.c 		\
-		comconsole.c devicename.c exec.c				\
+		biospnp.c biossmap.c bootexec.c bootinfo.c 		\
+		bootload.c comconsole.c devicename.c 			\
 		i386_autoload.c i386_copy.c nullconsole.c 		\
 		pread.c relocater_tramp.S _setjmp.S smbios.c 	\
 		spinconsole.c time.c vidconsole.c

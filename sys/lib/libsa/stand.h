@@ -105,8 +105,8 @@ extern int 				ndevs;			/* number of elements in devsw[] */
 #define DEVT_DISK		1
 #define DEVT_NET		2
 #define DEVT_CD			3
-#define DEVT_ZFS		4
-#define DEVT_FD			5
+#define DEVT_FD			4
+#define DEVT_ZFS		5
 
 /*
  * Generic device specifier; architecture-dependent
@@ -116,6 +116,7 @@ extern int 				ndevs;			/* number of elements in devsw[] */
 struct devdesc {
 	struct devsw 		*d_dev;
 	int					d_type;
+	int					d_major;
 	int 				d_unit;
 	int 				d_adaptor;
 	int 				d_controller;

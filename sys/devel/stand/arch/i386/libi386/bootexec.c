@@ -26,130 +26,123 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
-#include <sys/boot.h>
-#include <sys/exec.h>
-
 #include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
-#include <bootstrap.h>
+#include <stand/common/bootstrap.h>
 #include <libi386.h>
-#include <btxv86.h>
 
-#include <i386/include/bootinfo.h>
+int aout_load(char *, uint64_t, struct preloaded_file **);
+int aout_exec(struct preloaded_file *);
+int ecoff_load(char *, uint64_t, struct preloaded_file **);
+int ecoff_exec(struct preloaded_file *);
+int elf32_load(char *, uint64_t, struct preloaded_file **);
+int elf32_exec(struct preloaded_file *);
+int elf64_load(char *, uint64_t, struct preloaded_file **);
+int elf64_exec(struct preloaded_file *);
+int xcoff32_load(char *, uint64_t, struct preloaded_file **);
+int xcoff32_exec(struct preloaded_file *);
+int xcoff64_load(char *, uint64_t, struct preloaded_file **);
+int xcoff64_exec(struct preloaded_file *);
 
-struct bootinfo boot;
+struct file_format i386_aout = {
+		.l_load = aout_load,
+		.l_exec = aout_exec,
+};
 
-#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
-static int preload_ksyms(struct bootinfo *, struct preloaded_file *);
-#endif
+struct file_format i386_ecoff = {
+		.l_load = ecoff_load,
+		.l_exec = ecoff_exec,
+};
+
+struct file_format i386_elf32 = {
+		.l_load = elf32_load,
+		.l_exec = elf32_exec,
+};
+
+struct file_format i386_elf64 = {
+		.l_load = elf64_load,
+		.l_exec = elf64_exec
+};
+
+struct file_format i386_xcoff32 = {
+		.l_load = xcoff32_load,
+		.l_exec = xcoff32_exec
+};
+
+struct file_format i386_xcoff64 = {
+		.l_load = xcoff64_load,
+		.l_exec = xcoff64_exec
+};
 
 int
-boot_loadfile(char *filename, char *kerntype, uint64_t dest, struct preloaded_file **fp)
+aout_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 {
-	size_t size;
-	int error;
-
-	error = exec_loadfile(filename, kerntype, dest, LOAD_KERNEL, fp);
-	if (error != 0) {
-		printf("boot_load failed: %d unable to load kernel\n", error);
-		goto out;
-	}
-	/*
-	 * f_addr is already aligned to PAGE_SIZE, make sure
-	 * f_size it's also aligned so when the modules are loaded
-	 * they are aligned to PAGE_SIZE.
-	 */
-	size = roundup((*fp)->f_size, PAGE_SIZE);
-	(*fp)->f_size = size;
-
-out:
- 	return (error);
+	return (boot_loadfile(filename, AOUT_KERNELTYPE, dest, fp));
 }
 
 int
-boot_exec(struct preloaded_file *fp, char *kerntype)
+aout_exec(struct preloaded_file *fp)
 {
-	vm_offset_t entry;
-	int error;
-
-	error = bi_load(&boot, fp, kerntype, fp->f_args);
-	if (error != 0) {
-		printf("bi_load failed: %d\n", error);
-		goto out;
-	}
-
-#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
-	if (preload_ksyms(&boot, fp)) {
-		entry = preload_ksyms(&boot, fp);
-		&boot.bi_flags = fp->f_flags;
-	} else if (!preload_ksyms(&boot, fp)) {
-		entry = &boot.bi_entry & 0xffffff;
-	} else {
-		entry = &boot.bi_entry;
-	}
-#else /* !BOOT_ELF32 || !BOOT_ELF64 */
-	entry = &boot.bi_entry;
-#endif
-	__exec((void *)entry, &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0,
-			&boot.bi_bip, &boot.bi_kernend);
-
-out:
-	panic("exec returned");
-	return (error);
+	return (boot_exec(fp, AOUT_KERNELTYPE));
 }
 
-#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
-static int
-preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
+int
+ecoff_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 {
-	fp->f_flags = BOOTINFO_MEMORY;
-
-	fp->f_mem_upper = bi->bi_extmem;
-	fp->f_mem_lower = bi->bi_basemem;
-
-	if (fp->f_marks[MARK_SYM] != 0) {
-		Elf32_Ehdr ehdr;
-		void *shbuf, *basekern;
-		size_t shlen;
-		u_long shaddr;
-
-		bcopy((void *)fp->f_marks[MARK_SYM], &ehdr, sizeof(ehdr));
-
-		if (memcmp(&ehdr.e_ident, ELFMAG, SELFMAG) != 0) {
-			goto skip_ksyms;
-		}
-
-		shaddr = fp->f_marks[MARK_SYM] + ehdr.e_shoff;
-
-		shlen = ehdr.e_shnum * ehdr.e_shentsize;
-		shbuf = alloc(shlen);
-
-		basekern = (void *)(KERNBASE + fp->f_marks[MARK_SYM]);
-		bcopy((void *)shaddr, shbuf, shlen);
-		ksyms_addr_set(&ehdr, shbuf, basekern);
-		bcopy(shbuf, (void *)shaddr, shlen);
-
-		free(shbuf, shlen);
-
-		fp->f_elfshdr_num = ehdr.e_shnum;
-		fp->f_elfshdr_size = ehdr.e_shentsize;
-		fp->f_elfshdr_addr = shaddr;
-		fp->f_elfshdr_shndx = ehdr.e_shstrndx;
-
-		fp->f_flags |= BOOTINFO_ELF_SYMS;
-	}
-
-skip_ksyms:
-#ifdef DEBUG
-	printf("Start @ 0x%lx [%ld=0x%lx-0x%lx]...\n",
-			fp->f_marks[MARK_ENTRY],
-			fp->f_marks[MARK_NSYM],
-			fp->f_marks[MARK_SYM],
-			fp->f_marks[MARK_END]);
-#endif
-
-	return (0);
+	return (boot_loadfile(filename, ECOFF_KERNELTYPE, dest, fp));
 }
-#endif /* !BOOT_ELF32 || !BOOT_ELF64 */
+
+int
+ecoff_exec(struct preloaded_file *fp)
+{
+	return (boot_exec(fp, ECOFF_KERNELTYPE));
+}
+
+int
+elf32_load(char *filename, uint64_t dest, struct preloaded_file **fp)
+{
+	return (boot_loadfile(filename, ELF32_KERNELTYPE, dest, fp));
+}
+
+int
+elf32_exec(struct preloaded_file *fp)
+{
+	return (boot_exec(fp, ELF32_KERNELTYPE));
+}
+
+int
+elf64_load(char *filename, uint64_t dest, struct preloaded_file **fp)
+{
+	return (boot_loadfile(filename, ELF64_KERNELTYPE, dest, fp));
+}
+
+int
+elf64_exec(struct preloaded_file *fp)
+{
+	return (boot_exec(fp, ELF64_KERNELTYPE));
+}
+
+int
+xcoff32_load(char *filename, uint64_t dest, struct preloaded_file **fp)
+{
+	return (boot_loadfile(filename, XCOFF32_KERNELTYPE, dest, fp));
+}
+
+int
+xcoff32_exec(struct preloaded_file *fp)
+{
+	return (boot_exec(fp, XCOFF32_KERNELTYPE));
+}
+
+int
+xcoff64_load(char *filename, uint64_t dest, struct preloaded_file **fp)
+{
+	return (boot_loadfile(filename, XCOFF64_KERNELTYPE, dest, fp));
+}
+
+int
+xcoff64_exec(struct preloaded_file *fp)
+{
+	return (boot_exec(fp, XCOFF64_KERNELTYPE));
+}
