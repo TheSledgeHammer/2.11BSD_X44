@@ -49,10 +49,9 @@
 extern bool_t dynamic_kenv;
 extern struct lock 	kenv_lock;
 extern char *kern_envp;
-extern char *md_envp;
 extern char **kenvp;
 
-void	kenv_init(void);
+void kenv_init(void);
 
 #endif /* _KERNEL */
 #endif /* !_SYS_KENV_H_ */

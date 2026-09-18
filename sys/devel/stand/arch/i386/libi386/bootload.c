@@ -41,8 +41,10 @@
 
 struct bootinfo boot;
 
+#ifdef multiboot
 #if defined(BOOT_ELF32) || defined(BOOT_ELF64)
 static int preload_ksyms(struct bootinfo *, struct preloaded_file *);
+#endif
 #endif
 
 int

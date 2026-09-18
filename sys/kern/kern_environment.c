@@ -62,9 +62,6 @@ static int	kenv_mvallen = 	KENV_MVALLEN;
 /* pointer to the config-generated static environment */
 char *kern_envp;
 
-/* pointer to the md-static environment */
-char *md_envp;
-
 /* dynamic environment variables */
 char **kenvp;
 struct lock kenv_lock;
@@ -418,7 +415,6 @@ init_dynamic_kenv(void /* *data */)
 	kenvp = malloc((KENV_SIZE + 1) * sizeof(char *), M_KENV, M_WAITOK | M_ZERO);
 
 	dynamic_envpos = 0;
-	init_dynamic_kenv_from(md_envp, &dynamic_envpos);
 	init_dynamic_kenv_from(kern_envp, &dynamic_envpos);
 	kenvp[dynamic_envpos] = NULL;
 	lockinit(&kenv_lock, PLOCK, "kernel environment", 0, 0);
@@ -524,9 +520,6 @@ _getenv_static(name)
 {
 	char *val;
 
-	val = _getenv_static_from(md_envp, name);
-	if (val != NULL)
-		return (val);
 	val = _getenv_static_from(kern_envp, name);
 	if (val != NULL)
 		return (val);
@@ -743,7 +736,7 @@ getenv_int(name, data)
 
 	rval = getenv_quad(name, &tmp);
 	if (rval)
-		*data = (int) tmp;
+		*data = (int)tmp;
 	return (rval);
 }
 
@@ -760,7 +753,7 @@ getenv_uint(name, data)
 
 	rval = getenv_quad(name, &tmp);
 	if (rval)
-		*data = (unsigned int) tmp;
+		*data = (unsigned int)tmp;
 	return (rval);
 }
 
@@ -777,7 +770,7 @@ getenv_int64(name, data)
 
 	rval = getenv_quad(name, &tmp);
 	if (rval)
-		*data = (int64_t) tmp;
+		*data = (int64_t)tmp;
 	return (rval);
 }
 
@@ -794,7 +787,7 @@ getenv_uint64(name, data)
 
 	rval = getenv_quad(name, &tmp);
 	if (rval)
-		*data = (uint64_t) tmp;
+		*data = (uint64_t)tmp;
 	return (rval);
 }
 
@@ -811,7 +804,7 @@ getenv_long(name, data)
 
 	rval = getenv_quad(name, &tmp);
 	if (rval)
-		*data = (long) tmp;
+		*data = (long)tmp;
 	return (rval);
 }
 
@@ -828,7 +821,7 @@ getenv_ulong(name, data)
 
 	rval = getenv_quad(name, &tmp);
 	if (rval)
-		*data = (unsigned long) tmp;
+		*data = (unsigned long)tmp;
 	return (rval);
 }
 
