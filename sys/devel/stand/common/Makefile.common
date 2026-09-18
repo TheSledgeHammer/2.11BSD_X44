@@ -5,6 +5,7 @@
 SRCS+= boot.c console.c commands.c disk.c fileload.c
 SRCS+= interp_backslash.c interp_parse.c interp.c
 SRCS+= load_exec.c load_ksyms.c metadata.c misc.c
+SRCS+= smbios.c
 
 .if ${LOADER_INTERP} == "dloader"
 SRCS+= interp_dloader.c
@@ -12,6 +13,16 @@ SRCS+= interp_dloader.c
 SRCS+=	interp_simple.c
 .else
 .error Unknown interpreter ${LOADER_INTERP}
+.endif
+
+# Machine-independant ISA PnP
+.if ${HAVE_ISABUS} == "yes"
+SRCS+=	isapnp.c
+INCS+= 	isapnp.h
+.endif
+
+.if ${HAVE_PNP} == "yes"
+SRCS+=	pnp.c
 .endif
 
 .include <bsd.kinc.mk>

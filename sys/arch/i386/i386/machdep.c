@@ -1505,14 +1505,14 @@ init386_ksyms(boot)
 	vm_offset_t addend;
 	
 	if (boot->bi_environment != 0) {
-		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
+		ksyms_addsyms_elf(*(int*) &end, ((int *)&end) + 1, esym);
 		addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
 	} else {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 	}
 	boot->bi_symtab += KERNBASE;
 	boot->bi_esymtab += KERNBASE;
-	ksyms_addsyms_elf(boot->bi_nsymtab, (int*) boot->bi_symtab, (int*) boot->bi_esymtab);
+	ksyms_addsyms_elf(boot->bi_nsymtab, (int *)boot->bi_symtab, (int *)boot->bi_esymtab);
 }
 
 void
@@ -1587,7 +1587,7 @@ i386_ksyms_addsyms_elf(symstart, strstart, symsize, strsize, flags)
 		ehdr.e_ehsize = sizeof(ehdr);
 		ehdr.e_entry = (Elf_Addr) 0xffffff;
 
-		ksyms_addsyms_explicit((void*) &ehdr, (void*) symstart, symsize, (void*) strstart, strsize);
+		ksyms_addsyms_explicit((void *)&ehdr, (void *)symstart, symsize, (void *)strstart, strsize);
 	}
 	return (flags & BOOTINFO_ELF_SYMS);
 }

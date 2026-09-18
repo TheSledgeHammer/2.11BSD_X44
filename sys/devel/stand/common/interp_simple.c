@@ -22,24 +22,21 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * $FreeBSD$
  */
-
-#include <lib/libsa/stand.h>
-
-#include <common/bootstrap.h>
-#include "libi386.h"
 
 /*
- * Point (dev) at an allocated device specifier for the device matching the
- * path in (devspec). If it contains an explicit device specification,
- * use that.  If not, use the default device.
+ * Simple commandline interpreter, toplevel and misc.
  */
-int
-i386_getdev(void **vdev, const char *devspec, const char **path)
-{
-	struct devdesc **dev = (struct devdesc **)vdev;
 
-	return (disk_getdev(dev, devspec, path));
+#include "interp.h"
+
+INTERP_DEFINE("simp");
+
+void
+interp_init(void)
+{
+	setenv("script.lang", "simple", 1);
+
+	/* Read our default configuration. */
+	interp_include("/boot/loader.rc");
 }

@@ -127,9 +127,9 @@ struct bootinfo {
 };
 
 #ifdef _KERNEL
-extern struct bootinfo 			i386boot;
-extern char 					bootsize[];
-extern int						end;
-extern int 						*esym;
+extern struct bootinfo i386boot;
+extern char bootsize[];
+extern int end;
+extern int *esym;
 #endif
 #endif /* _I386_BOOTINFO_H_ */

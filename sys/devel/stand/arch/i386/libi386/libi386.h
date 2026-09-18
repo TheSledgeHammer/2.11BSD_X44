@@ -39,6 +39,10 @@ extern struct devdesc currdev;	/* our current device */
 #define MAXDEV			31		/* maximum number of distinct devices */
 #define MAXBDDEV		MAXDEV
 
+/* exported devices XXX rename? */
+extern struct devsw 	bioscd;
+extern struct devsw 	biosdisk;
+
 /* format support */
 extern struct file_format i386_aout;
 extern struct file_format i386_ecoff;
@@ -64,8 +68,16 @@ void *bio_alloc(size_t);
 void bio_free(void*, size_t);
 
 /* bioscd.c */
+int	bc_add(int);						/* Register CD booted from. */
+int	bc_getdev(struct i386_devdesc *);	/* return dev_t for (dev) */
+int	bc_bios2unit(int);					/* xlate BIOS device -> bioscd unit */
+int	bc_unit2bios(int);					/* xlate bioscd unit -> BIOS device */
 
 /* biosdisk.c */
+u_int32_t bd_getbigeom(int);			/* return geometry in bootinfo format */
+int bd_getdev(struct i386_devdesc *);	/* return dev_t for (dev) */
+int	bd_bios2unit(int);					/* xlate BIOS device -> biosdisk unit */
+int	bd_unit2bios(int);					/* xlate biosdisk unit -> BIOS device */
 
 /* biosfd.c */
 
@@ -102,6 +114,39 @@ ssize_t i386_readin(const int, vm_offset_t, const size_t);
 
 /* i386_reboot.c */
 int command_reboot(int, char **);
+
+/*
+ * relocater trampoline support.
+ */
+struct relocate_data {
+	uint32_t	src;
+	uint32_t	dest;
+	uint32_t	size;
+};
+
+/* relocator_tramp.S */
+extern void relocater(void);
+
+/*
+ * The relocater_data[] is fixed size array allocated in relocater_tramp.S
+ */
+extern struct relocate_data relocater_data[];
+extern uint32_t relocater_size;
+
+extern uint16_t relocator_ip;
+extern uint16_t relocator_cs;
+extern uint16_t relocator_ds;
+extern uint16_t relocator_es;
+extern uint16_t relocator_fs;
+extern uint16_t relocator_gs;
+extern uint16_t relocator_ss;
+extern uint16_t relocator_sp;
+extern uint32_t relocator_esi;
+extern uint32_t relocator_eax;
+extern uint32_t relocator_ebx;
+extern uint32_t relocator_edx;
+extern uint32_t relocator_ebp;
+extern uint16_t relocator_a20_enabled;
 
 /* pread.c */
 int pread(int, vm_offset_t, size_t);

@@ -36,8 +36,8 @@
 #include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
-#include <bootstrap.h>
-#include <libi386.h>
+#include <sys/devel/stand/common/bootstrap.h>
+#include "sys/devel/stand/arch/i386/libi386/libi386.h"
 #include <btxv86.h>
 
 #include <machine/bootinfo.h>
@@ -123,8 +123,8 @@ bi_rootdev(int *howto, int *biosdev, int *bootdevnr, char *args)
 	}
 
 	/* Try reading the /etc/fstab file to select the root device */
-	if (strcmp(rootdevname, i386_fmtdev(rootdev)) == 0) {
-		getrootmount(i386_fmtdev(rootdev));
+	if (strcmp(rootdevname, disk_fmtdev(rootdev->d_kind.dd)) == 0) {
+		getrootmount(disk_fmtdev(rootdev->d_kind.dd));
 	} else {
 		getrootmount(rootdevname);
 	}
@@ -132,7 +132,7 @@ bi_rootdev(int *howto, int *biosdev, int *bootdevnr, char *args)
 	/* XXX - use a default bootdev of 0.  Is this ok??? */
 	*bootdevnr = 0;
 
-	switch (rootdev->d_kind.dd.d_dev->dv_type) {
+	switch (rootdev->d_kind. dd.d_dev->dv_type) {
 	case DEVT_CD:
 	case DEVT_DISK: /* pass in the BIOS device number of the current disk */
 		*biosdev = bd_unit2bios(rootdev->d_kind.dd.d_unit);
@@ -144,7 +144,7 @@ bi_rootdev(int *howto, int *biosdev, int *bootdevnr, char *args)
 				rootdev->d_kind.dd.d_dev->dv_type);
 	}
 	if (*bootdevnr == -1) {
-		printf("root device %s invalid\n", i386_fmtdev(rootdev));
+		printf("root device %s invalid\n", disk_fmtdev(rootdev->d_kind.dd));
 		return (EINVAL);
 	}
 	free(rootdev);

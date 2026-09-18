@@ -32,7 +32,6 @@
  * SUCH DAMAGE.
  */
 
-#include "commands.h"
 #include "interp.h"
 
 INTERP_DEFINE("dloader");
