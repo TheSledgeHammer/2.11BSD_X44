@@ -80,18 +80,13 @@ boot_exec(struct preloaded_file *fp, char *kerntype)
 		goto out;
 	}
 
-#if defined(BOOT_ELF32) || defined(BOOT_ELF64)
-	if (preload_ksyms(&boot, fp)) {
-		entry = preload_ksyms(&boot, fp);
-		&boot.bi_flags = fp->f_flags;
-	} else if (!preload_ksyms(&boot, fp)) {
-		entry = &boot.bi_entry & 0xffffff;
-	} else {
-		entry = &boot.bi_entry;
-	}
-#else /* !BOOT_ELF32 || !BOOT_ELF64 */
-	entry = &boot.bi_entry;
+	entry = fp->f_marks[MARK_ENTRY] & 0xffffff;
+
+#ifdef DEBUG
+    printf("Start @ 0x%lx ...\n", entry);
 #endif
+
+    dev_cleanup();
 	__exec((void *)entry, &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0,
 			&boot.bi_bip, &boot.bi_kernend);
 
@@ -101,8 +96,9 @@ out:
 }
 
 /*
- * TODO: Fix preloaded_file elf symbols
+ * Multiboot
  */
+#ifdef multiboot
 #if defined(BOOT_ELF32) || defined(BOOT_ELF64)
 static int
 preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
@@ -156,3 +152,4 @@ skip_ksyms:
 	return (0);
 }
 #endif /* !BOOT_ELF32 || !BOOT_ELF64 */
+#endif

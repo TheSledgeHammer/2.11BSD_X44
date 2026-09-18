@@ -118,9 +118,12 @@ char machine_arch[] = "i386";		/* machine == machine_arch */
 void cpu_dumpconf(void);
 int	 cpu_dump(void);
 void dumpsys(void);
+void init386_ksyms(struct bootinfo *);
 void init386_bootinfo(struct bootinfo *);
 struct bootinfo *bootinfo_check(struct bootinfo *);
+#ifdef multuboot
 int i386_ksyms_addsyms_elf(caddr_t, caddr_t, size_t, size_t, uint32_t);
+#endif
 void cpu_reset(void);
 void cpu_halt(void);
 void identify_cpu(void);
@@ -1493,6 +1496,8 @@ init386(first)
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 
+	init386_ksyms(&i386boot);
+
 	/* setup proc0's pcb */
 	proc0pcb_setup(&proc0);
 }
@@ -1501,15 +1506,13 @@ void
 init386_ksyms(boot)
 	struct bootinfo *boot;
 {
-	extern int  end;
-	vm_offset_t addend;
-	
-	if (boot->bi_environment != 0) {
-		ksyms_addsyms_elf(*(int*) &end, ((int *)&end) + 1, esym);
-		addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
-	} else {
-		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
+	extern int end;
+
+	if (boot == NULL) {
+		ksyms_addsyms_elf(*(int *)&end, ((int *)&end) + 1, esym);
+		return;
 	}
+
 	boot->bi_symtab += KERNBASE;
 	boot->bi_esymtab += KERNBASE;
 	ksyms_addsyms_elf(boot->bi_nsymtab, (int *)boot->bi_symtab, (int *)boot->bi_esymtab);
@@ -1521,12 +1524,9 @@ init386_bootinfo(boot)
 {
 	vm_offset_t addend;
 
-	if (i386_ksyms_addsyms_elf(boot->bi_symstart, boot->bi_strstart, boot->bi_symsize, boot->bi_strsize, boot->bi_flags)) {
-		init386_ksyms(boot);
-	} else {
-		if (boot->bi_environment != 0) {
-			addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
-		}
+	if (boot->bi_environment != 0) {
+		addend = (vm_offset_t)(boot->bi_environment < KERNBASE ? PMAP_MAP_LOW : 0);
+		kern_envp = (char *)(boot->bi_environment + addend);
 	}
 	identify_cpu();
 }
@@ -1552,6 +1552,8 @@ bootinfo_check(boot)
 	return (boot);
 }
 
+/* Used for Multiboot: Not supported currently  */
+#ifdef multiboot
 int
 i386_ksyms_addsyms_elf(symstart, strstart, symsize, strsize, flags)
 	caddr_t symstart, strstart;
@@ -1591,6 +1593,7 @@ i386_ksyms_addsyms_elf(symstart, strstart, symsize, strsize, flags)
 	}
 	return (flags & BOOTINFO_ELF_SYMS);
 }
+#endif /* multiboot */
 
 void
 sdtossd(sd, ssd)

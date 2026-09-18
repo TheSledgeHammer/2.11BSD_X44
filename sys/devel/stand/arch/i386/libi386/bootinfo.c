@@ -47,7 +47,7 @@
 
 static int bi_checkcpu(void);
 static int bi_rootdev(int *, int *, int *, char *);
-static void bi_load_legacy(struct bootinfo, int, int *, char *);
+static void bi_load_legacy(struct bootinfo, int, int *);
 
 /*
  * Check to see if this CPU supports long mode.
@@ -132,9 +132,14 @@ bi_rootdev(int *howto, int *biosdev, int *bootdevnr, char *args)
 	/* XXX - use a default bootdev of 0.  Is this ok??? */
 	*bootdevnr = 0;
 
-	switch (rootdev->d_kind. dd.d_dev->dv_type) {
+	switch (rootdev->d_kind.dd.d_dev->dv_type) {
 	case DEVT_CD:
-	case DEVT_DISK: /* pass in the BIOS device number of the current disk */
+		/* pass in the BIOS device number */
+		*biosdev = bc_unit2bios(rootdev->d_kind.dd.d_unit);
+		*bootdevnr = bc_getdev(rootdev);
+		break;
+	case DEVT_DISK:
+		/* pass in the BIOS device number of the current disk */
 		*biosdev = bd_unit2bios(rootdev->d_kind.dd.d_unit);
 		*bootdevnr = bd_getdev(rootdev);
 		break;
@@ -186,13 +191,13 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *kerntype, char *ar
 		bi->bi_esymtab = 0;
 		//return (error);
 	}
-	bi_load_legacy(bi, bi->bi_boothowto, &bi->bi_bios_dev, args);
+	bi_load_legacy(bi, bi->bi_boothowto, &bi->bi_bios_dev);
 	return (0);
 }
 
 /* Needs fixing!! */
 static void
-bi_load_legacy(struct bootinfo *bi, int howto, int *bootdevnr, char *args)
+bi_load_legacy(struct bootinfo *bi, int howto, int *bootdevnr)
 {
 	int i;
 	const char *kernelpath;
@@ -201,9 +206,10 @@ bi_load_legacy(struct bootinfo *bi, int howto, int *bootdevnr, char *args)
 	/* legacy bootinfo structure */
 	kernelname = getenv("kernelname");
 	i386_getdev(NULL, kernelname, &kernelpath);
+	bi->bi_kernelname = 0;						/* XXX char * -> kernel name */
 	bi->bi_version = BOOTINFO_VERSION;
 	bi->bi_nfs_diskless = 0; 					/* struct nfs_diskless * */
-	bi->bi_n_bios_used = 0; 						/* XXX would have to hook biosdisk driver for these */
+	bi->bi_n_bios_used = 0; 					/* XXX would have to hook biosdisk driver for these */
 	for (i = 0; i < N_BIOS_GEOM; i++) {
 		bi->bi_bios_geom[i] = bd_getbigeom(i);
 	}
