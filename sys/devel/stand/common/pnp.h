@@ -23,58 +23,55 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: src/sys/boot/i386/loader/conf.c,v 1.24 2003/08/25 23:28:32 obrien Exp $
- * $DragonFly: src/sys/boot/pc32/loader/conf.c,v 1.4 2005/09/03 23:52:49 dillon Exp $
+ * $FreeBSD$
  */
 
-#include <lib/libsa/stand.h>
+#ifndef _PNP_H_
+#define _PNP_H_
 
-#include <common/bootstrap.h>
-#include <stand/common/commands.h>
-#include <stand/dloader/cmds.h>
-
-#include <libi386/libi386.h>
-
-struct bootblk_command commands[] = {
-		COMMON_COMMANDS
-		DLOADER_COMMANDS
-		I386_COMMANDS
-};
+#include <sys/types.h>
+#include <sys/queue.h>
 
 /*
- * We could use linker sets for some or all of these, but
- * then we would have to control what ended up linked into
- * the bootstrap.  So it's easier to conditionalise things
- * here.
- *
- * XXX rename these arrays to be consistent and less namespace-hostile
- *
- * XXX as libi386 and biosboot merge, some of these can become linker sets.
+ * Plug-and-play enumerator/configurator interface.
  */
-
-/* Exported for libstand */
-struct devsw *devsw[] = {
-		&bioscd,
-		&biosdisk,
-		NULL
+struct pnphandler {
+    const char				*pp_name;					/* handler/bus name */
+    void					(*pp_enumerate)(void);		/* enumerate PnP devices, add to chain */
 };
 
-struct fs_ops *file_system[] = {
-		&ufs_fsops,
-		NULL
+struct pnpident {
+    char					*id_ident;		/* ASCII identifier, actual format varies with bus/handler */
+    STAILQ_ENTRY(pnpident)	id_link;
 };
 
-/* Exported for i386 only */
+struct pnpinfo {
+    char					*pi_desc;		/* ASCII description, optional */
+    int						pi_revision;	/* optional revision (or -1) if not supported */
+    char					*pi_module;		/* module/args nominated to handle device */
+    int						pi_argc;		/* module arguments */
+    char					**pi_argv;
+    struct pnphandler		*pi_handler;	/* handler which detected this device */
+    STAILQ_HEAD(, pnpident) pi_ident;		/* list of identifiers */
+    STAILQ_ENTRY(pnpinfo)	pi_link;
+};
+
+STAILQ_HEAD(pnpinfo_stql, pnpinfo);
+
+extern struct pnphandler *pnphandlers[];	/* provided by MD code */
+
 /*
- * Sort formats so that those that can detect based on arguments
- * rather than reading the file go first.
+ *  < 0	- No ISA in system
+ * == 0	- Maybe ISA, search for read data port
+ *  > 0	- ISA in system, value is read data port address
  */
-struct file_format *file_formats[] = {
-		&i386_aout,
-		&i386_ecoff,
-		&i386_elf32,
-		&i386_xcoff32,
-		&amd64_elf64,
-		&amd64_xcoff64,
-		NULL
-};
+extern int isapnp_readport;
+
+/* pnp.c */
+void pnp_addident(struct pnpinfo *, char *);
+struct pnpinfo *pnp_allocinfo(void);
+void pnp_freeinfo(struct pnpinfo *);
+void pnp_addinfo(struct pnpinfo *);
+char *pnp_eisaformat(uint8_t *);
+
+#endif /* !_PNP_H_ */

@@ -35,20 +35,14 @@
 #include <lib/libkern/libkern.h>
 
 #include <stand/common/bootstrap.h>
-#include <stand/common/commands.h>
 #include <stand/common/console.h>
 #include <boot/common/smbios.h>
-
-#include <stand/dloader/cmds.h>
 
 #include "libi386.h"
 #include "btxv86.h"
 
-struct bootblk_command commands[] = {
-		COMMON_COMMANDS
-		DLOADER_COMMANDS
-		I386_COMMANDS
-};
+#include <machine/bootinfo.h>
+#include <machine/psl.h>
 
 static struct bootargs 		*kargs;
 static uint32_t				initial_howto;
@@ -65,8 +59,8 @@ struct arch_switch archsw = {
 		.arch_copyin = i386_copyin,
 		.arch_copyout = i386_copyout,
 		.arch_readin = i386_readin,
-	    .arch_isainb = isa_inb,
-	    .arch_isaoutb = isa_outb,
+		.arch_isainb = isa_inb,
+		.arch_isaoutb = isa_outb,
 };
 
 int
@@ -79,18 +73,19 @@ main(void)
 	kargs = (void *)__args;
 	initial_howto = kargs->howto;
 	initial_bootdev = kargs->bootdev;
-	initial_bootinfo = kargs->bootinfo ? (struct bootinfo *)PTOV(kargs->bootinfo) : NULL;
+	initial_bootinfo =
+			kargs->bootinfo ? (struct bootinfo *)PTOV(kargs->bootinfo) : NULL;
 
-    /* Initialize the v86 register set to a known-good state. */
-    bzero(&v86, sizeof(v86));
-    v86.efl = PSL_RESERVED_DEFAULT | PSL_I;
+	/* Initialize the v86 register set to a known-good state. */
+	bzero(&v86, sizeof(v86));
+	v86.efl = PSL_RESERVED_DEFAULT | PSL_I;
 
-    /*
-     * Initialise the heap as early as possible.  Once this is done, malloc() is usable.
-     */
+	/*
+	 * Initialise the heap as early as possible.  Once this is done, malloc() is usable.
+	 */
 	bios_getmem();
 
-	setheap((void *)malloc, (void *)(malloc + 512*1024));
+	setheap((void *)malloc, (void *) (malloc + 512 * 1024));
 
 	/*
 	 * XXX Chicken-and-egg problem; we want to have console output early, but some
@@ -100,26 +95,26 @@ main(void)
 	 * We can use printf() etc. once this is done.
 	 * If the previous boot stage has requested a serial console, prefer that.
 	 */
-    md_setboothowto(initial_howto);
-    if (initial_howto & RB_MULTIPLE) {
-    	if (initial_howto & RB_SERIAL) {
-    		 setenv("console", "comconsole vidconsole", 1);
-    	} else {
-    		 setenv("console", "vidconsole comconsole", 1);
-    	}
-    } else if (initial_howto & RB_SERIAL) {
-    	setenv("console", "comconsole", 1);
-    } else if (initial_howto & RB_MUTE) {
-    	setenv("console", "nullconsole", 1);
-    }
-    cons_probe();
+	md_setboothowto(initial_howto);
+	if (initial_howto & RB_MULTIPLE) {
+		if (initial_howto & RB_SERIAL) {
+			setenv("console", "comconsole vidconsole", 1);
+		} else {
+			setenv("console", "vidconsole comconsole", 1);
+		}
+	} else if (initial_howto & RB_SERIAL) {
+		setenv("console", "comconsole", 1);
+	} else if (initial_howto & RB_MUTE) {
+		setenv("console", "nullconsole", 1);
+	}
+	cons_probe();
 
-    /*
-     * Initialise the block cache. Set the upper limit.
-     */
-    bcache_init(32768, 512);
+	/*
+	 * Initialise the block cache. Set the upper limit.
+	 */
+	bcache_init(32768, 512);
 
-    /*
+	/*
 	 * Special handling for PXE and CD booting.
 	 */
 	if (kargs->bootinfo == 0) {
@@ -127,50 +122,53 @@ main(void)
 		 * We only want the PXE disk to try to init itself in the below
 		 * walk through devsw if we actually booted off of PXE.
 		 */
-		//if (kargs->bootflags & KARGS_FLAGS_PXE)
+		if (kargs->bootflags & KARGS_FLAGS_PXE) {
 			//pxe_enable(kargs->pxeinfo ? PTOV(kargs->pxeinfo) : NULL);
+		}
+
 		if (kargs->bootflags & KARGS_FLAGS_CD) {
 			bc_add(initial_bootdev);
 		}
 	}
 
-    /* ZFS & GELI SUPPORT Belongs Here */
+	/* ZFS & GELI SUPPORT Belongs Here */
 
-    /*
+	/*
 	 * March through the device switch probing for things.
 	 */
-    for (i = 0; devsw[i] != NULL; i++) {
-    	if (devsw[i]->dv_init != NULL) {
-    		(devsw[i]->dv_init)();
-    	}
-    }
+	for (i = 0; devsw[i] != NULL; i++) {
+		if (devsw[i]->dv_init != NULL) {
+			(devsw[i]->dv_init)();
+		}
+	}
 
-    printf("BIOS %dkB/%dkB available memory\n", bios_basemem / 1024, bios_extmem / 1024);
-    if (initial_bootinfo != NULL) {
-    	initial_bootinfo->bi_basemem = bios_basemem / 1024;
-    	initial_bootinfo->bi_extmem = bios_extmem / 1024;
-    }
+	printf("BIOS %dkB/%dkB available memory\n", bios_basemem / 1024,
+			bios_extmem / 1024);
+	if (initial_bootinfo != NULL) {
+		initial_bootinfo->bi_basemem = bios_basemem / 1024;
+		initial_bootinfo->bi_extmem = bios_extmem / 1024;
+	}
 
-    /* detect ACPI for future reference */
-    //biosacpi_detect();
+	/* detect ACPI for future reference */
+	//biosacpi_detect();
 
-    /* detect SMBIOS for future reference */
-    smbios_detect(NULL);
+	/* detect SMBIOS for future reference */
+	smbios_detect(NULL);
 
-    /* detect PCI BIOS for future reference */
-    biospci_detect();
+	/* detect PCI BIOS for future reference */
+	biospci_detect();
 
-    printf("\n%s", bootprog_info);
+	printf("\n%s", bootprog_info);
 
 	extract_currdev(kargs, initial_bootinfo, initial_bootdev);
-    setenv("LINES", "24", 1);		/* optional */
+	setenv("LINES", "24", 1); /* optional */
 
-    bios_getsmap();
+	bios_getsmap();
 
-    interact();
+	interact();
 
-    /* if we ever get here, it is an error */
-    return (1);
+	/* if we ever get here, it is an error */
+	return (1);
 }
 
 static void

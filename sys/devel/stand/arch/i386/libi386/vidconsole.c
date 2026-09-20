@@ -31,6 +31,7 @@
 #include <sys/cdefs.h>
 
 #include <btxv86.h>
+
 #include <machine/psl.h>
 
 #include <lib/libsa/stand.h>
@@ -44,7 +45,7 @@
 
 static int	probe_keyboard(void);
 #endif
-static void	vidc_probe(struct console *cp);
+static void	vidc_probe(struct console *);
 static int	vidc_init(int arg);
 static void	vidc_putchar(int c);
 static int	vidc_getchar(void);
@@ -373,7 +374,7 @@ void
 vidc_term_emu(int c)
 {
     static int ansi_col[] = {
-	0, 4, 2, 6, 1, 5, 3, 7,
+    		0, 4, 2, 6, 1, 5, 3, 7,
     };
     int t;
     int i;
@@ -509,27 +510,25 @@ vidc_putchar(int c)
 static int
 vidc_getchar(void)
 {
-
-    if (vidc_ischar()) {
-	v86.ctl = 0;
-	v86.addr = 0x16;
-	v86.eax = 0x0;
-	v86int();
-	return (v86.eax & 0xff);
-    } else {
-	return (-1);
-    }
+	if (vidc_ischar()) {
+		v86.ctl = 0;
+		v86.addr = 0x16;
+		v86.eax = 0x0;
+		v86int();
+		return (v86.eax & 0xff);
+	} else {
+		return (-1);
+	}
 }
 
 static int
 vidc_ischar(void)
 {
-
-    v86.ctl = V86_FLAGS;
-    v86.addr = 0x16;
-    v86.eax = 0x100;
-    v86int();
-    return (!(v86.efl & PSL_Z));
+	v86.ctl = V86_FLAGS;
+	v86.addr = 0x16;
+	v86.eax = 0x100;
+	v86int();
+	return (!(v86.efl & PSL_Z));
 }
 
 #if KEYBOARD_PROBE

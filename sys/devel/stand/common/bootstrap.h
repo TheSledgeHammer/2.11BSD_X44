@@ -30,7 +30,6 @@
 #define _BOOTSTRAP_H_
 
 #include <sys/types.h>
-#include <sys/queue.h>
 
 struct preloaded_file;
 

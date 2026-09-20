@@ -18,7 +18,6 @@ SRCS+=	interp_simple.c
 # Machine-independant ISA PnP
 .if ${HAVE_ISABUS} == "yes"
 SRCS+=	isapnp.c
-INCS+= 	isapnp.h
 .endif
 
 .if ${HAVE_PNP} == "yes"

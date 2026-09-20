@@ -47,9 +47,9 @@ extern struct devsw 	biosdisk;
 extern struct file_format i386_aout;
 extern struct file_format i386_ecoff;
 extern struct file_format i386_elf32;
-extern struct file_format i386_elf64;
 extern struct file_format i386_xcoff32;
-extern struct file_format i386_xcoff64;
+extern struct file_format amd64_elf64;
+extern struct file_format amd64_xcoff64;
 
 extern uint32_t		bios_basemem;	/* base memory in bytes */
 extern uint32_t		bios_extmem;	/* extended memory in bytes */
@@ -79,13 +79,24 @@ int bd_getdev(struct i386_devdesc *);	/* return dev_t for (dev) */
 int	bd_bios2unit(int);					/* xlate BIOS device -> biosdisk unit */
 int	bd_unit2bios(int);					/* xlate biosdisk unit -> BIOS device */
 
-/* biosfd.c */
-
 /* biosmem.c */
 void bios_getmem(void);
 int command_biosmem(int, char **);
 
 /* biospci.c */
+/*
+ * Values for width parameter to biospci_{read,write}_config
+ */
+#define BIOSPCI_8BITS	0
+#define BIOSPCI_16BITS	1
+#define BIOSPCI_32BITS	2
+
+void biospci_detect(void);
+int biospci_find_devclass(uint32_t, int, uint32_t *);
+int biospci_find_device(uint32_t, int, uint32_t *);
+int biospci_read_config(uint32_t, int, int, uint32_t *);
+uint32_t biospci_locator(int8_t, uint8_t, uint8_t);
+int biospci_write_config(uint32_t, int, int, uint32_t);
 
 /* biospnp.c */
 
@@ -97,8 +108,10 @@ int command_smap(int, char **);
 int bi_load(struct bootinfo *, struct preloaded_file *, char *, char *);
 
 /* bootload.c */
+struct preloaded_file;
 int boot_loadfile(char *, char *, uint64_t, struct preloaded_file **);
-int boot_exec(struct preloaded_file *, char *);
+int boot_exec32(struct preloaded_file *, char *);
+int boot_exec64(struct preloaded_file *, char *);
 
 /* devicename.c */
 int i386_getdev(void **, const char *, const char *);

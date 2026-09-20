@@ -96,6 +96,9 @@ int command_install(int, char **);
 int command_include(int, char **);
 int command_optinclude(int, char **);
 
+/*	pnp.c	*/
+int command_pnp_scan(int, char **);
+
 #ifdef USE_BCACHE
 #define COMMON_COMMANDS \
 	{ "help", "detailed help", command_help }, \
@@ -117,7 +120,8 @@ int command_optinclude(int, char **);
 	{ "heap", "show heap usage", command_heap }, \
 	{ "include", "read commands from a file", command_include }, \
 	{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
-	{ "install",  "install software package", command_install },
+	{ "install",  "install software package", command_install }, \
+	{ "pnpscan", "scan for PnP devices", command_pnp_scan },
 #else /* !USE_BCACHE */
 #define COMMON_COMMANDS \
 	{ "help", "detailed help", command_help }, \
@@ -138,6 +142,7 @@ int command_optinclude(int, char **);
 	{ "heap", "show heap usage", command_heap }, \
 	{ "include", "read commands from a file", command_include }, \
 	{ "optinclude", "run commands from file; ignore exit status", command_optinclude }, \
-	{ "install",  "install software package", command_install },
+	{ "install",  "install software package", command_install }, \
+	{ "pnpscan", "scan for PnP devices", command_pnp_scan },
 #endif /* !USE_BCACHE */
 #endif /* _COMMANDS_H_ */

@@ -60,17 +60,17 @@ struct file_format i386_elf32 = {
 		.l_exec = elf32_exec,
 };
 
-struct file_format i386_elf64 = {
-		.l_load = elf64_load,
-		.l_exec = elf64_exec
-};
-
 struct file_format i386_xcoff32 = {
 		.l_load = xcoff32_load,
 		.l_exec = xcoff32_exec
 };
 
-struct file_format i386_xcoff64 = {
+struct file_format amd64_elf64 = {
+		.l_load = elf64_load,
+		.l_exec = elf64_exec
+};
+
+struct file_format amd64_xcoff64 = {
 		.l_load = xcoff64_load,
 		.l_exec = xcoff64_exec
 };
@@ -84,7 +84,7 @@ aout_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 int
 aout_exec(struct preloaded_file *fp)
 {
-	return (boot_exec(fp, AOUT_KERNELTYPE));
+	return (boot_exec32(fp, AOUT_KERNELTYPE));
 }
 
 int
@@ -96,7 +96,7 @@ ecoff_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 int
 ecoff_exec(struct preloaded_file *fp)
 {
-	return (boot_exec(fp, ECOFF_KERNELTYPE));
+	return (boot_exec32(fp, ECOFF_KERNELTYPE));
 }
 
 int
@@ -108,7 +108,7 @@ elf32_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 int
 elf32_exec(struct preloaded_file *fp)
 {
-	return (boot_exec(fp, ELF32_KERNELTYPE));
+	return (boot_exec32(fp, ELF32_KERNELTYPE));
 }
 
 int
@@ -120,7 +120,7 @@ elf64_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 int
 elf64_exec(struct preloaded_file *fp)
 {
-	return (boot_exec(fp, ELF64_KERNELTYPE));
+	return (boot_exec64(fp, ELF64_KERNELTYPE));
 }
 
 int
@@ -132,7 +132,7 @@ xcoff32_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 int
 xcoff32_exec(struct preloaded_file *fp)
 {
-	return (boot_exec(fp, XCOFF32_KERNELTYPE));
+	return (boot_exec32(fp, XCOFF32_KERNELTYPE));
 }
 
 int
@@ -144,5 +144,5 @@ xcoff64_load(char *filename, uint64_t dest, struct preloaded_file **fp)
 int
 xcoff64_exec(struct preloaded_file *fp)
 {
-	return (boot_exec(fp, XCOFF64_KERNELTYPE));
+	return (boot_exec64(fp, XCOFF64_KERNELTYPE));
 }

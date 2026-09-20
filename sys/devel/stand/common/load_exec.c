@@ -78,6 +78,9 @@ exec_loadfile(char *filename, char *kerneltype, uint64_t dest, int flags, struct
 
 	printf("%s entry at 0x%lx\n", filename, (uintmax_t)dest);
 
+	if (fp->f_marks[MARK_ENTRY] != marks[MARK_ENTRY]) {
+		fp->f_marks[MARK_ENTRY] = marks[MARK_ENTRY];
+	}
 	fp->f_size = marks[MARK_END] - marks[MARK_START];
 	fp->f_addr = marks[MARK_START];
 

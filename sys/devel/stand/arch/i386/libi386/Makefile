@@ -6,11 +6,11 @@
 LIB=	i386
 
 SRCS=	bio.c bioscd.c biosdisk.c biosmem.c biossmap.c 	\
-		bootexec.c bootinfo.c bootload.c comconsole.c 	\
-		devicename.c i386_autoload.c i386_copy.c 		\
-		i386_reboot.c nullconsole.c pread.c 			\
-		relocater_tramp.S _setjmp.S smbios.c 			\
-		spinconsole.c time.c vidconsole.c
+		biospci.c biospnp.c bootexec.c bootinfo.c 		\
+		bootload.c comconsole.c devicename.c 			\
+		i386_autoload.c i386_copy.c i386_reboot.c 		\
+		nullconsole.c pread.c relocater_tramp.S 		\
+		_setjmp.S spinconsole.c time.c vidconsole.c
 		
 BOOT_COMCONSOLE_PORT?= 0x3f8
 CPPFLAGS+=	-DCOMPORT=${BOOT_COMCONSOLE_PORT}

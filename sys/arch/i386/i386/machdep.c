@@ -155,7 +155,7 @@ long Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
 int biosmem;
-struct bootinfo i386boot;
+struct bootinfo bootinfo;
 char bootsize[BOOTINFO_MAXSIZE];
 extern int *esym;
 
@@ -1426,7 +1426,7 @@ init386(first)
 
 	i386_bus_space_init();
 	init_descriptors();
-	init386_bootinfo(&i386boot);
+	init386_bootinfo(&bootinfo);
 
 	/*
 	 * Initialize the console before we print anything out.
@@ -1481,7 +1481,7 @@ init386(first)
 
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
 	vm86_initialize();
-	getmemsize(&i386boot);
+	getmemsize(&bootinfo);
 	vm_set_segment_size();
 	vm_set_page_size();
 
@@ -1496,7 +1496,7 @@ init386(first)
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 
-	init386_ksyms(&i386boot);
+	init386_ksyms(&bootinfo);
 
 	/* setup proc0's pcb */
 	proc0pcb_setup(&proc0);

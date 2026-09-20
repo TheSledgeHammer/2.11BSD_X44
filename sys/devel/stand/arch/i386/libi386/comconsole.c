@@ -51,33 +51,33 @@
 
 #define	PCIM_BAR_IO_BASE  PCI_MAPREG_IO_ADDR_MASK
 
-static void		comc_probe(struct console *cp);
-static int		comc_init(int arg);
-static void		comc_putchar(int c);
-static int		comc_getchar(void);
-static int		comc_getspeed(void);
-static int		comc_ischar(void);
-static int		comc_parseint(const char *string);
+static void comc_probe(struct console *cp);
+static int comc_init(int arg);
+static void comc_putchar(int c);
+static int comc_getchar(void);
+static int comc_getspeed(void);
+static int comc_ischar(void);
+static int comc_parseint(const char *string);
 static uint32_t comc_parse_pcidev(const char *string);
-static int		comc_pcidev_set(struct env_var *ev, int flags, const void *value);
-static int		comc_pcidev_handle(uint32_t locator);
-static int		comc_port_set(struct env_var *ev, int flags, const void *value);
-static void		comc_setup(int speed, int port);
-static int		comc_speed_set(struct env_var *ev, int flags, const void *value);
+static int comc_pcidev_set(struct env_var *ev, int flags, const void *value);
+static int comc_pcidev_handle(uint32_t locator);
+static int comc_port_set(struct env_var *ev, int flags, const void *value);
+static void comc_setup(int speed, int port);
+static int comc_speed_set(struct env_var *ev, int flags, const void *value);
 
-static int	comc_curspeed;
-static int	comc_port = COMPORT;
-static uint32_t	comc_locator;
+static int comc_curspeed;
+static int comc_port = COMPORT;
+static uint32_t comc_locator;
 
 struct console comconsole = {
-	.c_name = "comconsole",
-	.c_desc = "serial port",
-	.c_flags = 0,
-	.c_probe = comc_probe,
-	.c_init = comc_init,
-	.c_out = comc_putchar,
-	.c_in = comc_getchar,
-	.c_ready = comc_ischar
+		.c_name = "comconsole",
+		.c_desc = "serial port",
+		.c_flags = 0,
+		.c_probe = comc_probe,
+		.c_init = comc_init,
+		.c_out = comc_putchar,
+		.c_in = comc_getchar,
+		.c_ready = comc_ischar
 };
 
 static void
@@ -95,8 +95,8 @@ comc_probe(struct console *cp)
 		 * comconsole is already the preferred console.
 		 */
 		cons = getenv("console");
-		if ((cons != NULL && strcmp(cons, comconsole.c_name) == 0) ||
-		    getenv("boot_multicons") != NULL) {
+		if ((cons != NULL && strcmp(cons, comconsole.c_name) == 0)
+				|| getenv("boot_multicons") != NULL) {
 			comc_curspeed = comc_getspeed();
 		}
 
@@ -109,8 +109,8 @@ comc_probe(struct console *cp)
 
 		sprintf(intbuf, "%d", comc_curspeed);
 		unsetenv("comconsole_speed");
-		env_setenv("comconsole_speed", EV_VOLATILE, intbuf,
-		    comc_speed_set, env_nounset);
+		env_setenv("comconsole_speed", EV_VOLATILE, intbuf, comc_speed_set,
+				env_nounset);
 
 		env = getenv("comconsole_port");
 		if (env != NULL) {
@@ -121,8 +121,8 @@ comc_probe(struct console *cp)
 
 		sprintf(intbuf, "%d", comc_port);
 		unsetenv("comconsole_port");
-		env_setenv("comconsole_port", EV_VOLATILE, intbuf,
-		    comc_port_set, env_nounset);
+		env_setenv("comconsole_port", EV_VOLATILE, intbuf, comc_port_set,
+				env_nounset);
 
 		env = getenv("comconsole_pcidev");
 		if (env != NULL) {
@@ -132,8 +132,8 @@ comc_probe(struct console *cp)
 		}
 
 		unsetenv("comconsole_pcidev");
-		env_setenv("comconsole_pcidev", EV_VOLATILE, env,
-		    comc_pcidev_set, env_nounset);
+		env_setenv("comconsole_pcidev", EV_VOLATILE, env, comc_pcidev_set,
+				env_nounset);
 	}
 	comc_setup(comc_curspeed, comc_port);
 }
@@ -141,11 +141,10 @@ comc_probe(struct console *cp)
 static int
 comc_init(int arg)
 {
-
 	comc_setup(comc_curspeed, comc_port);
 
-	if ((comconsole.c_flags & (C_PRESENTIN | C_PRESENTOUT)) ==
-	    (C_PRESENTIN | C_PRESENTOUT))
+	if ((comconsole.c_flags & (C_PRESENTIN | C_PRESENTOUT))
+			== (C_PRESENTIN | C_PRESENTOUT))
 		return (CMD_OK);
 	return (CMD_ERROR);
 }
@@ -227,26 +226,26 @@ comc_parse_pcidev(const char *string)
 	int pres;
 
 	pres = strtol(string, &p, 0);
-	if (p == string || *p != ':' || pres < 0 )
+	if (p == string || *p != ':' || pres < 0)
 		return (0);
 	bus = pres;
 	p1 = ++p;
 
 	pres = strtol(p1, &p, 0);
-	if (p == string || *p != ':' || pres < 0 )
+	if (p == string || *p != ':' || pres < 0)
 		return (0);
 	dev = pres;
 	p1 = ++p;
 
 	pres = strtol(p1, &p, 0);
-	if (p == string || (*p != ':' && *p != '\0') || pres < 0 )
+	if (p == string || (*p != ':' && *p != '\0') || pres < 0)
 		return (0);
 	func = pres;
 
 	if (*p == ':') {
 		p1 = ++p;
 		pres = strtol(p1, &p, 0);
-		if (p == string || *p != '\0' || pres <= 0 )
+		if (p == string || *p != '\0' || pres <= 0)
 			return (0);
 		bar = pres;
 	} else
@@ -267,8 +266,8 @@ comc_pcidev_handle(uint32_t locator)
 	char intbuf[64];
 	uint32_t port;
 
-	if (biospci_read_config(locator & 0xffff,
-	    (locator & 0xff0000) >> 16, BIOSPCI_32BITS, &port) == -1) {
+	if (biospci_read_config(locator & 0xffff, (locator & 0xff0000) >> 16,
+			BIOSPCI_32BITS, &port) == -1) {
 		printf("Cannot read bar at 0x%x\n", locator);
 		return (CMD_ERROR);
 	}
@@ -286,12 +285,12 @@ comc_pcidev_handle(uint32_t locator)
 		printf("Memory bar at 0x%x\n", locator);
 		return (CMD_ERROR);
 	}
-        port &= PCIM_BAR_IO_BASE;
+	port &= PCIM_BAR_IO_BASE;
 
 	sprintf(intbuf, "%d", port);
 	unsetenv("comconsole_port");
-	env_setenv("comconsole_port", EV_VOLATILE, intbuf,
-		   comc_port_set, env_nounset);
+	env_setenv("comconsole_port", EV_VOLATILE, intbuf, comc_port_set,
+			env_nounset);
 
 	comc_setup(comc_curspeed, port);
 	comc_locator = locator;
@@ -310,8 +309,8 @@ comc_pcidev_set(struct env_var *ev, int flags, const void *value)
 		printf("Invalid pcidev\n");
 		return (CMD_ERROR);
 	}
-	if ((comconsole.c_flags & (C_ACTIVEIN | C_ACTIVEOUT)) != 0 &&
-	    comc_locator != locator) {
+	if ((comconsole.c_flags & (C_ACTIVEIN | C_ACTIVEOUT)) != 0
+			&& comc_locator != locator) {
 		error = comc_pcidev_handle(locator);
 		if (error != CMD_OK)
 			return (error);
@@ -368,10 +367,10 @@ comc_parseint(const char *speedstr)
 static int
 comc_getspeed(void)
 {
-	u_int	divisor;
-	u_char	dlbh;
-	u_char	dlbl;
-	u_char	cfcr;
+	u_int divisor;
+	u_char dlbh;
+	u_char dlbl;
+	u_char cfcr;
 
 	cfcr = inb(comc_port + com_cfcr);
 	outb(comc_port + com_cfcr, CFCR_DLAB | cfcr);

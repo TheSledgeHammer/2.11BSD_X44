@@ -26,6 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/boot.h>
 #include <sys/exec.h>
@@ -38,8 +40,17 @@
 #include <btxv86.h>
 
 #include <machine/bootinfo.h>
+#include <machine/pmap.h>
+#include <machine/pte.h>
 
-struct bootinfo boot;
+extern pml4_entry_t	PT4[];
+extern pdpt_entry_t	PT3[];
+extern pd_entry_t	PT2[];
+
+uint32_t entry_hi;
+uint32_t entry_lo;
+
+extern void amd64_tramp();
 
 #ifdef multiboot
 #if defined(BOOT_ELF32) || defined(BOOT_ELF64)
@@ -71,14 +82,15 @@ out:
 }
 
 int
-boot_exec(struct preloaded_file *fp, char *kerntype)
+boot_exec32(struct preloaded_file *fp, char *kerntype)
 {
+	struct bootinfo boot;
 	vm_offset_t entry;
 	int error;
 
 	error = bi_load(&boot, fp, kerntype, fp->f_args);
 	if (error != 0) {
-		printf("bi_load failed: %d\n", error);
+		printf("boot_exec32 failed: %d\n", error);
 		goto out;
 	}
 
@@ -88,7 +100,7 @@ boot_exec(struct preloaded_file *fp, char *kerntype)
     printf("Start @ 0x%lx ...\n", entry);
 #endif
 
-    dev_cleanup();
+	dev_cleanup();
 	__exec((void *)entry, &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0,
 			&boot.bi_bip, &boot.bi_kernend);
 
@@ -96,6 +108,58 @@ out:
 	panic("exec returned");
 	return (error);
 }
+
+int
+boot_exec64(struct preloaded_file *fp, char *kerntype)
+{
+	struct bootinfo boot;
+	int error;
+	int i;
+
+	error = bi_load(&boot, fp, kerntype, fp->f_args);
+	if (error != 0) {
+		printf("boot_exec64 failed: %d\n", error);
+		goto out;
+	}
+
+    bzero(PT4, PAGE_SIZE);
+    bzero(PT3, PAGE_SIZE);
+    bzero(PT2, PAGE_SIZE);
+
+    /*
+     * This is kinda brutal, but every single 1GB VM memory segment points to
+     * the same first 1GB of physical memory.  But it is more than adequate.
+     */
+    for (i = 0; i < 512; i++) {
+		/* Each slot of the level 4 pages points to the same level 3 page */
+		PT4[i] = (pml4_entry_t) VTOP((uintptr_t )&PT3[0]);
+		PT4[i] |= PG_V | PG_RW;
+
+		/* Each slot of the level 3 pages points to the same level 2 page */
+		PT3[i] = (pdpt_entry_t) VTOP((uintptr_t )&PT2[0]);
+		PT3[i] |= PG_V | PG_RW;
+
+		/* The level 2 page slots are mapped with 2MB pages for 1GB. */
+		PT2[i] = i * (2 * 1024 * 1024);
+		PT2[i] |= PG_V | PG_RW | PG_PS;
+	}
+
+    entry_lo = fp->f_marks[MARK_ENTRY] & 0xffffffff;
+    entry_hi = (fp->f_marks[MARK_ENTRY] >> 32) & 0xffffffff;
+
+#ifdef DEBUG
+    printf("Start @ 0x%lx ...\n", entry);
+#endif
+
+	dev_cleanup();
+	__exec((void *)VTOP(amd64_tramp), &boot.bi_howtop, &boot.bi_bootdevp, 0, 0, 0,
+			&boot.bi_bip, &boot.bi_kernend);
+
+out:
+	panic("exec returned");
+	return (error);
+}
+
 
 /*
  * Multiboot

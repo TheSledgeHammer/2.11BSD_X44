@@ -222,8 +222,8 @@ putc(int c)
 int
 main(void)
 {
-    int 		 autoboot;
-    boot2_ino_t  ino;
+	int autoboot;
+	boot2_ino_t ino;
 
     kname = NULL;
     boot2_dmadat = (void *)(roundup2(__base + (int32_t)&_end, 0x10000) - __base);
@@ -245,13 +245,13 @@ main(void)
 
 	if ((ino = lookup(PATH_CONFIG)) || (ino = lookup(PATH_DOTCONFIG))) {
 		fsread(ino, cmd, sizeof(cmd));
-    	}
+	}
 
 	if (*cmd) {
 		printf("%s: %s", PATH_CONFIG, cmd);
 		if (parse()) {
 			autoboot = 0;
-        }
+		}
 		/* Do not process this command twice */
 		*cmd = 0;
 	}

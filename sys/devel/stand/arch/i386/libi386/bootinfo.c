@@ -167,6 +167,8 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *kerntype, char *ar
 		return (EINVAL);
 	}
 
+	bi = calloc(sizeof(*bi), 1);
+
 	/*
 	 * Version 1 bootinfo.
 	 */
