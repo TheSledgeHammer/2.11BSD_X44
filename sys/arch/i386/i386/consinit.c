@@ -104,7 +104,7 @@ consinit(void)
 	struct bootinfo *consinfo;
 	static int initted;
 
-	consinfo = &i386boot;
+	consinfo = &bootinfo;
 	if (initted) {
 		return;
 	}

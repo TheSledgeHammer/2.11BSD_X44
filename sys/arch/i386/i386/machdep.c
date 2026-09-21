@@ -155,9 +155,9 @@ long Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
 int biosmem;
-struct bootinfo bootinfo;
 char bootsize[BOOTINFO_MAXSIZE];
 extern int *esym;
+extern int end;
 
 extern int biosbasemem;
 extern int biosextmem;
@@ -1506,8 +1506,6 @@ void
 init386_ksyms(boot)
 	struct bootinfo *boot;
 {
-	extern int end;
-
 	if (boot == NULL) {
 		ksyms_addsyms_elf(*(int *)&end, ((int *)&end) + 1, esym);
 		return;
