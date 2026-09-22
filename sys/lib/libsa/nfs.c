@@ -59,6 +59,16 @@
 #include "nfs.h"
 #include "rpc.h"
 
+struct fs_ops nfs_fsops = {
+		.open = nfs_open,
+		.close = nfs_close,
+		.read = nfs_read,
+		.write = nfs_write,
+		.seek = nfs_seek,
+		.stat= nfs_stat,
+		.readdir = nfs_readdir,
+};
+
 /* Define our own NFS attributes without NQNFS stuff. */
 struct nfsv2_fattrs {
 	n_long	fa_type;
@@ -682,4 +692,12 @@ nfs_stat(f, sb)
 	sb->st_size  = ntohl(fp->fa.fa_size);
 
 	return (0);
+}
+
+int
+nfs_readdir(f, d)
+	struct open_file *f;
+	struct dirent *d;
+{
+	return (EROFS);
 }

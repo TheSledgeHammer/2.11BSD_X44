@@ -48,6 +48,16 @@
 #include "stand.h"
 #include "cd9660.h"
 
+struct fs_ops cd9660_fsops = {
+		.open = cd9660_open,
+		.close = cd9660_close,
+		.read = cd9660_read,
+		.write = cd9660_write,
+		.seek = cd9660_seek,
+		.stat = cd9660_stat,
+		.readdir = cd9660_readdir,
+};
+
 /*
  * XXX Does not currently implement:
  * XXX
@@ -405,4 +415,12 @@ cd9660_stat(f, sb)
 	sb->st_uid = sb->st_gid = 0;
 	sb->st_size = fp->size;
 	return 0;
+}
+
+int
+cd9660_readdir(f, d)
+	struct open_file *f;
+	struct dirent *d;
+{
+	return (EROFS);
 }

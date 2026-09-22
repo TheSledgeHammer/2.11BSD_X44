@@ -36,5 +36,6 @@ int		dosfs_read(struct open_file *, char *, u_int, u_int *);
 int		dosfs_write(struct open_file *, char *, u_int, u_int *);
 off_t	dosfs_seek(struct open_file *, off_t, int);
 int		dosfs_stat(struct open_file *, struct stat *);
+int		dosfs_readdir(struct open_file *, struct dirent *);
 
 #endif /* _LIBSA_DOSFS_H_ */

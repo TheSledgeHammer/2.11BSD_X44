@@ -111,7 +111,7 @@ fsfind(const char *name, uint32_t * ino)
 	ssize_t n;
 
 	fs_off = 0;
-	while ((n = fsread(*ino, buf, DEV_BSIZE)) > 0)
+	while ((n = boot_fsread(*ino, buf, DEV_BSIZE)) > 0)
 		for (s = buf; s < buf + DEV_BSIZE;) {
 			memcpy(&d, s, sizeof(struct direct));
 			if (ls)

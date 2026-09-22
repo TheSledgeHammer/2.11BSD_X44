@@ -40,5 +40,6 @@ int		cd9660_read(struct open_file *, char *, u_int, u_int *);
 int		cd9660_write(struct open_file *, char *, u_int, u_int *);
 off_t	cd9660_seek(struct open_file *, off_t, int);
 int		cd9660_stat(struct open_file *, struct stat *);
+int		cd9660_readdir(struct open_file *, struct dirent *);
 
 #endif /* _LIBSA_CD9660_H_ */

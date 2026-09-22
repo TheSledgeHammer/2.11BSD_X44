@@ -109,6 +109,7 @@ int		tftp_read(struct open_file *, char *, u_int, u_int *);
 int		tftp_write(struct open_file *, char *, u_int, u_int *);
 off_t	tftp_seek(struct open_file *, off_t, int);
 int		tftp_stat(struct open_file *, struct stat *);
+int		tftp_readdir(struct open_file *, struct dirent *);
 #define IPPORT_TFTP 69
 
 #endif /* _LIBSA_TFTP_H_ */

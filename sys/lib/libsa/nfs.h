@@ -39,5 +39,6 @@ int		nfs_write(struct open_file *, char *, u_int, u_int *);
 off_t	nfs_seek(struct open_file *, off_t, int);
 int		nfs_stat(struct open_file *, struct stat *);
 int 	nfs_mount(int, struct in_addr, char *);
+int		nfs_readdir(struct open_file *, struct dirent *);
 
 #endif /* _LIBSA_NFS_H_ */

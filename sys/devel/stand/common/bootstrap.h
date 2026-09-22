@@ -114,7 +114,11 @@ extern struct arch_switch archsw;
 /* boot.c */
 int autoboot(int, char *);
 void autoboot_maybe(void);
-int getrootmount(char*);
+int getrootmount(char *);
+
+/* devopen.c */
+int devopen(struct open_file *, const char *, char **);
+int devclose(struct open_file *);
 
 /* disk.c */
 void disk_setbootdev(struct devdesc *, uint32_t);

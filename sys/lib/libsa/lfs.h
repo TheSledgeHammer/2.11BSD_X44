@@ -42,5 +42,6 @@ int		lfs_read(struct open_file *, char *, u_int, u_int *);
 int		lfs_write(struct open_file *, char *, u_int, u_int *);
 off_t	lfs_seek(struct open_file *, off_t, int);
 int		lfs_stat(struct open_file *, struct stat *);
+int		lfs_readdir(struct open_file *, struct dirent *);
 
 #endif /* _LIBSA_LFS_H_ */

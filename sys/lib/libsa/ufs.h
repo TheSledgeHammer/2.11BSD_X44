@@ -42,5 +42,6 @@ int		ufs_read(struct open_file *, char *, u_int, u_int *);
 int		ufs_write(struct open_file *, char *, u_int, u_int *);
 off_t	ufs_seek(struct open_file *, off_t, int);
 int		ufs_stat(struct open_file *, struct stat *);
+int		ufs_readdir(struct open_file *, struct dirent *);
 
 #endif /* _LIBSA_UFS_H_ */

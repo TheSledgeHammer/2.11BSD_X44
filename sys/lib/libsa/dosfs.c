@@ -59,6 +59,16 @@
 #define DSHIFT    4		/* DEPSEC shift */
 #define LOCLUS    2		/* lowest cluster number */
 
+struct fs_ops dosfs_fsops = {
+		.open = dosfs_open,
+		.close = dosfs_close,
+		.read = dosfs_read,
+		.write = dosfs_write,
+		.seek = dosfs_seek,
+		.stat = dosfs_stat,
+		.readdir = dosfs_readdir,
+};
+
 typedef union {
 	struct direntry de;	/* standard directory entry */
 	struct winentry xde;	/* extended directory entry */
@@ -374,6 +384,14 @@ dosfs_stat(struct open_file * fd, struct stat * sb)
 	if ((sb->st_size = fsize(f->fs, &f->de)) == -1)
 		return EINVAL;
 	return (0);
+}
+
+int
+dosfs_readdir(f, d)
+	struct open_file *f;
+	struct dirent *d;
+{
+	return (EROFS);
 }
 
 /*

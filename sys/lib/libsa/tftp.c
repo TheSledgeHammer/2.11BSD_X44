@@ -65,6 +65,16 @@ static int      tftpport = 2000;
 
 #define RSPACE 520		/* max data packet, rounded up */
 
+struct fs_ops tftp_fsops = {
+		.open = tftp_open,
+		.close = tftp_close,
+		.read = tftp_read,
+		.write = tftp_write,
+		.seek = tftp_seek,
+		.stat= tftp_stat,
+		.readdir = tftp_readdir,
+};
+
 struct tftp_handle {
 	struct iodesc  *iodesc;
 	int             currblock;	/* contents of lastdata */
@@ -80,14 +90,14 @@ struct tftp_handle {
 };
 
 static const int tftperrors[8] = {
-	0,			/* ??? */
-	ENOENT,
-	EPERM,
-	ENOSPC,
-	EINVAL,			/* ??? */
-	EINVAL,			/* ??? */
-	EEXIST,
-	EINVAL			/* ??? */
+		0,			/* ??? */
+		ENOENT,
+		EPERM,
+		ENOSPC,
+		EINVAL,			/* ??? */
+		EINVAL,			/* ??? */
+		EEXIST,
+		EINVAL			/* ??? */
 };
 
 static ssize_t recvtftp(struct iodesc *, void *, size_t, time_t);
@@ -429,4 +439,12 @@ tftp_seek(f, offset, where)
 		return (-1);
 	}
 	return (tftpfile->off);
+}
+
+int
+tftp_readdir(f, d)
+	struct open_file *f;
+	struct dirent *d;
+{
+	return (EROFS);
 }

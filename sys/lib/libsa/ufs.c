@@ -77,6 +77,16 @@
 #include <libsa/stand.h>
 #include <libsa/ufs.h>
 
+struct fs_ops ufs_fsops = {
+		.open = ufs_open,
+		.close = ufs_close,
+		.read = ufs_read,
+		.write = ufs_write,
+		.seek = ufs_seek,
+		.stat= ufs_stat,
+		.readdir = ufs_readdir,
+};
+
 /*
  * In-core open file.
  */
@@ -666,5 +676,40 @@ ufs_stat(f, sb)
 	sb->st_uid = DIP(fp->f_ip, uid);
 	sb->st_gid = DIP(fp->f_ip, gid);
 	sb->st_size = DIP(fp->f_ip, size);
+	return (0);
+}
+
+int
+ufs_readdir(f, d)
+	struct open_file *f;
+	struct dirent *d;
+{
+	struct file *fp = (struct file *)f->f_fsdata;
+	struct direct *dp;
+	char *buf;
+	size_t buf_size;
+	int error;
+
+	/*
+	 * assume that a directory entry will not be split across blocks
+	 */
+	do {
+		if (fp->f_seekp >= DIP(fp->f_ip, size))
+			return (ENOENT);
+		error = buf_read_file(f, &buf, &buf_size);
+		if (error)
+			return (error);
+		dp = (struct direct *)buf;
+		/*
+		 * Check for corrupt directory entry and bail out rather
+		 * than spin forever hoping that the user has other options.
+		 */
+		if (dp->d_reclen == 0)
+			return (0);
+		fp->f_seekp += dp->d_reclen;
+	} while (dp->d_ino == (ino_t)0);
+
+	d->d_type = dp->d_type;
+	strcpy(d->d_name, dp->d_name);
 	return (0);
 }
