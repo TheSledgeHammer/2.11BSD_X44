@@ -207,7 +207,7 @@ extract_currdev(struct bootargs *ba, struct bootinfo *bi, uint32_t bootdev)
 		currdev = -1;
 	} else {
 		biosdev = bi->bi_bios_dev;
-		disk_setbootdev(dev, biosdev);
+		disk_setbootdev(dev, bootdev);
 
 		/*
 		 * If we are booted by an old bootstrap, we have to guess at the BIOS
