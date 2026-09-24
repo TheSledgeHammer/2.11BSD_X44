@@ -139,7 +139,7 @@ int	Pflag;				/* pack locators */
 
 int	yyparse(void);
 
-#ifndef MAKE_BOOTSTRAP
+#if !defined(MAKE_BOOTSTRAP) && defined(YYDEBUG)
 extern int yydebug;
 #endif
 
@@ -193,7 +193,7 @@ main(int argc, char **argv)
 	while ((ch = getopt(argc, argv, "DPgpvb:s:x")) != -1) {
 		switch (ch) {
 
-#ifndef MAKE_BOOTSTRAP
+#if !defined(MAKE_BOOTSTRAP) && defined(YYDEBUG)
 		case 'D':
 			yydebug = 1;
 			break;
