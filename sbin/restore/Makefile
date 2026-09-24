@@ -12,6 +12,7 @@ MAN=	restore.8
 MLINKS+=restore.8 rrestore.8
 .PATH:	${NETBSDSRCDIR}/sbin/dump
 
+COPTS.dirs.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 COPTS.interactive.c+= ${GCC_NO_STRINGOP_TRUNCATION}
 
 .include <bsd.prog.mk>

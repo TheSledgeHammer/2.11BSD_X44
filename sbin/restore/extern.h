@@ -88,7 +88,7 @@ RST_DIR		*rst_opendir(const char *);
 struct direct	*rst_readdir(RST_DIR *);
 void		 rst_closedir(RST_DIR *);
 void	 	 runcmdshell(void);
-char		*savename(char *);
+char		*savename(const char *);
 void	 	 setdirmodes(int);
 void		 setinput(const char *);
 void		 setup(void);

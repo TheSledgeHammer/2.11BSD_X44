@@ -78,7 +78,7 @@ static int	tapesread;
 static jmp_buf	restart;
 static int	gettingfile = 0;	/* restart has a valid frame */
 #ifdef RRESTORE
-static char	*host = NULL;
+static const char	*host = NULL;
 #endif
 
 static int	ofile;
@@ -142,6 +142,7 @@ static void	 swap_old_header(struct s_ospcl *);
 void
 setinput(const char *source)
 {
+    char *cp;
 	FLUSHTAPEBUF();
 	if (bflag)
 		newtapebuf(ntrec);
@@ -150,10 +151,11 @@ setinput(const char *source)
 	terminal = stdin;
 
 #ifdef RRESTORE
-	if (strchr(source, ':')) {
+	if ((cp = strchr(source, ':')) != NULL) {
 		host = source;
 		source = strchr(host, ':');
-		*source++ = '\0';
+		*cp++ = '\0';
+        source = cp;
 		if (rmthost(host) == 0)
 			exit(1);
 	} else
@@ -176,7 +178,7 @@ setinput(const char *source)
 		}
 		pipein++;
 	}
-	(void) strlcpy(magtape, source, sizeof(magtape));
+	(void)strlcpy(magtape, source, sizeof(magtape));
 }
 
 void
@@ -277,7 +279,7 @@ setup(void)
 		exit(1);
 	}
 	maxino = (spcl.c_count * TP_BSIZE * NBBY) + 1;
-	dprintf(stdout, "maxino = %d\n", maxino);
+	dprintf(stdout, "maxino = %ld\n", maxino);
 	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == NULL)
 		panic("no memory for active inode map\n");
@@ -604,14 +606,14 @@ extractfile(char *name)
 			return (GOOD);
 		}
 		if (uflag)
-			(void) unlink(name);
+			(void)unlink(name);
 		if (linkit(lnkbuf, name, SYMLINK) == GOOD) {
 			if (setbirth)
-				(void) lutimes(name, ctimep);
-			(void) lutimes(name, mtimep);
-			(void) lchown(name, uid, gid);
-			(void) lchmod(name, mode);
-			(void) lchflags(name, flags);
+				(void)utimes(name, ctimep);
+			(void)utimes(name, mtimep);
+			(void)fchown(name, uid, gid);
+			(void)fchmod(name, mode);
+			(void)chflags(name, flags);
 			return (GOOD);
 		}
 		return (FAIL);
@@ -624,7 +626,7 @@ extractfile(char *name)
 			return (GOOD);
 		}
 		if (uflag)
-			(void) unlink(name);
+			(void)unlink(name);
 		if (mknod(name, (mode & (IFCHR | IFBLK)) | 0600,
 		    (int)curfile.rdev) < 0) {
 			fprintf(stderr, "%s: cannot create special file: %s\n",
@@ -634,11 +636,11 @@ extractfile(char *name)
 		}
 		skipfile();
 		if (setbirth)
-			(void) utimes(name, ctimep);
-		(void) utimes(name, mtimep);
-		(void) chown(name, uid, gid);
-		(void) chmod(name, mode);
-		(void) chflags(name, flags);
+			(void)utimes(name, ctimep);
+		(void)utimes(name, mtimep);
+		(void)chown(name, uid, gid);
+		(void)chmod(name, mode);
+		(void)chflags(name, flags);
 		return (GOOD);
 
 	case IFIFO:
@@ -648,7 +650,7 @@ extractfile(char *name)
 			return (GOOD);
 		}
 		if (uflag)
-			(void) unlink(name);
+			(void)unlink(name);
 		if (mkfifo(name, 0600) < 0) {
 			fprintf(stderr, "%s: cannot create fifo: %s\n",
 			    name, strerror(errno));
@@ -657,11 +659,11 @@ extractfile(char *name)
 		}
 		skipfile();
 		if (setbirth)
-			(void) utimes(name, ctimep);
-		(void) utimes(name, mtimep);
-		(void) chown(name, uid, gid);
-		(void) chmod(name, mode);
-		(void) chflags(name, flags);
+			(void)utimes(name, ctimep);
+		(void)utimes(name, mtimep);
+		(void)chown(name, uid, gid);
+		(void)chmod(name, mode);
+		(void)chflags(name, flags);
 		return (GOOD);
 
 	case IFREG:
@@ -671,7 +673,7 @@ extractfile(char *name)
 			return (GOOD);
 		}
 		if (uflag)
-			(void) unlink(name);
+			(void)unlink(name);
 		if ((ofile = open(name, O_WRONLY | O_CREAT | O_TRUNC,
 		    0600)) < 0) {
 			fprintf(stderr, "%s: cannot create file: %s\n",
@@ -681,12 +683,12 @@ extractfile(char *name)
 		}
 		getfile(xtrfile, xtrskip);
 		if (setbirth)
-			(void) futimes(ofile, ctimep);
-		(void) futimes(ofile, mtimep);
-		(void) fchown(ofile, uid, gid);
-		(void) fchmod(ofile, mode);
-		(void) fchflags(ofile, flags);
-		(void) close(ofile);
+			(void)utimes(ofile, ctimep);
+		(void)utimes(ofile, mtimep);
+		(void)fchown(ofile, uid, gid);
+		(void)fchmod(ofile, mode);
+		(void)chflags(ofile, flags);
+		(void)close(ofile);
 		return (GOOD);
 	}
 	/* NOTREACHED */
@@ -747,7 +749,7 @@ loop:
 		if (spcl.c_type == TS_BITS || spcl.c_type == TS_CLRI ||
 		    spcl.c_addr[i]) {
 			readtape(&buf[curblk++][0]);
-			if (curblk == fssize / TP_BSIZE) {
+			if ((u_int32_t)curblk == fssize / TP_BSIZE) {
 				(*fill)((char *)buf, (long)(size > TP_BSIZE ?
 				     fssize : (curblk - 1) * TP_BSIZE + size));
 				curblk = 0;
@@ -805,7 +807,7 @@ xtrfile(char *buf, long size)
 		return;
 	if (write(ofile, buf, (int) size) == -1) {
 		fprintf(stderr,
-		    "write error extracting inode %d, name %s\nwrite: %s\n",
+		    "write error extracting inode %ld, name %s\nwrite: %s\n",
 			curfile.ino, curfile.name, strerror(errno));
 		exit(1);
 	}
@@ -821,7 +823,7 @@ xtrskip(char *buf, long size)
 
 	if (lseek(ofile, size, SEEK_CUR) == -1) {
 		fprintf(stderr,
-		    "seek error extracting inode %d, name %s\nlseek: %s\n",
+		    "seek error extracting inode %ld, name %s\nlseek: %s\n",
 			curfile.ino, curfile.name, strerror(errno));
 		exit(1);
 	}
@@ -966,7 +968,7 @@ getmore:
 			fprintf(stderr, "restoring %s\n", curfile.name);
 			break;
 		case SKIP:
-			fprintf(stderr, "skipping over inode %d\n",
+			fprintf(stderr, "skipping over inode %ld\n",
 				curfile.ino);
 			break;
 		}
@@ -1204,10 +1206,10 @@ accthdr(struct s_spcl *header)
 		fprintf(stderr, "Used inodes map header");
 		break;
 	case TS_INODE:
-		fprintf(stderr, "File header, ino %d", previno);
+		fprintf(stderr, "File header, ino %ld", previno);
 		break;
 	case TS_ADDR:
-		fprintf(stderr, "File continuation header, ino %d", previno);
+		fprintf(stderr, "File continuation header, ino %ld", previno);
 		break;
 	case TS_END:
 		fprintf(stderr, "End of tape header");
@@ -1338,7 +1340,7 @@ checksum(int *buf)
 	}
 			
 	if (i != CHECKSUM) {
-		fprintf(stderr, "Checksum error %o, inode %d file %s\n", i,
+		fprintf(stderr, "Checksum error %o, inode %ld file %s\n", i,
 			curfile.ino, curfile.name);
 		return(FAIL);
 	}
