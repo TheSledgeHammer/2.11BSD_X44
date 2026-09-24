@@ -44,10 +44,10 @@
 #include <machine/bootinfo.h>
 #include <machine/psl.h>
 
-static struct bootargs 		*kargs;
-static uint32_t				initial_howto;
-static uint32_t				initial_bootdev;
-static struct bootinfo		*initial_bootinfo;
+static struct bootargs *kargs;
+static uint32_t initial_howto;
+static uint32_t initial_bootdev;
+static struct bootinfo *initial_bootinfo;
 
 static void extract_currdev(struct bootargs *, struct bootinfo *, uint32_t);
 static int isa_inb(int);
@@ -190,12 +190,12 @@ extract_currdev(struct bootargs *ba, struct bootinfo *bi, uint32_t bootdev)
 			dv = &pxedisk;
 			currdev.d_kind.dd.d_unit = 0;
 		} else {
-		    /* we don't know what our boot device is */
+			/* we don't know what our boot device is */
 			currdev.d_kind.dd.d_slice = -1;
 			currdev.d_kind.dd.d_adaptor = -1;
 			currdev.d_kind.dd.d_controller = -1;
 			currdev.d_kind.dd.d_partition = 0;
-		    biosdev = -1;
+			biosdev = -1;
 		}
 		/* ZFS SUPPORT Belongs Here */
 	} else if ((bootdev & B_MAGICMASK) != B_DEVMAGIC) {

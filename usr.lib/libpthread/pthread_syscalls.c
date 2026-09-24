@@ -517,14 +517,14 @@ pthread_sys_sigsuspend(const sigset_t *sigmask)
 }
 
 int
-pthread_sys_sigtimedwait(const sigset_t * set, int *signo, struct timespec * timeout)
+pthread_sys_sigtimedwait(const sigset_t * set, siginfo_t *info, struct timespec * timeout)
 {
 	int retval;
 	pthread_t self;
 
 	self = pthread__self();
 	TESTCANCEL(self);
-	retval = __syscall(SYS_sigtimedwait, set, signo, timeout);
+	retval = __syscall(SYS_sigtimedwait, set, info, timeout);
 	TESTCANCEL(self);
 
 	return (retval);

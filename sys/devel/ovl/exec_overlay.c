@@ -350,67 +350,6 @@ bad:
 	return (ENOEXEC);
 }
 
-int
-vmcmd_map_ovdata(p, cmd)
-	struct proc *p;
-	struct exec_vmcmd *cmd;
-{
-	struct vmspace *vmspace;
-	int error;
-
-	vmspace = p->p_vmspace;
-
-	if (cmd->ev_size == 0) {
-		return (0);
-	}
-	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-	if (error) {
-		return (error);
-	}
-	return (vmcmd_ovdata(p, cmd));
-}
-
-int
-vmcmd_ovdata(p, cmd)
-	struct proc *p;
-	struct exec_vmcmd *cmd;
-{
-	struct vmspace *vmspace;
-	int error;
-	vm_prot_t prot, maxprot;
-	size_t resid;
-
-	vmspace = p->p_vmspace;
-	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
-			cmd->ev_size, cmd->ev_offset, UIO_SYSSPACE, IO_UNIT, p->p_ucred,
-			&resid, p);
-	if (error != 0) {
-		return (error);
-	}
-	if (resid != 0) {
-		return (ENOEXEC);
-	}
-	prot = cmd->ev_prot;
-	maxprot = VM_PROT_ALL;
-
-	if (maxprot != VM_PROT_ALL) {
-		error = vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr),
-				round_page(cmd->ev_addr + cmd->ev_size), maxprot, TRUE);
-		if (error) {
-			return (error);
-		}
-	}
-
-	if (prot != maxprot) {
-		error = vm_map_protect(&vmspace->vm_map, trunc_page(cmd->ev_addr),
-				round_page(cmd->ev_addr + cmd->ev_size), prot, FALSE);
-		if (error) {
-			return (error);
-		}
-	}
-	return (0);
-}
-
 #ifdef notyet
 int
 exec_aout_prep_common(p, elp, a_out, ovflag, overlay, sep)

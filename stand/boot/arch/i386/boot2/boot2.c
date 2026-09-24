@@ -391,7 +391,7 @@ load(void)
 }
 
 static int
-parse()
+parse(void)
 {
     char *arg = cmd;
     char *p, *q;

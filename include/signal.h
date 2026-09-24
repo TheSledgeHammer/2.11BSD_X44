@@ -60,7 +60,12 @@ int		sigvec(int, struct sigvec *, struct sigvec *);
 void	psignal(unsigned int, const char *);
 #endif /* _XOPEN_SOURCE_EXTENDED || _XOPEN_SOURCE >= 500
 	   || _POSIX_C_SOURCE >= 200809L || __BSD_VISIBLE */
-
+#if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
+    defined(__BSD_VISIBLE)
+#include <sys/timespec.h>
+int		sigwait(const sigset_t *, int *);
+int		sigtimedwait(const sigset_t *, siginfo_t *, struct timespec *)
+#endif /* _POSIX_C_SOURCE >= 199309L || _XOPEN_SOURCE_EXTENDED || ... */
 __END_DECLS
 
 #endif	/* !_SIGNAL_H_ */

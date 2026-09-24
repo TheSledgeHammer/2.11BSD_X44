@@ -71,7 +71,7 @@ int	pthread_sys_select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 int	pthread_sys_sigaction(int, const struct sigaction *, struct sigaction *);
 int	pthread_sys_sigprocmask(int, sigset_t *, sigset_t *);
 int	pthread_sys_sigsuspend(const sigset_t *);
-int	pthread_sys_sigtimedwait(const sigset_t *, int *, struct timespec *);
+int	pthread_sys_sigtimedwait(const sigset_t *, siginfo_t *, struct timespec *);
 int	pthread_sys_timer_create(int, int, int *);
 int	pthread_sys_timer_gettime(int, struct itimerspec *);
 int	pthread_sys_timer_settime(int, int, const struct itimerspec *, struct itimerspec *);

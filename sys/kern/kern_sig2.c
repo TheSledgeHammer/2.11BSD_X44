@@ -345,7 +345,7 @@ sigaltstack()
 	u.u_psflags |= SAS_ALTSTACK;
 	u.u_sigstk = ss;
 out:
-	return(u.u_error = error);
+	return (u.u_error = error);
 }
 
 int
@@ -387,17 +387,18 @@ sigtimedwait()
 {
 	register struct sigtimedwait_args {
 		syscallarg(sigset_t *) set;
-		syscallarg(int *) sig;
+		syscallarg(siginfo_t *) info;
 		syscallarg(struct timespec *) timeout;
 	} *uap = (struct sigtimedwait_args *)u.u_ap;
 	sigset_t wanted, sigsavail;
 	register struct proc *p = u.u_procp;
 	struct timespec ts;
 	struct timeval tv;
+	siginfo_t siginfo;
 	int signo, error, s;
 	int timo = 0;
 
-	if (SCARG(uap, set) == 0 || SCARG(uap, sig) == 0) {
+	if (SCARG(uap, set) == 0 || SCARG(uap, info) == 0) {
 		error = EINVAL;
 		goto out;
 	}
@@ -473,8 +474,10 @@ sigtimedwait()
 	}
 
 	signo = ffs(sigsavail);
+	siginfo_init(&siginfo);
+	siginfo.si_signo = signo;
 	p->p_sig &= ~sigmask(signo);
-	error = copyout(&signo, SCARG(uap, sig), sizeof(int));
+	error = copyout(&siginfo, SCARG(uap, info), sizeof(siginfo));
 out:
 	return (u.u_error = error);
 }

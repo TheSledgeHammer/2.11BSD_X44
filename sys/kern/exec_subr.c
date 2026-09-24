@@ -298,15 +298,11 @@ int
 exec_alloc_ovdata(eovd)
 	struct exec_ovdata *eovd;
 {
-	MALLOC(eovd, struct exec_ovdata *, sizeof(struct exec_ovdata), M_EXEC, M_WAITOK);
-	if (eovd == NULL) {
-		bcopy(&u.u_ovdata, eovd, sizeof(struct u_ovd));
-		if (eovd != NULL) {
-			return (0);
-		}
-		return (ENOMEM);
+	bcopy(&u.u_ovdata, eovd, sizeof(struct u_ovd));
+	if (eovd != NULL) {
+		return (0);
 	}
-	return (0);
+	return (ENOMEM);
 }
 
 void
@@ -314,7 +310,7 @@ exec_free_ovdata(eovd)
 	struct exec_ovdata *eovd;
 {
 	if (eovd != NULL) {
-		FREE(eovd, M_EXEC);
+		bzero(eovd, sizeof(*eovd));
 	}
 }
 
