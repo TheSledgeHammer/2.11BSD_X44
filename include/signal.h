@@ -25,7 +25,6 @@ extern const int sys_nsiglist;
 #endif /* __BSD_VISIBLE */
 
 #if defined(__BSD_VISIBLE)
-/* 2.11BSD Compatability: No siginfo in kernel */
 #ifndef __SIGINFO_DECLARED
 #define __SIGINFO_DECLARED
 #include <sys/siginfo.h>
@@ -62,9 +61,9 @@ void	psignal(unsigned int, const char *);
 	   || _POSIX_C_SOURCE >= 200809L || __BSD_VISIBLE */
 #if (_POSIX_C_SOURCE - 0) >= 199309L || (_XOPEN_SOURCE - 0) >= 500 || \
     defined(__BSD_VISIBLE)
-#include <sys/timespec.h>
+#include <sys/time.h>
 int		sigwait(const sigset_t *, int *);
-int		sigtimedwait(const sigset_t *, siginfo_t *, struct timespec *)
+int		sigtimedwait(const sigset_t *, siginfo_t *, struct timespec *);
 #endif /* _POSIX_C_SOURCE >= 199309L || _XOPEN_SOURCE_EXTENDED || ... */
 __END_DECLS
 
