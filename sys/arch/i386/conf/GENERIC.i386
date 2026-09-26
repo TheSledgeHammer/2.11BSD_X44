@@ -296,7 +296,7 @@ com*			at mca? slot ?			# 16x50s on comm boards
 # Parallel Printer Interfaces
 
 # PCI parallel printer interfaces
-#lpt*			at puc? port ?			# || ports on "universal" comm boards
+lpt*			at puc? port ?			# || ports on "universal" comm boards
 
 # ISA parallel printer interfaces
 #lpt0			at isa? port 0x378 irq 7	# standard PC parallel ports
