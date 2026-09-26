@@ -89,7 +89,9 @@ __KERNEL_RCSID(0, "$NetBSD: lpt.c,v 1.63 2003/06/29 22:30:13 fvdl Exp $");
 int lptdebug = 0;
 #endif
 
-extern struct cfdriver lpt_cd;
+#define spllpt()	    spltty()
+
+CFDRIVER_DECL(NULL, lpt, DV_DULL);
 
 dev_type_open(lptopen);
 dev_type_close(lptclose);
@@ -109,6 +111,7 @@ const struct cdevsw lpt_cdevsw = {
 	.d_kqfilter = nokqfilter,
 	.d_type = D_OTHER
 };
+
 
 #define	LPTUNIT(s)	(minor(s) & 0x1f)
 #define	LPTFLAGS(s)	(minor(s) & 0xe0)

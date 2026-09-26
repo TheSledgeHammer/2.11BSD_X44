@@ -87,11 +87,10 @@ int lpt_isa_debug = 0;
 struct lpt_isa_softc {
 	struct lpt_softc sc_lpt;
 	int sc_irq;
-
 };
 
-int lpt_isa_probe (struct device *, struct cfdata *, void *);
-void lpt_isa_attach (struct device *, struct device *, void *);
+int lpt_isa_probe(struct device *, struct cfdata *, void *);
+void lpt_isa_attach(struct device *, struct device *, void *);
 
 CFOPS_DECL(lpt_isa, lpt_isa_probe, lpt_isa_attach, NULL, NULL);
 CFDRIVER_DECL(NULL, lpt_isa, DV_DULL);

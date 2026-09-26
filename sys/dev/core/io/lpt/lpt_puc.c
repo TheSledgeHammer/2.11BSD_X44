@@ -48,6 +48,7 @@ __KERNEL_RCSID(0, "$NetBSD: lpt_puc.c,v 1.6 2002/10/02 16:51:43 thorpej Exp $");
 
 #include <dev/core/pci/pcivar.h>
 #include <dev/core/io/puc/pucvar.h>
+#include <dev/core/io/lpt/lptreg.h>
 #include <dev/core/io/lpt/lptvar.h>
 
 int		lpt_puc_probe(struct device *, struct cfdata *, void *);

@@ -86,11 +86,11 @@ struct lpt_softc {
 #define NOT_READY()     ((bus_space_read_1(iot, ioh, lpt_status) ^ LPS_INVERT) & LPS_MASK)
 #define NOT_READY_ERR() lptnotready(bus_space_read_1(iot, ioh, lpt_status), sc)
 
-int lptnotready (u_char, struct lpt_softc *);
-void lptwakeup (void *arg);
-int lptpushbytes (struct lpt_softc *);
+int lptnotready(u_char, struct lpt_softc *);
+void lptwakeup(void *arg);
+int lptpushbytes(struct lpt_softc *);
 
-void lpt_attach_subr (struct lpt_softc *);
-int lptintr (void *);
+void lpt_attach_subr(struct lpt_softc *);
+int lptintr(void *);
 
 #endif /* _LPT_VAR_H_ */

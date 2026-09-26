@@ -1,5 +1,19 @@
 # $211BSD$ files.lpt
 #
 
-#attach	lpt at puc with lpt_puc
-#file	dev/core/io/lpt/lpt_puc.c		lpt_puc & !ppbus
+device lpt
+#attach	lpt at ppbus with lpt_ppbus
+#file	dev/core/ppbus/lpt.c		    lpt_ppbus
+
+file    dev/core/io/lpt/lpt.c           lpt & !ppbus
+
+# PC-style parallel ports: ISA bus attachment (XXX what chip?)
+# XXX chip driver should be defined elsewhere
+attach	lpt at isa with lpt_isa
+file	dev/core/io/lpt/lpt_isa.c		lpt_isa & !ppbus
+
+attach	lpt at puc with lpt_puc
+file	dev/core/io/lpt/lpt_puc.c		lpt_puc & !ppbus
+
+attach	lpt at upc with lpt_upc
+file	dev/core/io/lpt/lpt_upc.c		lpt_upc
