@@ -135,7 +135,7 @@ __KERNEL_RCSID(0, "$NetBSD: fd.c,v 1.51.2.1 2004/06/04 03:41:05 jmc Exp $");
 #include <dev/core/isa/isadmavar.h>
 
 #include <dev/disk/fd/fdreg.h>
-#include <dev/disk/fd/fdcvar.h>
+#include <dev/core/iocntrl/fdc/fdcvar.h>
 
 #if defined(i386)
 
