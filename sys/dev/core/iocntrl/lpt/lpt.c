@@ -153,7 +153,7 @@ lptopen(dev, flag, mode, p)
 	int error;
 	int spin;
 
-	sc = &lpt_cd.cd_devs[LPTUNIT(dev)];
+	sc = lpt_cd.cd_devs[LPTUNIT(dev)];
 	if (!sc || !sc->sc_dev_ok)
 		return ENXIO;
 
@@ -270,7 +270,7 @@ lptclose(dev, flag, mode, p)
 	int mode;
 	struct proc *p;
 {
-	struct lpt_softc *sc = &lpt_cd.cd_devs[LPTUNIT(dev)];
+	struct lpt_softc *sc = lpt_cd.cd_devs[LPTUNIT(dev)];
 	bus_space_tag_t iot = sc->sc_iot;
 	bus_space_handle_t ioh = sc->sc_ioh;
 
@@ -366,7 +366,7 @@ lptwrite(dev, uio, flags)
 	struct uio *uio;
 	int flags;
 {
-	struct lpt_softc *sc = &lpt_cd.cd_devs[LPTUNIT(dev)];
+	struct lpt_softc *sc = lpt_cd.cd_devs[LPTUNIT(dev)];
 	size_t n;
 	int error = 0;
 
