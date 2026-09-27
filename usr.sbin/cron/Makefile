@@ -3,7 +3,7 @@
 PROG=	cron
 SRCS=	cron.c database.c user.c entry.c compat.c \
 		misc.c job.c do_command.c env.c popen.c
-CPPFLAGS+=-I${.CURDIR} -DLOGIN_CAP
+CPPFLAGS+=-I${.CURDIR} -DLOGIN_CAP -DPOSIX
 LDADD+=-lutil
 MAN=	bitstring.3 cron.8
 

@@ -64,8 +64,8 @@
 #include "com.h"
 #if (NCOM > 0)
 #include <sys/termios.h>
-#include <dev/core/io/com/comreg.h>
-#include <dev/core/io/com/comvar.h>
+#include <dev/core/iocntrl/com/comreg.h>
+#include <dev/core/iocntrl/com/comvar.h>
 #endif
 
 //#include "ukbd.h"

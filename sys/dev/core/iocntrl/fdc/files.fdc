@@ -1,0 +1,7 @@
+# $211BSD:
+
+# Floppy Disk Controller
+device	fdc {drive = -1}: isadma
+
+attach	fdc at isa with fdc_isa
+file	dev/core/iocntrl/fdc/fdc_isa.c			fdc_isa

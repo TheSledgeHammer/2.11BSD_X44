@@ -65,13 +65,13 @@ __RCSID("$NetBSD: tape.c,v 1.49 2003/08/07 10:04:38 agc Exp $");
 #include "extern.h"
 
 static u_int32_t fssize = MAXBSIZE;
-static int	mt = -1;
-static int	pipein = 0;
-static char	magtape[BUFSIZ];
-static int	blkcnt;
-static int	numtrec;
-static char	*tapebuf;
-static union	u_spcl endoftapemark;
+static int mt = -1;
+static int pipein = 0;
+static char magtape[BUFSIZ];
+static int blkcnt;
+static int numtrec;
+static char *tapebuf;
+static union u_spcl endoftapemark;
 static int	blksread;		/* blocks read since last header */
 static int	tpblksread = 0;		/* TP_BSIZE blocks read */
 static int	tapesread;
@@ -365,8 +365,8 @@ again:
 		}
 		do	{
 			fprintf(stderr, "Specify next volume #: ");
-			(void) fflush(stderr);
-			(void) fgets(buf, BUFSIZ, terminal);
+			(void)fflush(stderr);
+			(void)fgets(buf, BUFSIZ, terminal);
 		} while (!feof(terminal) && buf[0] == '\n');
 		if (feof(terminal))
 			exit(1);
@@ -588,7 +588,7 @@ extractfile(char *name)
 	case IFDIR:
 		if (mflag) {
 			ep = lookupname(name);
-			if (ep == NULL || ep->e_flags & EXTRACT)
+			if ((ep == NULL) || (ep->e_flags & EXTRACT))
 				panic("unextracted directory %s\n", name);
 			skipfile();
 			return (GOOD);
@@ -611,8 +611,8 @@ extractfile(char *name)
 			if (setbirth)
 				(void)utimes(name, ctimep);
 			(void)utimes(name, mtimep);
-			(void)fchown(name, uid, gid);
-			(void)fchmod(name, mode);
+			(void)chown(name, uid, gid);
+			(void)chmod(name, mode);
 			(void)chflags(name, flags);
 			return (GOOD);
 		}
@@ -683,11 +683,11 @@ extractfile(char *name)
 		}
 		getfile(xtrfile, xtrskip);
 		if (setbirth)
-			(void)utimes(ofile, ctimep);
-		(void)utimes(ofile, mtimep);
+			(void)utimes(name, ctimep);
+		(void)utimes(name, mtimep);
 		(void)fchown(ofile, uid, gid);
 		(void)fchmod(ofile, mode);
-		(void)chflags(ofile, flags);
+		(void)fchflags(ofile, flags);
 		(void)close(ofile);
 		return (GOOD);
 	}

@@ -37,8 +37,8 @@
  */
 
 #include <dev/disk/ata/atavar.h>
-#include <dev/core/io/wdc/wdcreg.h>
-#include <dev/core/io/wdc/wdcvar.h>
+#include <dev/core/iocntrl/wdc/wdcreg.h>
+#include <dev/core/iocntrl/wdc/wdcvar.h>
 //#include "opt_pciide.h"
 
 /* options passed via the 'flags' config keyword */

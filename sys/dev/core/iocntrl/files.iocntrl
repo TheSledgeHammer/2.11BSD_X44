@@ -1,0 +1,13 @@
+# $211BSD$
+#
+# IO Controller Configuration Files:
+# IO Controllers
+#
+
+include 	"dev/core/iocntrl/upc/files.upc"
+include 	"dev/core/iocntrl/puc/files.puc"
+include 	"dev/core/iocntrl/com/files.serial"
+include 	"dev/core/iocntrl/lpt/files.lpt"
+include 	"dev/core/iocntrl/fdc/files.fdc"
+#include 	"dev/core/iocntrl/upc/files.usbc"
+include 	"dev/core/iocntrl/wdc/files.wdc"

@@ -55,8 +55,8 @@ main(int argc, char *argv[])
 
 	parse_args(argc, argv);
 
-	(void) signal(SIGCHLD, sigchld_handler);
-	(void) signal(SIGHUP, sighup_handler);
+	(void)signal(SIGCHLD, sigchld_handler);
+	(void)signal(SIGHUP, sighup_handler);
 
 	acquire_daemonlock(0);
 	set_cron_uid();
@@ -66,11 +66,11 @@ main(int argc, char *argv[])
 
 	/* if there are no debug flags turned on, fork as a daemon should.
 	 */
-# if DEBUGGING
+#if DEBUGGING
 	if (DebugFlags) {
-# else
+#else
 	if (0) {
-# endif
+#endif
 		(void) fprintf(stderr, "[%d] cron started\n", getpid());
 	} else {
 		switch (fork()) {
@@ -97,9 +97,9 @@ main(int argc, char *argv[])
 	run_reboot_jobs(&database);
 	cron_sync();
 	while (TRUE) {
-# if DEBUGGING
+#if DEBUGGING
 		if (!(DebugFlags & DTEST))
-# endif /*DEBUGGING*/
+#endif /*DEBUGGING*/
 			cron_sleep();
 
 		load_database(&database);
@@ -135,10 +135,10 @@ run_reboot_jobs(cron_db *db)
 static void
 cron_tick(cron_db *db)
 {
- 	register struct tm	*tm = localtime(&TargetTime);
-	register int		minute, hour, dom, month, dow;
-	register user		*u;
-	register entry		*e;
+	register struct tm *tm = localtime(&TargetTime);
+	register int minute, hour, dom, month, dow;
+	register user *u;
+	register entry *e;
 
 	/* make 0-based values out of these so we can use them as indicies
 	 */
@@ -204,7 +204,7 @@ cron_sleep(void)
 
 	do {
 		seconds_to_wait = (int) (TargetTime - time((time_t*)0));
-		Debug(DSCH, ("[%d] TargetTime=%ld, sec-to-wait=%d\n",
+		Debug(DSCH, ("[%d] TargetTime=%lld, sec-to-wait=%d\n",
 			getpid(), TargetTime, seconds_to_wait))
 
 		/* if we intend to sleep, this means that it's finally
@@ -229,8 +229,8 @@ cron_sleep(void)
 static void
 sigchld_handler(int x)
 {
-	WAIT_T		waiter;
-	PID_T		pid;
+	WAIT_T waiter;
+	PID_T pid;
 
 	for (;;) {
 		pid = waitpid(-1, &waiter, WNOHANG);

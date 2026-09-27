@@ -48,8 +48,8 @@
 
 #include <dev/disk/ata/atareg.h>
 #include <dev/disk/ata/atavar.h>
-#include <dev/core/io/wdc/wdcreg.h>
-#include <dev/core/io/wdc/wdcvar.h>
+#include <dev/core/iocntrl/wdc/wdcreg.h>
+#include <dev/core/iocntrl/wdc/wdcvar.h>
 
 #include "locators.h"
 
