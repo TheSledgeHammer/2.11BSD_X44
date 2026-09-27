@@ -4,9 +4,9 @@
 .include <bsd.own.mk>
 
 PROG=	fmt
-SRCS=	fmt.c head.c
-WARNS=	2
+SRCS=	fmt.c
+#WARNS=	2
 
-.PATH: ${NETBSDSRCDIR}/usr.bin/mail
+#.PATH: ${NETBSDSRCDIR}/usr.bin/mail
 
 .include <bsd.prog.mk>
