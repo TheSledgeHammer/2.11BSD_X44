@@ -87,7 +87,7 @@ __KERNEL_RCSID(0, "$NetBSD: fdc_isa.c,v 1.10 2003/09/25 19:06:19 mycroft Exp $")
 #include <dev/core/isa/isadmavar.h>
 
 #include <dev/disk/fd/fdreg.h>
-#include <dev/disk/fd/fdcvar.h>
+#include <dev/core/iocntrl/fdc/fdcvar.h>
 
 int		fdc_isa_probe(struct device *, struct cfdata *, void *);
 void	fdc_isa_attach(struct device *, struct device *, void *);
