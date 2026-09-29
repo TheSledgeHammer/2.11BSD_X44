@@ -68,16 +68,18 @@
 /*
  *	File primitives proper
  */
-
+/*
 struct fs_ops file_system[] = {
 	{ ufs_open, ufs_close, ufs_read, ufs_write, ufs_seek, ufs_stat }
 };
-#define	NFSYS	(sizeof(file_system) / sizeof(struct fs_ops))
+*/
+
+#define	NFSYS	(sizeof(file_system)/sizeof(struct fs_ops *))
 
 struct open_file files[SOPEN_MAX];
 
 int
-open(char *fname, int mode)
+open(const char *fname, int mode)
 {
 	register struct open_file *f;
 	register int fd, i, error;
@@ -109,7 +111,7 @@ fnd:
 	/* pass file name to the different filesystem open routines */
 	for (i = 0; i < NFSYS; i++) {
 		/* convert mode (0,1,2) to FREAD, FWRITE. */
-		error = (file_system[i].open)(file, f);
+		error = (file_system[i]->open)(file, f);
 		if (error == 0) {
 			f->f_ops = &file_system[i];
 			return (fd);

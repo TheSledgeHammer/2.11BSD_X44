@@ -165,7 +165,7 @@ cd9660_open(path, f)
 #if !defined(LIBSA_NO_TWIDDLE)
 		twiddle();
 #endif
-		rc = DEV_STRATEGY(f->f_dev)(f->f_devdata, F_READ, cdb2devb(bno),
+		rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ, cdb2devb(bno),
 					   ISO_DEFAULT_BLOCK_SIZE, buf, &nread);
 		if (rc)
 			goto out;
@@ -196,7 +196,7 @@ cd9660_open(path, f)
 #if !defined(LIBSA_NO_TWIDDLE)
 	twiddle();
 #endif
-	rc = DEV_STRATEGY(f->f_dev)(f->f_devdata, F_READ, cdb2devb(bno),
+	rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ, cdb2devb(bno),
 				   buf_size, buf, &nread);
 	if (rc)
 		goto out;
@@ -247,7 +247,7 @@ cd9660_open(path, f)
 #if !defined(LIBSA_NO_TWIDDLE)
 			twiddle();
 #endif
-			rc = DEV_STRATEGY(f->f_dev)(f->f_devdata, F_READ,
+			rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ,
 						   cdb2devb(bno),
 						   ISO_DEFAULT_BLOCK_SIZE,
 						   buf, &nread);
@@ -339,7 +339,7 @@ cd9660_read(f, start, size, resid)
 #if !defined(LIBSA_NO_TWIDDLE)
 		twiddle();	
 #endif
-		rc = DEV_STRATEGY(f->f_dev)(f->f_devdata, F_READ, cdb2devb(bno),
+		rc = (f->f_dev->dv_strategy)(f->f_devdata, F_READ, cdb2devb(bno),
 					   ISO_DEFAULT_BLOCK_SIZE, dp, &nread);
 		if (rc)
 			return rc;
@@ -410,7 +410,7 @@ cd9660_stat(f, sb)
 {
 	struct file *fp = (struct file *)f->f_fsdata;
 	
-	/* only importatn stuff */
+	/* only important stuff */
 	sb->st_mode = S_IFREG | S_IRUSR | S_IRGRP | S_IROTH;
 	sb->st_uid = sb->st_gid = 0;
 	sb->st_size = fp->size;
@@ -422,5 +422,13 @@ cd9660_readdir(f, d)
 	struct open_file *f;
 	struct dirent *d;
 {
+	struct file *fp = (struct file *)f->f_fsdata;
+	struct iso_directory_record *ep;
+	size_t buf_size, reclen, namelen;
+	int error = 0;
+	int lenskip;
+	char *buf, *name;
+
+
 	return (EROFS);
 }

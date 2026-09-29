@@ -68,7 +68,7 @@ struct fs_ops {
 	int					(*stat)(struct open_file *, struct stat *);
 	int					(*readdir)(struct open_file *, struct dirent *);
 };
-extern struct fs_ops 	file_system[];
+extern struct fs_ops 	*file_system[];
 extern struct fs_ops	*exclusive_file_system;
 
 /*
@@ -229,7 +229,7 @@ void    				ls(const char *);
 off_t   				lseek(int, off_t, int);
 
 /* open.c */
-int     				open(char *, int);
+int     				open(const char *, int);
 
 /* printf.c */
 void    				printf(const char *, ...);

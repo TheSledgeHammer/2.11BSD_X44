@@ -270,7 +270,7 @@ clnp_output(struct mbuf *m0, ...)
 		}
 #endif
 
-		m = m_copy(clcp->clc_hdr, 0, (int) M_COPYALL);
+		m = m_copy(clcp->clc_hdr, 0, (int)M_COPYALL);
 		if (m == NULL) {
 			/*
 			 * No buffers left to copy cached packet header. Use

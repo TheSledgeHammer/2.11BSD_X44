@@ -18,6 +18,11 @@
 #ifndef _RBX_H_
 #define	_RBX_H_
 
+extern uint32_t opts;
+
+#define OPT_SET(opt)	(1 << (opt))
+#define OPT_CHECK(opt)	((opts) & OPT_SET(opt))
+
 #define RBX_ASKNAME		0x0	/* -a */
 #define RBX_SINGLE		0x1	/* -s */
 /* 0x2 is reserved for log2(RB_NOSYNC). */
@@ -43,19 +48,18 @@
 #define RBX_NOINTR		0x1c	/* -n */
 /* 0x1d is reserved for log2(RB_MULTIPLE) and is just misnamed here. */
 #define RBX_DUAL		0x1d	/* -D */
+#define RBX_PROBEKBD	0x1e	/* -P */
 /* 0x1f is reserved for log2(RB_BOOTINFO). */
 
-/* pass: -a, -s, -r, -d, -c, -v, -h, -C, -g, -m, -p, -D */
-#define RBX_MASK		(OPT_SET(RBX_ASKNAME) | OPT_SET(RBX_SINGLE) | \
-						OPT_SET(RBX_DFLTROOT) | OPT_SET(RBX_KDB ) | \
-						OPT_SET(RBX_CONFIG) | OPT_SET(RBX_VERBOSE) | \
-						OPT_SET(RBX_SERIAL) | OPT_SET(RBX_CDROM) | \
-						OPT_SET(RBX_GDB ) | OPT_SET(RBX_MUTE) | \
-						OPT_SET(RBX_PAUSE) | OPT_SET(RBX_DUAL))
-
-#define OPT_SET(opt)	(1 << (opt))
-#define OPT_CHECK(opt)	((opts) & OPT_SET(opt))
-
-extern uint32_t opts;
+/* pass: -a, -s, -r, -d, -c, -v, -h, -C, -g, -m, -p, -D, -P */
+#define RBX_MASK ( \
+		OPT_SET(RBX_ASKNAME) | OPT_SET(RBX_SINGLE) | \
+		OPT_SET(RBX_DFLTROOT) | OPT_SET(RBX_KDB ) | \
+		OPT_SET(RBX_CONFIG) | OPT_SET(RBX_VERBOSE) | \
+		OPT_SET(RBX_SERIAL) | OPT_SET(RBX_CDROM) | \
+		OPT_SET(RBX_GDB ) | OPT_SET(RBX_MUTE) | \
+		OPT_SET(RBX_PAUSE) | OPT_SET(RBX_DUAL) | \
+		OPT_SET(RBX_PROBEKBD) \
+		)
 
 #endif	/* !_RBX_H_ */

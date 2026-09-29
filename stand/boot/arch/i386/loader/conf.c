@@ -27,6 +27,7 @@
  * $DragonFly: src/sys/boot/pc32/loader/conf.c,v 1.4 2005/09/03 23:52:49 dillon Exp $
  */
 #include <lib/libsa/stand.h>
+
 #include <common/bootstrap.h>
 #include <libi386/libi386.h>
 
@@ -50,6 +51,11 @@ struct devsw *devsw[] = {
 
 struct fs_ops *file_system[] = {
 		&ufs_fsops,
+		&lfs_fsops,
+		&dosfs_fsops,
+		&cd9660_fsops,
+		&tftp_fsops,
+		&nfs_fsops,
 		NULL
 };
 

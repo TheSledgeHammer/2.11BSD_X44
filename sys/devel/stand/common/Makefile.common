@@ -3,9 +3,9 @@
 .include <bsd.own.mk>
 
 SRCS+= boot.c console.c commands.c disk.c devopen.c
-SRCS+= fileload.c interp_backslash.c interp_parse.c
-SRCS+= interp.c load_exec.c load_ksyms.c metadata.c
-SRCS+= misc.c smbios.c
+SRCS+= fileload.c fsread.c interp_backslash.c
+SRCS+= interp_parse.c interp.c load_exec.c load_ksyms.c
+SRCS+= md.c misc.c smbios.c
 
 .if ${LOADER_INTERP} == "dloader"
 SRCS+= interp_dloader.c

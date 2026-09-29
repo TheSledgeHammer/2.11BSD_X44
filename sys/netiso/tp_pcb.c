@@ -886,14 +886,14 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 #endif
 #ifdef INET6
 		case AF_INET6:
-            tsel = (caddr_t)&tutil;
+			tsel = (caddr_t)&tutil;
 			if ((tutil = ((struct sockaddr_in6 *)siso)->sin6_port)) {
 				tlen = 2;
 			}
 			if (((struct sockaddr_in6 *)siso)->sin6_addr.s6_addr == 0) {
 				siso = 0;
 			}
-            break;
+			break;
 #endif
 		default:
 			return (EAFNOSUPPORT);
@@ -929,8 +929,8 @@ tp_pcbbind(void *v, struct mbuf *nam, struct proc *p)
 					break;
 #ifdef INET6
 				case AF_INET6:
-                    ((struct sockaddr_in6 *)siso)->sin6_port = tutil;
-                    break;
+					((struct sockaddr_in6 *)siso)->sin6_port = tutil;
+					break;
 #endif
 				}
 			}

@@ -133,7 +133,7 @@ read_inode(inumber, f)
 	}
 
 	{
-		if(I_IS_UFS1_MOUNTED(fp->f_ip)) {
+		if (I_IS_UFS1_MOUNTED(fp->f_ip)) {
 			struct ufs1_dinode *dp = (struct ufs1_dinode *)buf;
 			DIP(fp->f_ip, dp[ino_to_fsbo(fs, inumber)]);
 		} else {
