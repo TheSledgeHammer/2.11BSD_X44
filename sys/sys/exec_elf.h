@@ -150,6 +150,12 @@ typedef struct {
 #define	ELFMAG				"\177ELF"
 #define	SELFMAG				4
 
+#define	IS_ELF(ehdr) \
+	((ehdr).e_ident[EI_MAG0] == ELFMAG0 && \
+			(ehdr).e_ident[EI_MAG1] == ELFMAG1 && \
+			(ehdr).e_ident[EI_MAG2] == ELFMAG2 && \
+			(ehdr).e_ident[EI_MAG3] == ELFMAG3)
+
 /* e_ident[EI_CLASS] */
 #define	ELFCLASSNONE			0	/* Invalid class */
 #define	ELFCLASS32			1	/* 32-bit objects */

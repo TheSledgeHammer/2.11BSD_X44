@@ -72,7 +72,7 @@ void
 disk_setbootdev(struct devdesc *dev, uint32_t bootdev)
 {
 	disk_format(bootdev, dev->d_major, dev->d_adaptor, dev->d_controller,
-			dev->d_slice, dev->d_partition);
+			dev->d_slice, dev->d_unit, dev->d_partition);
 }
 
 int
@@ -145,18 +145,25 @@ disk_device_slice(uint32_t bootdev)
 }
 
 int
+disk_device_unit(uint32_t bootdev)
+{
+	return (B_UNIT(bootdev));
+}
+
+int
 disk_device_partition(uint32_t bootdev)
 {
 	return (B_PARTITION(bootdev));
 }
 
 void
-disk_format(uint32_t bootdev, int type, int adaptor, int controller, int slice, int partition)
+disk_format(uint32_t bootdev, int type, int adaptor, int controller, int slice, int unit, int partition)
 {
 	type = disk_device_type(bootdev);
 	adaptor = disk_device_adaptor(bootdev);
 	controller = disk_device_controller(bootdev);
 	slice = disk_device_slice(bootdev);
+	unit = disk_device_unit(bootdev);
 	partition = disk_device_partition(bootdev);
 }
 

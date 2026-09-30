@@ -51,117 +51,117 @@ static off_t fs_off;
 static unsigned int
 fsfind(const char *name, ino_t *ino)
 {
-    static char buf[DEV_BSIZE];
-    static struct dirent *d;
-    char *s;
-    int n;
+	static char buf[DEV_BSIZE];
+	static struct dirent *d;
+	char *s;
+	int n;
 
-    fs_off = 0;
-    n = fsread(name, buf, DEV_BSIZE, fs_off);
-    if (n > 0) {
-        for (s = buf; s < buf + DEV_BSIZE;) {
-            memcpy(d, s, sizeof(struct dirent));
-            if (ls) {
-                printf("%s ", d->d_name);
-            } else if (!strcmp(name, d->d_name)) {
-                *ino = d->d_fileno;
-                return (d->d_type);
-            }
-            s += d->d_reclen;
-        }
-    }
-    if (n != -1 && ls) {
-        printf("\n");
-    }
-    return (0);
+	fs_off = 0;
+	n = fsread(name, buf, DEV_BSIZE, fs_off);
+	if (n > 0) {
+		for (s = buf; s < buf + DEV_BSIZE;) {
+			memcpy(d, s, sizeof(struct dirent));
+			if (ls) {
+				printf("%s ", d->d_name);
+			} else if (!strcmp(name, d->d_name)) {
+				*ino = d->d_fileno;
+				return (d->d_type);
+			}
+			s += d->d_reclen;
+		}
+	}
+	if (n != -1 && ls) {
+		printf("\n");
+	}
+	return (0);
 }
 
 ino_t
 lookup(const char *path)
 {
-    static char name[MAXNAMLEN + 1];
-    const char *s;
-    ino_t ino;
-    ssize_t n;
-    int dt;
+	static char name[MAXNAMLEN + 1];
+	const char *s;
+	ino_t ino;
+	ssize_t n;
+	int dt;
 
-    ino = 2; /* UFS_ROOTINO */
-    dt = DT_DIR;
-    for (;;) {
-        if (*path == '/') {
-            path++;
-        }
-        if (!*path) {
-            break;
-        }
-        for (s = path; *s && *s != '/'; s++) {
-            ;
-        }
-        n = (s - path);
-        if (n > MAXNAMLEN) {
-            return (0);
-        }
-        ls = *path == '?' && n == 1 && !*s;
-        memcpy(name, path, n);
-        name[n] = 0;
-        if (dt != DT_DIR) {
-            printf("%s: not a directory.\n", name);
-            return (0);
-        }
-        dt = fsfind(name, &ino);
-        if (dt <= 0) {
-            break;
-        }
-        path = s;
-    }
-    return (dt == DT_REG ? ino : 0);
+	ino = 2; /* UFS_ROOTINO */
+	dt = DT_DIR;
+	for (;;) {
+		if (*path == '/') {
+			path++;
+		}
+		if (!*path) {
+			break;
+		}
+		for (s = path; *s && *s != '/'; s++) {
+			;
+		}
+		n = (s - path);
+		if (n > MAXNAMLEN) {
+			return (0);
+		}
+		ls = *path == '?' && n == 1 && !*s;
+		memcpy(name, path, n);
+		name[n] = 0;
+		if (dt != DT_DIR) {
+			printf("%s: not a directory.\n", name);
+			return (0);
+		}
+		dt = fsfind(name, &ino);
+		if (dt <= 0) {
+			break;
+		}
+		path = s;
+	}
+	return (dt == DT_REG ? ino : 0);
 }
 
 static int
 fsread_path(const char *path, int mode, void *buf, size_t nbyte, off_t offset)
 {
 	char *s, buffer[nbyte];
-    int fd;
-    off_t pos;
-    size_t size, n, nb, ret;
+	int fd;
+	off_t pos;
+	size_t size, n, nb, ret;
 
 	fd = open(path, mode);
-    if (fd < 0) {
-        printf("Error opening file");
-        return (-1);
-    }
-    pos = lseek(fd, offset, SEEK_SET);
-    if (pos < 0) {
-        printf("Error in lseek");
-        close(fd);
-        return (-1);
-    }
-    s = buf;
-    size = sizeof(buffer);
-    n = size - offset;
-    if (nbyte > n) {
-        nbyte = n;
-    }
-    nb = nbyte;
-    //while (nb) {
-    	ret = read(fd, buffer, nb);
-        if (ret < 0) {
-            printf("Error reading file");
-            close(fd);
-            return (-1);
-        }
-        buffer[nb] = '\0';
-        //n -= offset;
-        if (n > nb) {
-            n = nb;
-        }
-        memcpy(s, buffer, n);
-        //s += n;
+	if (fd < 0) {
+		printf("Error opening file");
+		return (-1);
+	}
+	pos = lseek(fd, offset, SEEK_SET);
+	if (pos < 0) {
+		printf("Error in lseek");
+		close(fd);
+		return (-1);
+	}
+	s = buf;
+	size = sizeof(buffer);
+	n = size - offset;
+	if (nbyte > n) {
+		nbyte = n;
+	}
+	nb = nbyte;
+	//while (nb) {
+		ret = read(fd, buffer, nb);
+		if (ret < 0) {
+			printf("Error reading file");
+			close(fd);
+			return (-1);
+		}
+		buffer[nb] = '\0';
+		//n -= offset;
+		if (n > nb) {
+			n = nb;
+		}
+		memcpy(s, buffer, n);
+		//s += n;
 		//offset += (off_t)n;
-        //nb -= n;
-    //}
-    close(fd);
-    return (0);
+		//nb -= n;
+	//}
+	close(fd);
+	return (0);
 }
 
 int
