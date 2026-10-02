@@ -103,11 +103,11 @@ rest(ticks)
  * Requires tone(), rest(), and endtone(). String play is not interruptible
  * except possibly at physical block boundaries.
  */
-
+/*
 typedef int	bool;
 #define TRUE	1
 #define FALSE	0
-
+*/
 #define toupper(c)	((c) - ' ' * (((c) >= 'a') && ((c) <= 'z')))
 #define isdigit(c)	(((c) >= '0') && ((c) <= '9'))
 #define dtoi(c)		((c) - '0')
