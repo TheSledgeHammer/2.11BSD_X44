@@ -74,6 +74,8 @@ __KERNEL_RCSID(0, "$NetBSD: lpt.c,v 1.63 2003/06/29 22:30:13 fvdl Exp $");
 #include <dev/core/iocntrl/lpt/lptreg.h>
 #include <dev/core/iocntrl/lpt/lptvar.h>
 
+#include "ioconf.h"
+
 #define	TIMEOUT		hz*16	/* wait up to 16 seconds for a ready */
 #define	STEP		hz/4
 
