@@ -72,6 +72,7 @@
 #include "ugen.h"
 #include "ucom.h"
 */
+//#include "lpt.h"
 #include "com.h"
 #include "pty.h"
 #include "video.h"
