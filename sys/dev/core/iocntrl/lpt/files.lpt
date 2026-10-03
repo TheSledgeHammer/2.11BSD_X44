@@ -2,18 +2,15 @@
 #
 
 device lpt
-#attach	lpt at ppbus with lpt_ppbus
-#file	dev/core/ppbus/lpt.c		    lpt_ppbus
-
-file    dev/core/iocntrl/lpt/lpt.c           lpt & !ppbus
+file    dev/core/iocntrl/lpt/lpt.c           lpt needs-flag
 
 # PC-style parallel ports: ISA bus attachment (XXX what chip?)
 # XXX chip driver should be defined elsewhere
 attach	lpt at isa with lpt_isa
-file	dev/core/iocntrl/lpt/lpt_isa.c		lpt_isa & !ppbus
+file	dev/core/iocntrl/lpt/lpt_isa.c		lpt_isa
 
 attach	lpt at puc with lpt_puc
-file	dev/core/iocntrl/lpt/lpt_puc.c		lpt_puc & !ppbus
+file	dev/core/iocntrl/lpt/lpt_puc.c		lpt_puc
 
 attach	lpt at upc with lpt_upc
 file	dev/core/iocntrl/lpt/lpt_upc.c		lpt_upc
