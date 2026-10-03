@@ -42,7 +42,30 @@
 #define LOAD_KERNEL		(LOAD_ALL & ~LOAD_TEXTA)
 #define COUNT_KERNEL	(COUNT_ALL & ~COUNT_TEXTA)
 
+#define READ(f, b, c)	read((f), (void *)LOADADDR(b), (c))
+#define BCOPY(s, d, c)	memcpy((void *)LOADADDR(d), (void *)(s), (c))
+#define BZERO(d, c)		memset((void *)LOADADDR(d), 0, (c))
+#define	WARN(a)			(void)(printf a, 						\
+							printf((errno ? ": %s\n" : "\n"), 	\
+							strerror(errno)))
+#define PROGRESS(a)		(void)printf a
+#define ALLOC(a)		alloc(a)
+#define DEALLOC(a, b)	free(a, b)
+
 #ifdef _STANDALONE
+#define LOADADDR(a)		((((u_long)(a)) & 0x07ffffff) + offset)
+#define ALIGNENTRY(a)	((u_long)(a) & 0x00100000)
+#define OKMAGIC(a)		((a) == ZMAGIC)
+
+ssize_t pread(int, void *, size_t);
+
+#else /* !_STANDALONE */
+#define LOADADDR(a)		(((u_long)(a)) + offset)
+#define ALIGNENTRY(a)	((u_long)(a))
+#define OKMAGIC(a)		((a) == OMAGIC)
+#endif /* !_STANDALONE */
+
+#ifdef deprecated
 
 #define LOADADDR(a)		((((u_long)(a)) & 0x07ffffff) + offset)
 #define ALIGNENTRY(a)	((u_long)(a) & 0x00100000)
@@ -52,7 +75,7 @@
 #define	WARN(a)			(void)(printf a, 						\
 							printf((errno ? ": %s\n" : "\n"), 	\
 							strerror(errno)))
-#define PROGRESS(a)		(void) printf a
+#define PROGRESS(a)		(void)printf a
 #define ALLOC(a)		alloc(a)
 #define DEALLOC(a, b)	free(a, b)
 #define OKMAGIC(a)		((a) == ZMAGIC)
@@ -61,7 +84,7 @@ void 	vpbcopy(const void *, void *, size_t);
 void 	pbzero(void *, size_t);
 ssize_t pread(int, void *, size_t);
 
-#else
+//#else
 
 #define LOADADDR(a)		(((u_long)(a)) + offset)
 #define READ(f, b, c)	read((f), (void *)LOADADDR(b), (c))
@@ -78,5 +101,5 @@ ssize_t vread(int, u_long, u_long *, size_t);
 void 	vcopy(u_long, u_long, u_long *, size_t);
 void 	vzero(u_long, u_long *, size_t);
 
-#endif
+#endif /* deprecated */
 #endif /* _I386_LOADFILE_MACHDEP_H_ */

@@ -71,7 +71,7 @@ static int disk_makebootdev1(struct devdesc *);
 void
 disk_setbootdev(struct devdesc *dev, uint32_t bootdev)
 {
-	disk_format(bootdev, dev->d_major, dev->d_adaptor, dev->d_controller,
+	disk_format(bootdev, dev->d_type, dev->d_adaptor, dev->d_controller,
 			dev->d_slice, dev->d_unit, dev->d_partition);
 }
 

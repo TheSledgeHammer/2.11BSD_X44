@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && !defined(LINT)
+#if 0
 static char rcsid[] = "$Id: database.c,v 2.8 1994/01/15 20:43:43 vixie Exp $";
+#endif
 #endif
 
 /* vix 26jan87 [RCS has the log]
@@ -28,22 +30,20 @@ static char rcsid[] = "$Id: database.c,v 2.8 1994/01/15 20:43:43 vixie Exp $";
 #include <sys/stat.h>
 #include <sys/file.h>
 
-
 #define TMAX(a,b) ((a)>(b)?(a):(b))
 
-
-static	void process_crontab(char *, char *, char *, struct stat *, cron_db *, cron_db *);
+static void process_crontab(const char *, const char *, const char *, struct stat *, cron_db *, cron_db *);
 
 
 void
 load_database(cron_db *old_db)
 {
-	DIR		*dir;
-	struct stat	statbuf;
-	struct stat	syscron_stat;
-	register DIR_T   *dp;
-	cron_db		new_db;
-	user		*u, *nu;
+	DIR *dir;
+	struct stat statbuf;
+	struct stat syscron_stat;
+	register DIR_T *dp;
+	cron_db new_db;
+	user *u, *nu;
 
 	Debug(DLOAD, ("[%d] load_database()\n", getpid()))
 
@@ -171,7 +171,7 @@ unlink_user(cron_db *db, user *u)
 user *
 find_user(cron_db *db, char *name)
 {
-	char	*env_get();
+	//char	*env_get();
 	register user	*u;
 
 	for (u = db->head;  u != NULL;  u = u->next)
@@ -182,11 +182,11 @@ find_user(cron_db *db, char *name)
 
 
 static void
-process_crontab(char *uname, char *fname, char *tabname, struct stat *statbuf, cron_db *new_db, cron_db *old_db)
+process_crontab(const char *uname, const char *fname, const char *tabname, struct stat *statbuf, cron_db *new_db, cron_db *old_db)
 {
-	struct passwd	*pw = NULL;
-	int		crontab_fd = OK - 1;
-	register user		*u;
+	struct passwd *pw = NULL;
+	int crontab_fd = OK - 1;
+	register user *u;
 
 	if (strcmp(fname, "*system*") && !(pw = getpwnam(uname))) {
 		/* file doesn't have a user in passwd file.

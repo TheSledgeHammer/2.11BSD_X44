@@ -116,15 +116,15 @@ static int 	bd_close(struct open_file *f);
 static int 	bd_print(int verbose);
 
 struct devsw biosdisk = {
-	.dv_name = 		"disk",
-	.dv_type = 		DEVT_DISK,
-	.dv_init = 		bd_init,
-	.dv_strategy =	bd_strategy,
-	.dv_open = 		bd_open,
-	.dv_close = 	bd_close,
-	.dv_ioctl = 	noioctl,
-	.dv_print = 	bd_print,
-	.dv_cleanup = 	NULL
+		.dv_name = 		"disk",
+		.dv_type = 		DEVT_DISK,
+		.dv_init = 		bd_init,
+		.dv_strategy =	bd_strategy,
+		.dv_open = 		bd_open,
+		.dv_close = 	bd_close,
+		.dv_ioctl = 	noioctl,
+		.dv_print = 	bd_print,
+		.dv_cleanup = 	NULL
 };
 
 static int	bd_opendisk(struct open_disk **odp, struct i386_devdesc *dev);
@@ -1193,7 +1193,7 @@ bd_getbigeom(int bunit)
 	v86.edx = 0x80 + bunit;
 	v86int();
 	if (v86.efl & 0x1) {
-		return 0x4f010f;
+		return (0x4f010f);
 	}
 	return ((v86.ecx & 0xc0) << 18) | ((v86.ecx & 0xff00) << 8)
 			| (v86.edx & 0xff00) | (v86.ecx & 0x3f);

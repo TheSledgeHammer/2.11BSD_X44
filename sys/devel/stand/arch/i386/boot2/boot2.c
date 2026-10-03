@@ -25,6 +25,7 @@
 #include <sys/dirent.h>
 #include <sys/exec_aout.h>
 #include <sys/exec_elf.h>
+#include <sys/errno.h>
 
 #include <machine/bootinfo.h>
 #include <machine/psl.h>
@@ -33,10 +34,9 @@
 
 #include <stdarg.h>
 
-
 #include <btxv86.h>
 
-#include "boot2.h"
+#include <boot2.h>
 #include "bootpaths.h"
 #include "lib.h"
 
@@ -55,13 +55,14 @@
 #define V86_CY(x)		((x) & PSL_C)
 #define V86_ZR(x)		((x) & PSL_Z)
 
+#define DRV_FLOPPY		0x00
 #define DRV_HARD		0x80
 #define DRV_MASK		0x7f
 
-#define TYPE_AD			0
-#define TYPE_DA			1
+#define TYPE_AD			0	 	/* scsi (DTYPE_SCSI) */
+#define TYPE_DA			1		/* ide (DTYPE_ST506 | DTYPE_ESDI) */
 #define TYPE_MAXHARD	TYPE_DA
-#define TYPE_FD			2
+#define TYPE_FD			2		/* floppy (DTYPE_FLOPPY | DTYPE_ATAPI) */
 
 #define INVALID_S		"Invalid %s\n"
 
@@ -101,24 +102,22 @@ static char kname[1024];
 static uint32_t opts = 0;
 static struct bootinfo bootinfo;
 static uint8_t ioctrl = IO_KEYBOARD;
-
+struct boot2_dmadat *boot2_dmadat;
 off_t fs_off;
-int ls;
-
-/* secbuf: for MBR/disklabel */
-#define SECBUFSIZE (DEV_BSIZE*4)
-static char secbuf[SECBUFSIZE];
+uint8_t ls;
 
 void exit(int);
 static void load_aout(struct exec *, uint32_t *, ino_t, const char *, int, struct bootinfo *);
 static void load_elf(Elf32_Ehdr *, uint32_t *, ino_t, const char *, int, struct bootinfo *);
 static void load(void);
+static int dev2bios(const char *, int, int *);
+static int bios2dev(int *, int, int);
 static int parse(void);
 static void boot2_banner(void);
 static uint32_t dskmakebootdev(void);
 static int xfsread_path(const char *, void *, size_t, off_t);
 static int xfsread(ino_t, const char *, void *, size_t, off_t);
-int dskread(void *, unsigned, unsigned);
+int dskread(void *, unsigned, unsigned); /* UNUSED */
 static void printf(const char *, ...);
 static void putchar(int);
 static uint32_t memsize(void);
@@ -228,17 +227,18 @@ boot2_banner(void)
 static uint32_t
 dskmakebootdev(void)
 {
-	int major, type, adaptor, controller, slice, unit, partition;
-	uint32_t bootdev;
+	int error, major;
 
-	major = dev_maj[dsk.type];
-	type = dsk.type;
-	slice = dsk.slice;
-	adaptor = B_SLICE_TO_B_ADAPTOR(slice);
-	controller = B_SLICE_TO_B_CONTROLLER(slice);
-	unit = dsk.unit;
-	bootdev = MAKEBOOTDEV1(major, adaptor, controller, unit, partition);
-	return (bootdev);
+	error = bios2dev(&major, dsk.type, dsk.unit);
+	if ((error != 0) && (major < 0)) {
+		major = dev_maj[dsk.type];
+	}
+#ifdef DISK_SLICES
+	return (MAKEBOOTDEV2(major, dsk.slice, dsk.unit, dsk.part));
+#else /* !DISK_SLICES */
+	return (MAKEBOOTDEV1(major, B_SLICE_TO_B_ADAPTOR(dsk.slice),
+			B_SLICE_TO_B_CONTROLLER(dsk.slice), dsk.unit, dsk.part));
+#endif /* !DISK_SLICES */
 }
 
 int
@@ -248,6 +248,8 @@ main(void)
 	ino_t ino;
 
 	kname = NULL;
+	boot2_dmadat = (void *)(roundup2(__base + (int32_t) & _end, 0x10000)
+			- __base);
 	v86.ctl = V86_FLAGS;
 	v86.efl = PSL_RESERVED_DEFAULT | PSL_I;
 	dsk.drive = *(uint8_t *)PTOV(ARGS);
@@ -440,6 +442,36 @@ load(void)
 }
 
 static int
+dev2bios(const char *devname, int unit, int *biosdev)
+{
+    if ((strcmp(devname, dev_nm[0]) == 0) || (strcmp(devname, dev_nm[1]) == 0)) {
+        *biosdev = (DRV_HARD + unit);
+    } else if (strcmp(devname, dev_nm[2]) == 0) {
+        *biosdev = (DRV_FLOPPY + unit);
+    } else {
+        return (ENXIO);
+    }
+    return (0);
+}
+
+static int
+bios2dev(int *major, int type, int unit)
+{
+	const char *devname;
+	int error, biosdev;
+
+    devname = dev_nm[type];
+    *major = -1;
+    error = dev2bios(devname, unit, &biosdev);
+    if (error != 0) {
+    	printf("Invalid %s\n", devname);
+    	return (error);
+    }
+    *major = biosdev;
+    return (0);
+}
+
+static int
 parse(void)
 {
 	char *arg = cmd;
@@ -536,7 +568,7 @@ dskprobe(void)
 	/*
 	 * Probe slice table
 	 */
-	sec = secbuf;
+	sec = boot2_dmadat->secbuf;
 	dsk.start = 0;
 	if (drvread(sec, DOSBBSECTOR, 1))
 		return (-1);
@@ -591,6 +623,7 @@ dskprobe(void)
 	return (0);
 }
 
+/* UNUSED */
 int
 dskread(void *buf, unsigned lba, unsigned nblk)
 {
@@ -716,4 +749,22 @@ xgetc(int fn)
 		if (fn)
 			return (0);
 	}
+}
+
+
+dev2bios(char *devname, int unit, int *biosdev)
+{
+	if (strcmp(devname, "hd") == 0) {
+		*biosdev = DRV_HARD + unit;
+	} else if (strcmp(devname, "fd") == 0) {
+		*biosdev = DRV_FLOPPY + unit;
+	}
+
+	dsk.drive
+}
+
+
+boot2()
+{
+
 }

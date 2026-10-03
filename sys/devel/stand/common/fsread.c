@@ -32,21 +32,13 @@
 
 #include <sys/cdefs.h>
 
-#ifdef BOOT2
-#include "boot2.h"
-#else
 #include <sys/param.h>
-#endif
 #include <sys/disklabel.h>
 #include <sys/dirent.h>
 
 #include <lib/libsa/stand.h>
 
-int fsread(const char *, void *, size_t, off_t);
-ino_t lookup(const char *);
-
-static uint8_t ls;
-static off_t fs_off;
+#include <boot2.h>
 
 static unsigned int
 fsfind(const char *name, ino_t *ino)
