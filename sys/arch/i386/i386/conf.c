@@ -76,6 +76,7 @@
 #include "com.h"
 #include "pty.h"
 #include "video.h"
+#include "agp.h"
 
 #include "evdev.h"
 #include "wsdisplay.h"
@@ -247,7 +248,7 @@ video_init(devsw)
 	struct devswtable *devsw;
 {
 	//DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
-	//DEVSWIO_CONFIG_INIT(devsw,  , NULL, &agp_cdevsw, NULL);				/* AGP Video */
+	DEVSWIO_CONFIG_INIT(devsw, NAGP, NULL, &agp_cdevsw, NULL);				/* AGP Video */
 }
 
 /* Add wscon driver configuration */
