@@ -750,21 +750,3 @@ xgetc(int fn)
 			return (0);
 	}
 }
-
-
-dev2bios(char *devname, int unit, int *biosdev)
-{
-	if (strcmp(devname, "hd") == 0) {
-		*biosdev = DRV_HARD + unit;
-	} else if (strcmp(devname, "fd") == 0) {
-		*biosdev = DRV_FLOPPY + unit;
-	}
-
-	dsk.drive
-}
-
-
-boot2()
-{
-
-}
