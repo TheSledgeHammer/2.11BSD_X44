@@ -35,12 +35,12 @@
 #include <sys/tty.h>
 #include <sys/null.h>
 
-#include <dev/misc/cons/cons.h>
+//#include <dev/misc/cons/cons.h>
 
 #include "audio.h"
 #include "sequencer.h"
-#include "spkr.h"
 #include "midi.h"
+#include "spkr.h"
 
 #include "wd.h"
 #include "sd.h"
@@ -72,7 +72,7 @@
 #include "ugen.h"
 #include "ucom.h"
 */
-//#include "lpt.h"
+#include "lpt.h"
 #include "com.h"
 #include "pty.h"
 #include "video.h"
@@ -170,7 +170,7 @@ audio_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NAUDIO, NULL, &audio_cdevsw, NULL);			/* generic audio I/O */
 	DEVSWIO_CONFIG_INIT(devsw, NMIDI, NULL, &midi_cdevsw, NULL);			/* MIDI I/O */
 	DEVSWIO_CONFIG_INIT(devsw, NSEQUENCER, NULL, &sequencer_cdevsw, NULL);	/* MIDI Sequencer I/O */
-//	DEVSWIO_CONFIG_INIT(devsw, NSPKR, NULL, &spkr_cdevsw, NULL);			/* PC Speaker */
+	DEVSWIO_CONFIG_INIT(devsw, NSPKR, NULL, &spkr_cdevsw, NULL);			/* PC Speaker */
 }
 
 /* Add core driver configuration */
@@ -179,7 +179,7 @@ core_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);				/* Serial port */
-//	DEVSWIO_CONFIG_INIT(devsw, NLPT, NULL, &lpt_cdevsw, NULL);				/* parallel printer */
+	DEVSWIO_CONFIG_INIT(devsw, NLPT, NULL, &lpt_cdevsw, NULL);				/* parallel printer */
 }
 
 /* Add disk driver configuration */
