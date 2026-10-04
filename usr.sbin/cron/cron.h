@@ -221,8 +221,8 @@ char	*env_get(const char *, char **),
 		**env_copy(char **),
  		**env_set(char **, char *);
 
-user	*load_user(int, struct passwd *, char *),
-		*find_user(cron_db *, char *);
+user	*load_user(int, struct passwd *, const char *),
+		*find_user(cron_db *, const char *);
 
 entry	*load_entry(FILE *, void (*)(const char *), struct passwd *, char **);
 

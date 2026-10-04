@@ -169,7 +169,7 @@ unlink_user(cron_db *db, user *u)
 
 
 user *
-find_user(cron_db *db, char *name)
+find_user(cron_db *db, const char *name)
 {
 	//char	*env_get();
 	register user	*u;

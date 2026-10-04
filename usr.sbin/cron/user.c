@@ -40,7 +40,7 @@ free_user(user *u)
 
 
 user *
-load_user(int crontab_fd, struct passwd *pw /* NULL implies syscrontab */, char *name)
+load_user(int crontab_fd, struct passwd *pw /* NULL implies syscrontab */, const char *name)
 {
 	char	envstr[MAX_ENVSTR];
 	FILE	*file;
