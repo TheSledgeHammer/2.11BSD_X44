@@ -103,8 +103,7 @@ mktempname(struct entry *ep)
  * Generate a temporary name for an entry.
  */
 char *
-gentempname(ep)
-	struct entry *ep;
+gentempname(struct entry *ep)
 {
 	static char name[MAXPATHLEN];
 	struct entry *np;
