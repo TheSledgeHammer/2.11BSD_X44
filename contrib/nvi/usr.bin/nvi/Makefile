@@ -8,6 +8,7 @@ WARNS=	5
 
 COPTS.exf.c+=		-Wno-format-nonliteral
 COPTS.msg.c+=		-Wno-format-nonliteral
+COPTS.options.c+=   -Wno-restrict
 .if ${USE_WIDECHAR} == "yes"
 .if ${ACTIVE_CC} == "gcc"
 COPTS.regexec.c+=	-Wno-old-style-definition
