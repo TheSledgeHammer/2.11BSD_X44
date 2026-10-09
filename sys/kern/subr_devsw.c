@@ -56,13 +56,14 @@ struct lock_object  				devswtable_lock;
 
 #define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
 
-static int bdevsw_io_lookup(dev_t major, const struct bdevsw **bdev);
-static int cdevsw_io_lookup(dev_t major, const struct cdevsw **cdev);
-static int linesw_io_lookup(dev_t major, const struct linesw **line);
+static int bdevsw_io_lookup(dev_t, const struct bdevsw **);
+static int cdevsw_io_lookup(dev_t, const struct cdevsw **);
+static int linesw_io_lookup(dev_t, const struct linesw **);
 static int  devsw_io_attach(dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
 static void devsw_io_detach(const struct bdevsw *, const struct cdevsw *, const struct linesw *);
 
 #ifdef deprecated
+
 struct devswtable 					sys_devsw;
 struct devswtable_head 				devsw_hashtable[MAXDEVSW];
 
@@ -689,7 +690,7 @@ devsw_io_attach(dev_t major, const struct bdevsw *bdev, const struct cdevsw *cde
 	return (0);
 
 out:
-	devsw_detach(bdev, cdev, line);
+	devsw_io_detach(bdev, cdev, line);
 	return (error);
 }
 
@@ -726,6 +727,7 @@ devsw_io_detach(const struct bdevsw *bdev, const struct cdevsw *cdev, const stru
 }
 
 #ifdef deprecated
+
 void
 linesw_add(devsw, line, major)
 	struct devswtable 	*devsw;
