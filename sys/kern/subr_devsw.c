@@ -105,13 +105,13 @@ devswtable_configure(devsw, major, bdev, cdev, line)
 {
 	int error, rv;
 
-	rv = devsw_io_attach(devsw, major, bdev, cdev, line);
+	rv = devsw_io_attach(major, bdev, cdev, line);
 	if (rv != 0) {
 		return (rv);
 	}
 	error = devswtable_io_init(major, rv);
 	if (error == ENXIO) {
-		devsw_io_detach(major, bdev, cdev, line);
+		devsw_io_detach(bdev, cdev, line);
 		return (ENXIO);
 	}
 	return (error);
@@ -344,9 +344,9 @@ bdevsw_lookup(dev)
 }
 
 static int
-bdevsw_io_lookup(const struct bdevsw **bdev, dev_t major)
+bdevsw_io_lookup(dev_t major, const struct bdevsw **bdev)
 {
-	const struct cdevsw *bd;
+	const struct bdevsw *bd;
 
 	bd = bdevsw_lookup(major);
 	if (bd != NULL) {
@@ -499,7 +499,7 @@ cdevsw_lookup(dev)
 }
 
 static int
-cdevsw_io_lookup(const struct cdevsw **cdev, dev_t major)
+cdevsw_io_lookup(dev_t major, const struct cdevsw **cdev)
 {
 	const struct cdevsw *cd;
 
@@ -648,7 +648,7 @@ linesw_lookup(dev)
 }
 
 static int
-linesw_io_lookup(const struct linesw **line, dev_t major)
+linesw_io_lookup(dev_t major, const struct linesw **line)
 {
 	const struct linesw *ld;
 
