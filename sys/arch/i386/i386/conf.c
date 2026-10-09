@@ -60,7 +60,7 @@
 #include "cmos.h"
 
 #include "bpfilter.h"
-//#include "tb.h"
+#include "tb.h"
 #include "sl.h"
 #include "ppp.h"
 #include "strip.h"
@@ -84,6 +84,8 @@
 #include "wsmouse.h"
 #include "wsmux.h"
 #include "wsfont.h"
+
+#include "opencrypto.h"
 
 #include "scsibus.h"
 #include "pci.h"
@@ -137,9 +139,13 @@ const struct cdevsw *cdevsw0[] = {
 		cdevsw_init(NMIDI, midi_cdevsw),			/* MIDI I/O */
 		cdevsw_init(NSEQUENCER, sequencer_cdevsw),	/* MIDI Sequencer I/O */
 		cdevsw_init(NSES, ses_cdevsw),				/* SCSI ses */
-		cdevsw_init(NAGP, agp_cdevsw),				/* AGP Video */
+		cdevsw_init(NAGP, agp_cdevsw),				/* AGP graphics aperture device */
 		cdevsw_init(NKSYMS, ksyms_cdevsw),			/* Kernel symbols device */
-		cdevsw_init(1, cmos_cdevsw),				/* CMOS Interface */
+		cdevsw_init(1, cmos_cdevsw),			    /* CMOS Interface */
+        cdevsw_init(NOPENCRYPTO, crypto_cdevsw),    /* Opencrypto */
+        cdevsw_init(NVIDEO, video_cdevsw),          /* generic video I/O */
+        cdevsw_init(NPCI, pci_cdevsw),              /* PCI bus access device */
+        cdevsw_init(NSCSIBUS, scsibus_cdevsw),      /* SCSI bus */
 		/*
 		cdevsw_init(NUSB, usb),
 		cdevsw_init(NUHID, uhid),
@@ -149,11 +155,11 @@ const struct cdevsw *cdevsw0[] = {
 };
 
 const struct linesw *linesw0[] = {
-		linesw_init(0, ttydisc),					/* 0- TTYDISC */
-		linesw_init(0, nttydisc),					/* 1- NTTYDISC */
-		linesw_init(0, ottydisc),					/* 2- OTTYDISC */
+		linesw_init(1, ttydisc),					/* 0- TTYDISC */
+		linesw_init(1, nttydisc),					/* 1- NTTYDISC */
+		linesw_init(1, ottydisc),					/* 2- OTTYDISC */
 		linesw_init(0, netldisc),					/* 3- NETLDISC */
-		linesw_init(0, tabldisc),					/* 4- TABLDISC */
+		linesw_init(NTB, tabldisc),					/* 4- TABLDISC */
 		linesw_init(NSL, slipdisc),					/* 5- SLIPDISC */
 		linesw_init(NPPP, pppdisc),					/* 6- PPPDISC */
 		linesw_init(NSTRIP, stripdisc),				/* 7- STRIPDISC */
@@ -164,9 +170,9 @@ const struct bdevsw *bdevsw0;
 const struct cdevsw *cdevsw0;
 const struct linesw *linesw0;
 */
-const struct bdevsw **bdevsw = &bdevsw0;
-const struct cdevsw **cdevsw = &cdevsw0;
-const struct linesw **linesw = &linesw0;
+const struct bdevsw **bdevsw = bdevsw0;
+const struct cdevsw **cdevsw = cdevsw0;
+const struct linesw **linesw = linesw0;
 const int sys_bdevsws = __arraycount(bdevsw0);
 const int sys_cdevsws = __arraycount(cdevsw0);
 const int sys_linesws = __arraycount(linesw0);
