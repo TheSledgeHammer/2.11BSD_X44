@@ -142,6 +142,19 @@ struct swdevt {
 
 extern struct swdevt swdevt[];
 
+/* devsw init (i.e. bdevsw, cdevsw, linesw) */
+#define devsw_init(c, n) \
+	((c > 0 ? &n : NULL))
+
+#define bdevsw_init(c, n) \
+	devsw_init(c, n)
+
+#define cdevsw_init(c, n) \
+	devsw_init(c, n)
+
+#define linesw_init(c, n) \
+	devsw_init(c, n)
+
 /* dev types */
 typedef int 		dev_type_open_t(dev_t, int, int, struct proc *);
 typedef int 		dev_type_close_t(dev_t, int, int, struct proc *);

@@ -88,10 +88,82 @@
 #include "scsibus.h"
 #include "pci.h"
 
+/* devsw init (i.e. bdevsw, cdevsw, linesw) */
 /* devsw switch table */
+const struct bdevsw *bdevsw0[] = {
+		bdevsw_init(NWD, wd_bdevsw),				/* ATA: ST506/ESDI/IDE disk */
+		bdevsw_init(1, swap_bdevsw),				/* swap interfaces */
+		bdevsw_init(NFDC, fd_bdevsw),				/* floppy diskette */
+		bdevsw_init(NSD, sd_bdevsw),				/* SCSI disk */
+		bdevsw_init(NST, st_bdevsw),				/* SCSI tape */
+		bdevsw_init(NCD, cd_bdevsw),				/* SCSI CD-ROM */
+		bdevsw_init(NVND, vnd_bdevsw),				/* vnode disk driver */
+		bdevsw_init(NCCD, ccd_bdevsw),				/* "Concatenated" disk driver */
+		bdevsw_init(NMD, md_bdevsw),				/* memory disk driver */
+};
+
+const struct cdevsw *cdevsw0[] = {
+		cdevsw_init(1, cons_cdevsw),				/* virtual console */
+		cdevsw_init(1, ctty_cdevsw),				/* ctty controlling terminal */
+		cdevsw_init(1, mm_cdevsw),					/* /dev/{null,mem,kmem,...} */
+		cdevsw_init(NWD, wd_cdevsw),				/* ATA: ST506/ESDI/IDE disk */
+		cdevsw_init(1, swap_cdevsw),				/* swap interfaces */
+		cdevsw_init(NPTY, pts_cdevsw),				/* pts pseudo-tty slave, pseudo-tty master  */
+		cdevsw_init(NPTY, ptc_cdevsw),				/* ptc pseudo-tty slave, pseudo-tty master  */
+		cdevsw_init(1, log_cdevsw),				  	/* log interfaces */
+		cdevsw_init(NCOM, com_cdevsw),				/* Serial port */
+		cdevsw_init(NFDC, fd_cdevsw),				/* floppy diskette */
+		cdevsw_init(NSD, sd_cdevsw),				/* SCSI disk */
+		cdevsw_init(NST, st_cdevsw),				/* SCSI tape */
+		cdevsw_init(NCD, cd_cdevsw),				/* SCSI CD-ROM */
+		cdevsw_init(NLPT, lpt_cdevsw),				/* parallel printer */
+		cdevsw_init(NCH, ch_cdevsw),				/* SCSI autochanger */
+		cdevsw_init(NCCD, ccd_cdevsw),				/* "Concatenated" disk driver */
+		cdevsw_init(NSS, ss_cdevsw),				/* SCSI scanner */
+		cdevsw_init(NUK, uk_cdevsw),				/* SCSI unknown  */
+		cdevsw_init(NBPFILTER, bpf_cdevsw),			/* Berkeley packet filter */
+		cdevsw_init(NMD, md_cdevsw),				/* memory disk driver */
+		cdevsw_init(NSPKR, spkr_cdevsw),			/* PC Speaker */
+		cdevsw_init(NTUN, tun_cdevsw),				/* network tunnel */
+		cdevsw_init(NVND, vnd_cdevsw),				/* vnode disk driver */
+		cdevsw_init(NAUDIO, audio_cdevsw),			/* generic audio I/O */
+		cdevsw_init(NRND, rnd_cdevsw),				/* Random device */
+		cdevsw_init(NWSDISPLAY, wsdisplay_cdevsw), 	/* Wscons Display */
+		cdevsw_init(NWSKBD, wskbd_cdevsw),			/* Wscons Keyboard */
+		cdevsw_init(NWSMOUSE, wsmouse_cdevsw),		/* Wscons Mouse */
+		cdevsw_init(NWSMUX, wsmux_cdevsw),			/* Wscons Multiplexor */
+		cdevsw_init(NWSFONT, wsfont_cdevsw),		/* Wscons Wsfont */
+		cdevsw_init(NEVDEV, evdev_cdevsw),			/* Evdev Keyboard & Mouse*/
+		cdevsw_init(NMIDI, midi_cdevsw),			/* MIDI I/O */
+		cdevsw_init(NSEQUENCER, sequencer_cdevsw),	/* MIDI Sequencer I/O */
+		cdevsw_init(NSES, ses_cdevsw),				/* SCSI ses */
+		cdevsw_init(NAGP, agp_cdevsw),				/* AGP Video */
+		cdevsw_init(NKSYMS, ksyms_cdevsw),			/* Kernel symbols device */
+		cdevsw_init(1, cmos_cdevsw),				/* CMOS Interface */
+		/*
+		cdevsw_init(NUSB, usb),
+		cdevsw_init(NUHID, uhid),
+		cdevsw_init(NUGEN, ugen),
+		cdevsw_init(NUCOM, ucom),
+		*/
+};
+
+const struct linesw *linesw0[] = {
+		linesw_init(0, ttydisc),					/* 0- TTYDISC */
+		linesw_init(0, nttydisc),					/* 1- NTTYDISC */
+		linesw_init(0, ottydisc),					/* 2- OTTYDISC */
+		linesw_init(0, netldisc),					/* 3- NETLDISC */
+		linesw_init(0, tabldisc),					/* 4- TABLDISC */
+		linesw_init(NSL, slipdisc),					/* 5- SLIPDISC */
+		linesw_init(NPPP, pppdisc),					/* 6- PPPDISC */
+		linesw_init(NSTRIP, stripdisc),				/* 7- STRIPDISC */
+};
+
+/*
 const struct bdevsw *bdevsw0;
 const struct cdevsw *cdevsw0;
 const struct linesw *linesw0;
+*/
 const struct bdevsw **bdevsw = &bdevsw0;
 const struct cdevsw **cdevsw = &cdevsw0;
 const struct linesw **linesw = &linesw0;
@@ -105,6 +177,7 @@ int max_linesws = __arraycount(linesw0);
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
 
+#ifdef deprecated
 void kernel_init(struct devswtable *);
 void device_init(struct devswtable *);
 void audio_init(struct devswtable *);
@@ -264,3 +337,4 @@ wscons_init(devsw)
 
 	DEVSWIO_CONFIG_INIT(devsw, NEVDEV, NULL, &evdev_cdevsw, NULL);		    	/* Evdev Keyboard & Mouse*/
 }
+#endif /* deprecated */

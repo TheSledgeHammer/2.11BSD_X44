@@ -125,12 +125,32 @@ disk_isvalid(bdev, cdev)
 	const struct cdevsw *cdev;
 {
 	dev_t dev1, dev2;
+	int bdev_found, cdev_found;
 
+	bdev_found = 0;
+	cdev_found = 0;
 	if ((bdev != NULL) && (cdev != NULL)) {
 		dev1 = bdevsw_lookup_major(bdev);
+		if (dev1 != NODEVMAJOR) {
+			bdev_found = 1;
+		}
 		dev2 = cdevsw_lookup_major(cdev);
-		if (dev1 == dev2) {
-			return (dev1);
+		if (dev2 != NODEVMAJOR) {
+			cdev_found = 1;
+		}
+		if ((bdev_found != 0) && (cdev_found != 0)) {
+			if ((dev1 == chrtoblk(dev2)) && (dev2 == blktochr(dev1))) {
+				return (dev1);
+			} else {
+				return (dev2);
+			}
+		} else {
+			if ((bdev_found != 0) && (cdev_found == 0)) {
+				return (dev1);
+			}
+			if ((bdev_found == 0) && (cdev_found != 0)) {
+				return (dev2);
+			}
 		}
 	} else {
 		if ((bdev != NULL) && (cdev == NULL)) {

@@ -48,8 +48,6 @@ extern const struct linesw **linesw, *linesw0[];
 extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
-struct devswtable 					sys_devsw;
-struct devswtable_head 				devsw_hashtable[MAXDEVSW];
 struct lock_object  				devswtable_lock;
 
 #define devswtable_lock_init(lock)	(simple_lock_init(lock, "devswtable_lock"))
@@ -58,27 +56,39 @@ struct lock_object  				devswtable_lock;
 
 #define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
 
+static int bdevsw_io_lookup(dev_t major, const struct bdevsw **bdev);
+static int cdevsw_io_lookup(dev_t major, const struct cdevsw **cdev);
+static int linesw_io_lookup(dev_t major, const struct linesw **line);
+static int  devsw_io_attach(dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
+static void devsw_io_detach(const struct bdevsw *, const struct cdevsw *, const struct linesw *);
+
+#ifdef deprecated
+struct devswtable 					sys_devsw;
+struct devswtable_head 				devsw_hashtable[MAXDEVSW];
+
 static void devswtable_allocate(struct devswtable *);
 void devsw_io_add(struct devswtable *, dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
 void devsw_io_remove(dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
-int  devsw_io_attach(struct devswtable *, dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
-void devsw_io_detach(dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
 int  devsw_io_lookup(dev_t, const void *, int);
+#endif /* deprecated */
 
 void
 devswtable_init(void)
 {
+#ifdef deprecated
 	int i;
 
-	for(i = 0; i < MAXDEVSW; i++) {
+	for (i = 0; i < MAXDEVSW; i++) {
 		TAILQ_INIT(&devsw_hashtable[i]);
 	}
+
+	devswtable_allocate(&sys_devsw);
+
+#endif /* deprecated */
 
 	KASSERT(sys_bdevsws < MAXDEVSW - 1);
 	KASSERT(sys_cdevsws < MAXDEVSW - 1);
 	KASSERT(sys_linesws < MAXDEVSW - 1);
-
-	devswtable_allocate(&sys_devsw);
 
 	devswtable_lock_init(&devswtable_lock);
 }
@@ -99,13 +109,14 @@ devswtable_configure(devsw, major, bdev, cdev, line)
 		return (rv);
 	}
 	error = devswtable_io_init(major, rv);
-	if(error == ENXIO) {
+	if (error == ENXIO) {
 		devsw_io_detach(major, bdev, cdev, line);
 		return (ENXIO);
 	}
-
 	return (error);
 }
+
+#ifdef deprecated
 
 /* allocate devswtable structures */
 static void
@@ -122,7 +133,7 @@ devswtable_hash(data, major)
 {
 	Fnv32_t hash1 = fnv_32_buf(&data, sizeof(&data), FNV1_32_INIT) % MAXDEVSW;
 	Fnv32_t hash2 = fnv_32_buf(&major, sizeof(&major), FNV1_32_INIT) % MAXDEVSW;
-	return (hash1^hash2);
+	return (hash1 ^ hash2);
 }
 
 struct devswtable *
@@ -130,15 +141,15 @@ devswtable_lookup(data, major)
 	void 	*data;
 	dev_t 	major;
 {
-	struct devswtable_head 		*bucket;
+	struct devswtable_head *bucket;
 	register devswtable_entry_t entry;
-	struct devswtable 			*devsw;
+	struct devswtable *devsw;
 
 	simple_lock(&devswtable_lock);
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
 	TAILQ_FOREACH(entry, bucket, dve_link) {
 		devsw = entry->dve_devswtable;
-		if(devsw->dv_data == data && devsw->dv_major == major) {
+		if (devsw->dv_data == data && devsw->dv_major == major) {
 			devswtable_unlock(&devswtable_lock);
 			return (devsw);
 		}
@@ -153,14 +164,15 @@ devswtable_add(devsw, data, major)
 	void 			*data;
 	dev_t 			major;
 {
-	struct devswtable_head 		*bucket;
+	struct devswtable_head *bucket;
 	register devswtable_entry_t entry;
 
 	devsw->dv_data = data;
 	devsw->dv_major = major;
 
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
-	entry = (devswtable_entry_t) malloc((u_long) sizeof(*entry), M_DEVSWHASH, M_WAITOK);
+	entry = (devswtable_entry_t)malloc((u_long) sizeof(*entry), M_DEVSWHASH,
+			M_WAITOK);
 	entry->dve_devswtable = devsw;
 
 	devswtable_lock(&devswtable_lock);
@@ -173,9 +185,9 @@ devswtable_remove(data, major)
 	void 		*data;
 	dev_t 		major;
 {
-	struct devswtable_head 		*bucket;
+	struct devswtable_head *bucket;
 	register devswtable_entry_t entry;
-	struct devswtable 			*devsw;
+	struct devswtable *devsw;
 
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
 	devswtable_lock(&devswtable_lock);
@@ -188,22 +200,24 @@ devswtable_remove(data, major)
 	}
 }
 
+#endif /* deprecated */
+
 /* return number of items on the device switch depending on type */
 const int
 devsw_nelems(type)
     int type;
 {
-    switch(type) {
-    case BDEVTYPE:
-        return (sys_bdevsws);
-        
-    case CDEVTYPE:
-        return (sys_cdevsws);
-        
-    case LINETYPE:
-        return (sys_linesws);
-    }
-    return (0);
+	switch (type) {
+	case BDEVTYPE:
+		return (sys_bdevsws);
+
+	case CDEVTYPE:
+		return (sys_cdevsws);
+
+	case LINETYPE:
+		return (sys_linesws);
+	}
+	return (0);
 }
 
 /* BDEVSW */
@@ -212,40 +226,49 @@ bdevsw_attach(bdev, major)
 	struct bdevsw 	*bdev;
 	dev_t			major;
 {
-	const struct bdevsw **newptr;
 	dev_t maj;
-	int i;
 
-	 devswtable_lock(&devswtable_lock);
+	devswtable_lock(&devswtable_lock);
 
-	if(bdev == NULL) {
-		return (0);
+	if (bdev == NULL) {
+		return (ENXIO);
 	}
 
-	if(major < 0) {
-		for (maj = sys_bdevsws; maj < max_bdevsws ; maj++) {
+	if (major < 0) {
+		for (maj = sys_bdevsws; maj < max_bdevsws; maj++) {
 			if (bdevsw[maj] != NULL) {
 				continue;
 			}
 			break;
 		}
-		maj = major;
+		major = maj;
 	}
 
-	if(major >= MAXDEVSW) {
+	if (major >= MAXDEVSW) {
 		printf("%s: block majors exhausted", __func__);
 		devswtable_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
 	if (major >= max_bdevsws) {
+		const struct bdevsw **newptr;
+		int old, new;
+
+		old = max_bdevsws;
+		new = major + 1;
 		KASSERT(bdevsw == bdevsw0);
-		newptr = calloc(MAXDEVSW, BDEVSW_SIZE, M_DEVSW, M_NOWAIT);
+		newptr = calloc(new, BDEVSW_SIZE, M_DEVBUF, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
 		}
-		memcpy(newptr, bdevsw, max_bdevsws * BDEVSW_SIZE);
+		memset(newptr + old, 0, (new - old) * BDEVSW_SIZE);
+		if (old != 0) {
+            memcpy(newptr, bdevsw, old * BDEVSW_SIZE);
+            if (bdevsw != bdevsw0) {
+                free(bdevsw, M_DEVBUF);
+            }
+		}
 		bdevsw = newptr;
 		max_bdevsws = MAXDEVSW;
 	}
@@ -268,9 +291,9 @@ bdevsw_detach(bdev)
 
 	devswtable_lock(&devswtable_lock);
 
-	if(bdevsw != NULL) {
-		for (i = 0 ; i < max_bdevsws ; i++) {
-			if(bdevsw[i] != bdev) {
+	if (bdevsw != NULL) {
+		for (i = 0; i < max_bdevsws; i++) {
+			if (bdevsw[i] != bdev) {
 				continue;
 			}
 			bdevsw[i] = NULL;
@@ -293,8 +316,9 @@ bdevsw_lookup_major(bdev)
 	const struct bdevsw *bdev;
 {
 	dev_t maj;
-	for(maj = 0; maj < max_bdevsws; maj++) {
-		if(bdevsw[maj] == bdev) {
+
+	for (maj = 0; maj < max_bdevsws; maj++) {
+		if (bdevsw[maj] == bdev) {
 			return (maj);
 		}
 	}
@@ -318,6 +342,21 @@ bdevsw_lookup(dev)
 	return (bdevsw[maj]);
 }
 
+static int
+bdevsw_io_lookup(const struct bdevsw **bdev, dev_t major)
+{
+	const struct cdevsw *bd;
+
+	bd = bdevsw_lookup(major);
+	if (bd != NULL) {
+		*bdev = bd;
+		return (0);
+	}
+	return (ENXIO);
+}
+
+#ifdef deprecated
+
 void
 bdevsw_add(devsw, bdev, major)
 	struct devswtable 	*devsw;
@@ -335,48 +374,58 @@ bdevsw_remove(bdev, major)
 	devswtable_remove(bdev, major);
 }
 
+#endif  /* deprecated */
+
 /* CDEVSW */
 int
 cdevsw_attach(cdev, major)
 	struct cdevsw 	*cdev;
 	dev_t 			major;
 {
-	const struct cdevsw **newptr;
 	dev_t maj;
-	int i;
 
 	devswtable_lock(&devswtable_lock);
-
-	if(cdev == NULL) {
-		return (0);
+	if (cdev == NULL) {
+		return (ENXIO);
 	}
 
-	if(major < 0) {
-		for (maj = sys_cdevsws; maj < max_cdevsws ; maj++) {
+	if (major < 0) {
+		for (maj = sys_cdevsws; maj < max_cdevsws; maj++) {
 			if (cdevsw[maj] != NULL) {
 				continue;
 			}
 			break;
 		}
-		maj = major;
+		major = maj;
 	}
 
-	if(major >= MAXDEVSW) {
+	if (major >= MAXDEVSW) {
 		printf("%s: character majors exhausted", __func__);
 		devswtable_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
 	if (major >= max_cdevsws) {
+		const struct cdevsw **newptr;
+		int old, new;
+
+		old = max_cdevsws;
+		new = major + 1;
 		KASSERT(cdevsw == cdevsw0);
-		newptr = calloc(MAXDEVSW, CDEVSW_SIZE, M_DEVSW, M_NOWAIT);
+		newptr = calloc(new, CDEVSW_SIZE, M_DEVBUF, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
 		}
-		memcpy(newptr, cdevsw, max_cdevsws * CDEVSW_SIZE);
+		memset(newptr + old, 0, (new - old) * CDEVSW_SIZE);
+		if (old != 0) {
+            memcpy(newptr, cdevsw, old * CDEVSW_SIZE);
+            if (cdevsw != cdevsw0) {
+                free(cdevsw, M_DEVBUF);
+            }
+		}
 		cdevsw = newptr;
-		max_cdevsws = MAXDEVSW;
+		max_cdevsws = new;
 	}
 
 	if (cdevsw[major] != NULL) {
@@ -397,9 +446,9 @@ cdevsw_detach(cdev)
 
 	devswtable_lock(&devswtable_lock);
 
-	if(cdev != NULL) {
-		for (i = 0 ; i < max_cdevsws ; i++) {
-			if(cdevsw[i] != cdev) {
+	if (cdev != NULL) {
+		for (i = 0; i < max_cdevsws; i++) {
+			if (cdevsw[i] != cdev) {
 				continue;
 			}
 			cdevsw[i] = NULL;
@@ -422,8 +471,9 @@ cdevsw_lookup_major(cdev)
 	const struct cdevsw *cdev;
 {
 	dev_t maj;
-	for(maj = 0; maj < max_cdevsws; maj++) {
-		if(cdevsw[maj] == cdev) {
+
+	for (maj = 0; maj < max_cdevsws; maj++) {
+		if (cdevsw[maj] == cdev) {
 			return (maj);
 		}
 	}
@@ -447,6 +497,20 @@ cdevsw_lookup(dev)
 	return (cdevsw[maj]);
 }
 
+static int
+cdevsw_io_lookup(const struct cdevsw **cdev, dev_t major)
+{
+	const struct cdevsw *cd;
+
+	cd = cdevsw_lookup(major);
+	if (cd != NULL) {
+		*cdev = cd;
+		return (0);
+	}
+	return (ENXIO);
+}
+
+#ifdef deprecated
 void
 cdevsw_add(devsw, cdev, major)
 	struct devswtable 	*devsw;
@@ -464,48 +528,59 @@ cdevsw_remove(cdev, major)
 	devswtable_remove(cdev, major);
 }
 
+#endif /* deprecated */
+
 /* LINESW */
 int
 linesw_attach(line, major)
 	struct linesw 	*line;
 	dev_t 			major;
 {
-	const struct linesw **newptr;
 	dev_t maj;
-	int i;
 
 	devswtable_lock(&devswtable_lock);
 
-	if(line == NULL) {
-		return (0);
+	if (line == NULL) {
+		return (ENXIO);
 	}
 
-	if(major < 0) {
-		for (maj = sys_linesws; maj < max_linesws ; maj++) {
+	if (major < 0) {
+		for (maj = sys_linesws; maj < max_linesws; maj++) {
 			if (linesw[maj] != NULL) {
 				continue;
 			}
 			break;
 		}
-		maj = major;
+		major = maj;
 	}
 
-	if(major >= MAXDEVSW) {
+	if (major >= MAXDEVSW) {
 		printf("%s: line majors exhausted", __func__);
 		devswtable_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
 	if (major >= max_linesws) {
+		const struct linesw **newptr;
+		int old, new;
+
+		old = max_linesws;
+		new = major + 1;
 		KASSERT(linesw == linesw0);
-		newptr = calloc(MAXDEVSW, LINESW_SIZE, M_DEVSW, M_NOWAIT);
+		newptr = calloc(new, LINESW_SIZE, M_DEVBUF, M_NOWAIT);
 		if (newptr == NULL) {
 			devswtable_unlock(&devswtable_lock);
 			return (ENOMEM);
 		}
-		memcpy(newptr, linesw, max_linesws * LINESW_SIZE);
+		memset(newptr + old, 0, (new - old) * LINESW_SIZE);
+		if (old != 0) {
+			memcpy(newptr, linesw, old * LINESW_SIZE);
+			if (linesw != linesw0) {
+				free(linesw, M_DEVBUF);
+			}
+		}
 		linesw = newptr;
-		max_linesws = MAXDEVSW;
+		max_linesws = new;
 	}
 
 	if (linesw[major] != NULL) {
@@ -526,9 +601,9 @@ linesw_detach(line)
 
 	devswtable_lock(&devswtable_lock);
 
-	if(linesw != NULL) {
-		for (i = 0 ; i < max_linesws ; i++) {
-			if(linesw[i] != line) {
+	if (linesw != NULL) {
+		for (i = 0; i < max_linesws; i++) {
+			if (linesw[i] != line) {
 				continue;
 			}
 			linesw[i] = NULL;
@@ -545,8 +620,9 @@ linesw_lookup_major(line)
 	const struct linesw *line;
 {
 	dev_t maj;
-	for(maj = 0; maj < max_linesws; maj++) {
-		if(linesw[maj] == line) {
+
+	for (maj = 0; maj < max_linesws; maj++) {
+		if (linesw[maj] == line) {
 			return (maj);
 		}
 	}
@@ -557,7 +633,7 @@ const struct linesw *
 linesw_lookup(dev)
 	dev_t 	dev;
 {
-	dev_t 	maj;
+	dev_t maj;
 
 	if (dev == NODEV) {
 		return (NULL);
@@ -570,6 +646,86 @@ linesw_lookup(dev)
 	return (linesw[maj]);
 }
 
+static int
+linesw_io_lookup(const struct linesw **line, dev_t major)
+{
+	const struct linesw *ld;
+
+	ld = linesw_lookup(major);
+	if (ld != NULL) {
+		*line = ld;
+		return (0);
+	}
+	return (ENXIO);
+}
+
+/* DEVSW IO */
+int
+devsw_io_attach(dev_t major, const struct bdevsw *bdev, const struct cdevsw *cdev, const struct linesw *line)
+{
+	int error;
+
+	if (bdev != NULL) {
+		error = bdevsw_attach(bdev, major);
+		if (error != 0) {
+			goto out;
+		}
+	}
+
+	if (cdev != NULL) {
+		error = cdevsw_attach(cdev, major);
+		if (error != 0) {
+			goto out;
+		}
+	}
+
+	if (line != NULL) {
+		error = linesw_attach(line, major);
+		if (error != 0) {
+			goto out;
+		}
+	}
+
+	return (0);
+
+out:
+	devsw_detach(bdev, cdev, line);
+	return (error);
+}
+
+void
+devsw_io_detach(const struct bdevsw *bdev, const struct cdevsw *cdev, const struct linesw *line)
+{
+	int error;
+
+	if (bdev != NULL) {
+		error = bdevsw_detach(bdev);
+		if (error) {
+			printf("devsw_io_detach: block device detached");
+		} else {
+			printf("devsw_io_detach: block device not found");
+		}
+	}
+	if (cdev != NULL) {
+		error = cdevsw_detach(cdev);
+		if (error) {
+			printf("devsw_io_detach: character device detached");
+		} else {
+			printf("devsw_io_detach: character device not found");
+		}
+	}
+
+	if (line != NULL) {
+		error = linesw_detach(line);
+		if (error) {
+			printf("devsw_io_detach: line device detached");
+		} else {
+			printf("devsw_io_detach: line device not found");
+		}
+	}
+}
+
+#ifdef deprecated
 void
 linesw_add(devsw, line, major)
 	struct devswtable 	*devsw;
@@ -627,32 +783,32 @@ devsw_io_remove(major, bdev, cdev, line)
 
 int
 devsw_io_attach(devsw, major, bdev, cdev, line)
-	struct devswtable 	*devsw;
-	dev_t				major;
-	const struct bdevsw 		*bdev;
-	const struct cdevsw 		*cdev;
-	const struct linesw 		*line;
+	struct devswtable *devsw;
+	dev_t major;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
+	const struct linesw *line;
 {
 	int error;
 
-	if(bdev) {
+	if (bdev) {
 		devsw_io_add(devsw, major, bdev, NULL, NULL);
 		error = bdevsw_attach(bdev, major);
-		if(error != 0) {
+		if (error != 0) {
 			return (ENXIO);
 		}
 	}
-	if(cdev) {
+	if (cdev) {
 		devsw_io_add(devsw, major, NULL, cdev, NULL);
 		error = cdevsw_attach(cdev, major);
-		if(error != 0) {
+		if (error != 0) {
 			return (ENXIO);
 		}
 	}
-	if(line) {
+	if (line) {
 		devsw_io_add(devsw, major, NULL, NULL, line);
 		error = linesw_attach(line, major);
-		if(error != 0) {
+		if (error != 0) {
 			return (ENXIO);
 		}
 	}
@@ -662,35 +818,35 @@ devsw_io_attach(devsw, major, bdev, cdev, line)
 
 void
 devsw_io_detach(major, bdev, cdev, line)
-	dev_t			major;
-	const struct bdevsw 	*bdev;
-	const struct cdevsw 	*cdev;
-	const struct linesw 	*line;
+	dev_t major;
+	const struct bdevsw *bdev;
+	const struct cdevsw *cdev;
+	const struct linesw *line;
 {
 	int error;
 
-	if(bdev) {
+	if (bdev) {
 		devsw_io_remove(major, bdev, NULL, NULL);
 		error = bdevsw_detach(bdev, major);
-		if(error) {
+		if (error) {
 			printf("devsw_io_detach: block device detached");
-		}else {
+		} else {
 			printf("devsw_io_detach: block device not found");
 		}
 	}
-	if(cdev) {
+	if (cdev) {
 		devsw_io_remove(major, NULL, cdev, NULL);
 		error = cdevsw_detach(cdev, major);
-		if(error) {
+		if (error) {
 			printf("devsw_io_detach: character device detached");
 		} else {
 			printf("devsw_io_detach: character device not found");
 		}
 	}
-	if(line) {
+	if (line) {
 		devsw_io_remove(major, NULL, NULL, line);
 		error = linesw_detach(line, major);
-		if(error) {
+		if (error) {
 			printf("devsw_io_detach: line device detached");
 		} else {
 			printf("devsw_io_detach: line device not found");
@@ -700,45 +856,48 @@ devsw_io_detach(major, bdev, cdev, line)
 
 int
 devsw_io_lookup(major, data, type)
-	dev_t 	major;
+	dev_t major;
 	const void 	*data;
-	int		type;
+	int	type;
 {
 	struct devswtable *devsw;
-    const struct bdevsw *bd;
-    const struct cdevsw *cd;
-    const struct linesw *ld;
-    
-    devsw = devswtable_lookup(data, major);
-	if(devsw == NULL) {
+	const struct bdevsw *bd;
+	const struct cdevsw *cd;
+	const struct linesw *ld;
+
+	devsw = devswtable_lookup(data, major);
+	if (devsw == NULL) {
 		return (NODEV);
 	}
 
-    switch(type) {
-    case BDEVTYPE:
-    	bd = bdevsw_lookup(major);
-        if(bd == DTOB(devsw)) {
-            return (0);
-        }
-        break;
+	switch (type) {
+	case BDEVTYPE:
+		bd = bdevsw_lookup(major);
+		if (bd == DTOB(devsw)) {
+			return (0);
+		}
+		break;
 
-    case CDEVTYPE:
-        cd = cdevsw_lookup(major);
-        if(cd == DTOC(devsw)) {
-        	return (0);
-        }
-        break;
+	case CDEVTYPE:
+		cd = cdevsw_lookup(major);
+		if (cd == DTOC(devsw)) {
+			return (0);
+		}
+		break;
 
-    case LINETYPE:
-        ld = linesw_lookup(major);
-        if(ld == DTOL(devsw)) {
-        	return (0);
-        }
-        break;
-    }
+	case LINETYPE:
+		ld = linesw_lookup(major);
+		if (ld == DTOL(devsw)) {
+			return (0);
+		}
+		break;
+	}
 
-    return (ENXIO);
+	return (ENXIO);
 }
+
+#endif /* deprecated */
+
 
 /*
  * Routine that identifies /dev/mem and /dev/kmem.
@@ -848,8 +1007,8 @@ bdev_open(dev_t dev, int flag, int devtype, struct proc *p)
 	const struct bdevsw *d;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(dev, &d);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -864,8 +1023,8 @@ bdev_close(dev_t dev, int fflag, int devtype, struct proc *p)
 	const struct bdevsw *d;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(dev, &d);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -880,8 +1039,8 @@ bdev_strategy(struct buf *bp)
 	const struct bdevsw *d;
 	int error;
 
-	error = devsw_io_lookup(bp->b_dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(bp->b_dev, &d);
+	if (error != 0) {
 		return;
 	}
 
@@ -896,8 +1055,8 @@ bdev_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
 	const struct bdevsw *d;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(dev, &d);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -912,8 +1071,8 @@ bdev_dump(dev_t dev, daddr_t blkno, caddr_t addr, size_t size)
 	const struct bdevsw *d;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(dev, &d);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -934,8 +1093,8 @@ bdev_size(dev_t dev)
 	const struct bdevsw *d;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(dev, &d);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -951,8 +1110,8 @@ bdev_discard(dev_t dev, off_t pos, off_t len)
 	daddr_t rv;
 	int error;
 
-	error = devsw_io_lookup(dev, d, BDEVTYPE);
-	if(error != 0) {
+	error = bdevsw_io_lookup(dev, &d);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -968,9 +1127,8 @@ cdev_open(dev_t dev, int oflags, int devtype, struct proc *p)
 	const struct cdevsw *c;
 	int rv, error;
 
-
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -985,8 +1143,8 @@ cdev_close(dev_t dev, int fflag, int devtype, struct proc *p)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1001,8 +1159,8 @@ cdev_read(dev_t dev, struct uio *uio, int ioflag)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1017,8 +1175,8 @@ cdev_write(dev_t dev, struct uio *uio, int ioflag)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1033,8 +1191,8 @@ cdev_ioctl(dev_t dev, u_long cmd, caddr_t data, int fflag, struct proc *p)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1049,8 +1207,8 @@ cdev_stop(struct tty *tp, int rw)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(tp->t_dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1072,11 +1230,11 @@ cdev_tty(dev_t dev)
 	struct tty *rv;
 	int error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if((error != 0) && (c = cdevsw_lookup(dev)) == NULL) {
+	error = cdevsw_io_lookup(dev, &c);
+	if ((error != 0) && (c == NULL)) {
 		return (NULL);
 	}
-	
+
 	rv = (*c->d_tty)(dev);
 
 	return (rv);
@@ -1088,8 +1246,8 @@ cdev_select(dev_t dev, int which, struct proc *p)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1104,8 +1262,8 @@ cdev_poll(dev_t dev, int events, struct proc *p)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1121,9 +1279,9 @@ cdev_mmap(dev_t dev, off_t off, int flag)
 	caddr_t rv;
 	int error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
-		return ((caddr_t)error);
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
+		return ((caddr_t) error);
 	}
 
 	rv = (*c->d_mmap)(dev, off, flag);
@@ -1137,8 +1295,8 @@ cdev_strategy(struct buf *bp)
 	const struct cdevsw *c;
 	int error;
 
-	error = devsw_io_lookup(bp->b_dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(bp->b_dev, &c);
+	if (error != 0) {
 		return;
 	}
 
@@ -1153,8 +1311,8 @@ cdev_kqfilter(dev_t dev, struct knote *kn)
 	const struct cdevsw *c;
 	int rv, error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1170,8 +1328,8 @@ cdev_discard(dev_t dev, off_t pos, off_t len)
 	daddr_t rv;
 	int error;
 
-	error = devsw_io_lookup(dev, c, CDEVTYPE);
-	if(error != 0) {
+	error = cdevsw_io_lookup(dev, &c);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1187,8 +1345,8 @@ line_open(dev_t dev, struct tty *tp)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1203,8 +1361,8 @@ line_close(struct tty *tp, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1219,8 +1377,8 @@ line_read(struct tty *tp, struct uio *uio, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1235,8 +1393,8 @@ line_write(struct tty *tp, struct uio *uio, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1251,8 +1409,8 @@ line_ioctl(struct tty *tp, u_long cmd, caddr_t data, int flag, struct proc *p)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1267,8 +1425,8 @@ line_rint(int c, struct tty *tp)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1295,8 +1453,8 @@ line_start(struct tty *tp)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1311,8 +1469,8 @@ line_modem(struct tty *tp, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 
@@ -1327,8 +1485,8 @@ line_poll(struct tty *tp, int flag, struct proc *p)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
-	if(error != 0) {
+	error = linesw_io_lookup(tp->t_dev, &l);
+	if (error != 0) {
 		return (error);
 	}
 

@@ -318,7 +318,7 @@ vfprintf_l(FILE *fp, locale_t locale, const char *fmt0, va_list ap)
 	int prec; 			/* precision from format (%.3d), or -1 */
 	char sign; 			/* sign prefix (' ', '+', '-', or \0) */
 #ifdef FLOATING_POINT
-    	struct lconv *lc;
+	struct lconv *lc;
 	char *decimal_point;
 	char softsign;			/* temporary negative sign for floats */
 	double _double;			/* double precision arguments %[eEfgG] */
