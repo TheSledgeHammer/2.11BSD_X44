@@ -138,7 +138,7 @@ struct swdevt {
 #define SW_FAKE			0x20		/* fake: still being built */
 #define sw_freed		sw_flags	/* XXX compat */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 extern struct swdevt swdevt[];
 
