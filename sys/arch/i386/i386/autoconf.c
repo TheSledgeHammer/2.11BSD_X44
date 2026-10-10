@@ -146,10 +146,6 @@ configure()
 #endif
 
 	setroot();
-	/*
-	 * Configure device structures
-	 */
-	conf_init(&sys_devsw);
 
 	/*
 	 * Configure swap area and related system

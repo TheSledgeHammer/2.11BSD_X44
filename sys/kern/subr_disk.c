@@ -108,10 +108,11 @@ disk_find(name)
 {
 	struct dkdevice *diskp;
 
-	if ((name == NULL) || (disk_count <= 0))
+	if ((name == NULL) || (disk_count <= 0)) {
 		return (NULL);
+	}
 
-	for (diskp = TAILQ_FIRST(&disklist); diskp != NULL; diskp = TAILQ_NEXT(diskp, dk_link)) {
+	TAILQ_FOREACH(diskp, &disklist, dk_link) {
 		if (strcmp(diskp->dk_name, name) == 0) {
 			return (diskp);
 		}
@@ -204,7 +205,7 @@ disk_attach(diskp, bdev, cdev)
 	dev = disk_isvalid(bdev, cdev);
 	if (dev != NODEVMAJOR) {
 		pdev = dkmakedev(major(dev), dkunit(dev), RAW_PART);
-		ret = mbrinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
+		ret = dsinit(diskp, pdev, diskp->dk_label, &diskp->dk_slices);
 	} else {
 		ret = -1;
 	}

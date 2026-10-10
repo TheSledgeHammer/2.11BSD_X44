@@ -35,8 +35,6 @@
 #include <sys/tty.h>
 #include <sys/null.h>
 
-//#include <dev/misc/cons/cons.h>
-
 #include "audio.h"
 #include "sequencer.h"
 #include "midi.h"
@@ -90,62 +88,63 @@
 #include "scsibus.h"
 #include "pci.h"
 
-/* devsw init (i.e. bdevsw, cdevsw, linesw) */
-/* devsw switch table */
+
+/* bdevsw table */
 const struct bdevsw *bdevsw0[] = {
-		bdevsw_init(NWD, wd_bdevsw),				/* ATA: ST506/ESDI/IDE disk */
-		bdevsw_init(1, swap_bdevsw),				/* swap interfaces */
-		bdevsw_init(NFDC, fd_bdevsw),				/* floppy diskette */
-		bdevsw_init(NSD, sd_bdevsw),				/* SCSI disk */
-		bdevsw_init(NST, st_bdevsw),				/* SCSI tape */
-		bdevsw_init(NCD, cd_bdevsw),				/* SCSI CD-ROM */
-		bdevsw_init(NVND, vnd_bdevsw),				/* vnode disk driver */
-		bdevsw_init(NCCD, ccd_bdevsw),				/* "Concatenated" disk driver */
-		bdevsw_init(NMD, md_bdevsw),				/* memory disk driver */
+		bdevsw_init(NWD, wd_bdevsw),				/* 0- ATA: ST506/ESDI/IDE disk */
+		bdevsw_init(1, swap_bdevsw),				/* 1- swap interfaces */
+		bdevsw_init(NFDC, fd_bdevsw),				/* 2- floppy diskette */
+		bdevsw_init(NSD, sd_bdevsw),				/* 3- SCSI disk */
+		bdevsw_init(NST, st_bdevsw),				/* 4- SCSI tape */
+		bdevsw_init(NCD, cd_bdevsw),				/* 5- SCSI CD-ROM */
+		bdevsw_init(NVND, vnd_bdevsw),				/* 6- vnode disk driver */
+		bdevsw_init(NCCD, ccd_bdevsw),				/* 7- "Concatenated" disk driver */
+		bdevsw_init(NMD, md_bdevsw),				/* 8- memory disk driver */
 };
 
+/* cdevsw table */
 const struct cdevsw *cdevsw0[] = {
-		cdevsw_init(1, cons_cdevsw),				/* virtual console */
-		cdevsw_init(1, ctty_cdevsw),				/* ctty controlling terminal */
-		cdevsw_init(1, mm_cdevsw),					/* /dev/{null,mem,kmem,...} */
-		cdevsw_init(NWD, wd_cdevsw),				/* ATA: ST506/ESDI/IDE disk */
-		cdevsw_init(1, swap_cdevsw),				/* swap interfaces */
-		cdevsw_init(NPTY, pts_cdevsw),				/* pts pseudo-tty slave, pseudo-tty master  */
-		cdevsw_init(NPTY, ptc_cdevsw),				/* ptc pseudo-tty slave, pseudo-tty master  */
-		cdevsw_init(1, log_cdevsw),				  	/* log interfaces */
-		cdevsw_init(NCOM, com_cdevsw),				/* Serial port */
-		cdevsw_init(NFDC, fd_cdevsw),				/* floppy diskette */
-		cdevsw_init(NSD, sd_cdevsw),				/* SCSI disk */
-		cdevsw_init(NST, st_cdevsw),				/* SCSI tape */
-		cdevsw_init(NCD, cd_cdevsw),				/* SCSI CD-ROM */
-		cdevsw_init(NLPT, lpt_cdevsw),				/* parallel printer */
-		cdevsw_init(NCH, ch_cdevsw),				/* SCSI autochanger */
-		cdevsw_init(NCCD, ccd_cdevsw),				/* "Concatenated" disk driver */
-		cdevsw_init(NSS, ss_cdevsw),				/* SCSI scanner */
-		cdevsw_init(NUK, uk_cdevsw),				/* SCSI unknown  */
-		cdevsw_init(NBPFILTER, bpf_cdevsw),			/* Berkeley packet filter */
-		cdevsw_init(NMD, md_cdevsw),				/* memory disk driver */
-		cdevsw_init(NSPKR, spkr_cdevsw),			/* PC Speaker */
-		cdevsw_init(NTUN, tun_cdevsw),				/* network tunnel */
-		cdevsw_init(NVND, vnd_cdevsw),				/* vnode disk driver */
-		cdevsw_init(NAUDIO, audio_cdevsw),			/* generic audio I/O */
-		cdevsw_init(NRND, rnd_cdevsw),				/* Random device */
-		cdevsw_init(NWSDISPLAY, wsdisplay_cdevsw), 	/* Wscons Display */
-		cdevsw_init(NWSKBD, wskbd_cdevsw),			/* Wscons Keyboard */
-		cdevsw_init(NWSMOUSE, wsmouse_cdevsw),		/* Wscons Mouse */
-		cdevsw_init(NWSMUX, wsmux_cdevsw),			/* Wscons Multiplexor */
-		cdevsw_init(NWSFONT, wsfont_cdevsw),		/* Wscons Wsfont */
-		cdevsw_init(NEVDEV, evdev_cdevsw),			/* Evdev Keyboard & Mouse*/
-		cdevsw_init(NMIDI, midi_cdevsw),			/* MIDI I/O */
-		cdevsw_init(NSEQUENCER, sequencer_cdevsw),	/* MIDI Sequencer I/O */
-		cdevsw_init(NSES, ses_cdevsw),				/* SCSI ses */
-		cdevsw_init(NAGP, agp_cdevsw),				/* AGP graphics aperture device */
-		cdevsw_init(NKSYMS, ksyms_cdevsw),			/* Kernel symbols device */
-		cdevsw_init(1, cmos_cdevsw),			    /* CMOS Interface */
-        cdevsw_init(NOPENCRYPTO, crypto_cdevsw),    /* Opencrypto */
-        cdevsw_init(NVIDEO, video_cdevsw),          /* generic video I/O */
-        cdevsw_init(NPCI, pci_cdevsw),              /* PCI bus access device */
-        cdevsw_init(NSCSIBUS, scsibus_cdevsw),      /* SCSI bus */
+		cdevsw_init(1, cons_cdevsw),				/* 0- virtual console */
+		cdevsw_init(1, ctty_cdevsw),				/* 1- ctty controlling terminal */
+		cdevsw_init(1, mm_cdevsw),					/* 2- /dev/{null,mem,kmem,...} */
+		cdevsw_init(NWD, wd_cdevsw),				/* 3- ATA: ST506/ESDI/IDE disk */
+		cdevsw_init(1, swap_cdevsw),				/* 4- swap interfaces */
+		cdevsw_init(NPTY, pts_cdevsw),				/* 5- pts pseudo-tty slave, pseudo-tty master  */
+		cdevsw_init(NPTY, ptc_cdevsw),				/* 6- ptc pseudo-tty slave, pseudo-tty master  */
+		cdevsw_init(1, log_cdevsw),				  	/* 7- log interfaces */
+		cdevsw_init(NCOM, com_cdevsw),				/* 8- Serial port */
+		cdevsw_init(NFDC, fd_cdevsw),				/* 9- floppy diskette */
+		cdevsw_init(NSD, sd_cdevsw),				/* 10- SCSI disk */
+		cdevsw_init(NST, st_cdevsw),				/* 11- SCSI tape */
+		cdevsw_init(NCD, cd_cdevsw),				/* 12- SCSI CD-ROM */
+		cdevsw_init(NLPT, lpt_cdevsw),				/* 13- parallel printer */
+		cdevsw_init(NCH, ch_cdevsw),				/* 14- SCSI autochanger */
+		cdevsw_init(NCCD, ccd_cdevsw),				/* 15- "Concatenated" disk driver */
+		cdevsw_init(NSS, ss_cdevsw),				/* 16- SCSI scanner */
+		cdevsw_init(NUK, uk_cdevsw),				/* 17- SCSI unknown  */
+		cdevsw_init(NBPFILTER, bpf_cdevsw),			/* 18- Berkeley packet filter */
+		cdevsw_init(NMD, md_cdevsw),				/* 19- memory disk driver */
+		cdevsw_init(NSPKR, spkr_cdevsw),			/* 20- PC Speaker */
+		cdevsw_init(NTUN, tun_cdevsw),				/* 21- network tunnel */
+		cdevsw_init(NVND, vnd_cdevsw),				/* 22- vnode disk driver */
+		cdevsw_init(NAUDIO, audio_cdevsw),			/* 23- generic audio I/O */
+		cdevsw_init(NRND, rnd_cdevsw),				/* 24- Random device */
+		cdevsw_init(NWSDISPLAY, wsdisplay_cdevsw), 	/* 25- Wscons Display */
+		cdevsw_init(NWSKBD, wskbd_cdevsw),			/* 26- Wscons Keyboard */
+		cdevsw_init(NWSMOUSE, wsmouse_cdevsw),		/* 27- Wscons Mouse */
+		cdevsw_init(NWSMUX, wsmux_cdevsw),			/* 28- Wscons Multiplexor */
+		cdevsw_init(NWSFONT, wsfont_cdevsw),		/* 29- Wscons Wsfont */
+		cdevsw_init(NEVDEV, evdev_cdevsw),			/* 30- Evdev Keyboard & Mouse*/
+		cdevsw_init(NMIDI, midi_cdevsw),			/* 31- MIDI I/O */
+		cdevsw_init(NSEQUENCER, sequencer_cdevsw),	/* 32- MIDI Sequencer I/O */
+		cdevsw_init(NSES, ses_cdevsw),				/* 33- SCSI ses */
+		cdevsw_init(NAGP, agp_cdevsw),				/* 34- AGP graphics aperture device */
+		cdevsw_init(NKSYMS, ksyms_cdevsw),			/* 35- Kernel symbols device */
+		cdevsw_init(1, cmos_cdevsw),			    /* 36- CMOS Interface */
+		cdevsw_init(NOPENCRYPTO, crypto_cdevsw),    /* 37- Opencrypto */
+		cdevsw_init(NVIDEO, video_cdevsw),          /* 38- generic video I/O */
+		cdevsw_init(NPCI, pci_cdevsw),              /* 39- PCI bus access device */
+		cdevsw_init(NSCSIBUS, scsibus_cdevsw),      /* 40- SCSI bus */
 		/*
 		cdevsw_init(NUSB, usb),
 		cdevsw_init(NUHID, uhid),
@@ -154,6 +153,7 @@ const struct cdevsw *cdevsw0[] = {
 		*/
 };
 
+/* linesw table */
 const struct linesw *linesw0[] = {
 		linesw_init(1, ttydisc),					/* 0- TTYDISC */
 		linesw_init(1, nttydisc),					/* 1- NTTYDISC */
@@ -165,11 +165,6 @@ const struct linesw *linesw0[] = {
 		linesw_init(NSTRIP, stripdisc),				/* 7- STRIPDISC */
 };
 
-/*
-const struct bdevsw *bdevsw0;
-const struct cdevsw *cdevsw0;
-const struct linesw *linesw0;
-*/
 const struct bdevsw **bdevsw = bdevsw0;
 const struct cdevsw **cdevsw = cdevsw0;
 const struct linesw **linesw = linesw0;
@@ -182,165 +177,3 @@ int max_linesws = __arraycount(linesw0);
 
 int	nblkdev = sys_bdevsws;
 int	nchrdev = sys_cdevsws;
-
-#ifdef deprecated
-void kernel_init(struct devswtable *);
-void device_init(struct devswtable *);
-void audio_init(struct devswtable *);
-void core_init(struct devswtable *);
-void disks_init(struct devswtable *);
-void misc_init(struct devswtable *);
-void usb_init(struct devswtable *);
-void video_init(struct devswtable *);
-void wscons_init(struct devswtable *);
-void network_init(struct devswtable *);
-
-/*
- * Configure Initialization
- */
-void
-conf_init(devsw)
-	struct devswtable *devsw;
-{
-	device_init(devsw);			/* device interfaces */
-	kernel_init(devsw);			/* kernel interfaces */
-	network_init(devsw);		/* network interfaces */
-}
-
-/* Add kernel driver configuration */
-void
-kernel_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &log_cdevsw, NULL);			        /* log interfaces */
-	DEVSWIO_CONFIG_INIT(devsw, 1, &swap_bdevsw, &swap_cdevsw, NULL);		/* swap interfaces */
-	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ttydisc);					/* 0- TTYDISC */
-	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);					/* 1- NTTYDISC */
-	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);					/* 2- OTTYDISC */
-//	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);					/* 3- NETLDISC */
-//	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);					/* 4- TABLDISC */
-	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);					/* 5- SLIPDISC */
-	DEVSWIO_CONFIG_INIT(devsw, NPPP, NULL, NULL, &pppdisc);					/* 6- PPPDISC */
-	DEVSWIO_CONFIG_INIT(devsw, NSTRIP, NULL, NULL, &stripdisc);				/* 7- STRIPDISC */
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);				/* ctty controlling terminal */
-	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);				/* ptc pseudo-tty slave, pseudo-tty master  */
-	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &pts_cdevsw, NULL);				/* pts pseudo-tty slave, pseudo-tty master  */
-}
-
-/* Add device driver configuration */
-void
-device_init(devsw)
-	struct devswtable *devsw;
-{
-	core_init(devsw);			/* core interfaces */
-	wscons_init(devsw);			/* wscons & pccons interfaces */
-	video_init(devsw);			/* video interfaces */
-	misc_init(devsw);			/* misc (ksyms) interfaces */
-	disks_init(devsw);			/* disk interfaces */
-	audio_init(devsw);			/* audio interfaces */
-	usb_init(devsw);			/* usb interfaces */
-}
-
-/* Add audio driver configuration */
-void
-audio_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, NAUDIO, NULL, &audio_cdevsw, NULL);			/* generic audio I/O */
-	DEVSWIO_CONFIG_INIT(devsw, NMIDI, NULL, &midi_cdevsw, NULL);			/* MIDI I/O */
-	DEVSWIO_CONFIG_INIT(devsw, NSEQUENCER, NULL, &sequencer_cdevsw, NULL);	/* MIDI Sequencer I/O */
-	DEVSWIO_CONFIG_INIT(devsw, NSPKR, NULL, &spkr_cdevsw, NULL);			/* PC Speaker */
-}
-
-/* Add core driver configuration */
-void
-core_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);				/* Serial port */
-	DEVSWIO_CONFIG_INIT(devsw, NLPT, NULL, &lpt_cdevsw, NULL);				/* parallel printer */
-}
-
-/* Add disk driver configuration */
-void
-disks_init(devsw)
-	struct devswtable *devsw;
-{
-	/* ATA Devices */
-	DEVSWIO_CONFIG_INIT(devsw, NWD, &wd_bdevsw, &wd_cdevsw, NULL);  		/* ATA: ST506/ESDI/IDE disk */
-
-	/* Floppy Devices */
-	DEVSWIO_CONFIG_INIT(devsw, NFDC, &fd_bdevsw, &fd_cdevsw, NULL);			/* floppy diskette */
-
-	/* SCSI Devices */
-	DEVSWIO_CONFIG_INIT(devsw, NSD, &sd_bdevsw, &sd_cdevsw, NULL);			/* SCSI disk */
-	DEVSWIO_CONFIG_INIT(devsw, NST, &st_bdevsw, &st_cdevsw, NULL);			/* SCSI tape */
-	DEVSWIO_CONFIG_INIT(devsw, NCD, &cd_bdevsw, &cd_cdevsw, NULL);			/* SCSI CD-ROM */
-	DEVSWIO_CONFIG_INIT(devsw, NCH, NULL, &ch_cdevsw, NULL);				/* SCSI autochanger */
-	DEVSWIO_CONFIG_INIT(devsw, NUK, NULL, &uk_cdevsw, NULL);				/* SCSI unknown  */
-	DEVSWIO_CONFIG_INIT(devsw, NSS, NULL, &ss_cdevsw, NULL);				/* SCSI scanner */
-	DEVSWIO_CONFIG_INIT(devsw, NSES, NULL, &ses_cdevsw, NULL);				/* SCSI ses */
-
-	/* Pseudo Devices */
-	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);		/* vnode disk driver */
-	DEVSWIO_CONFIG_INIT(devsw, NCCD, &ccd_bdevsw, &ccd_cdevsw, NULL);		/* "Concatenated" disk driver */
-	DEVSWIO_CONFIG_INIT(devsw, NMD, &md_bdevsw, &md_cdevsw, NULL);			/* memory disk driver */
-}
-
-/* Add miscellaneous driver configuration */
-void
-misc_init(devsw)
-	struct devswtable *devsw;
-{
-	//DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);					/* Power Management (APM) Interface */
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);				/* CMOS Interface */
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &mm_cdevsw, NULL);					/* /dev/{null,mem,kmem,...} */
-	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
-	DEVSWIO_CONFIG_INIT(devsw, NRND, NULL, &rnd_cdevsw, NULL);				/* Random device */
-}
-
-/* Add network driver configuration */
-void
-network_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
-	DEVSWIO_CONFIG_INIT(devsw, NTUN, NULL, &tun_cdevsw, NULL);				/* network tunnel */
-	//DEVSWIO_CONFIG_INIT(devsw, NOPENCRYPTO, NULL, &crypto_cdevsw, NULL);		/* Opencrypto */
-}
-
-/* Add usb driver configuration */
-void
-usb_init(devsw)
-	struct devswtable *devsw;
-{
-	//DEVSWIO_CONFIG_INIT(devsw, NUSB, NULL, &usb_cdevsw, NULL);			/* USB controller */
-	//DEVSWIO_CONFIG_INIT(devsw, NUHID, NULL, &uhid_cdevsw, NULL);			/* USB generic HID */
-	//DEVSWIO_CONFIG_INIT(devsw, NUGEN, NULL, &ugen_cdevsw, NULL);			/* USB generic driver */
-	//DEVSWIO_CONFIG_INIT(devsw, NUCOM, NULL, &ucom_cdevsw, NULL);			/* USB tty */
-}
-
-/* Add video driver configuration */
-void
-video_init(devsw)
-	struct devswtable *devsw;
-{
-	//DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
-	DEVSWIO_CONFIG_INIT(devsw, NAGP, NULL, &agp_cdevsw, NULL);				/* AGP Video */
-}
-
-/* Add wscon driver configuration */
-void
-wscons_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, NWSDISPLAY, NULL, &wsdisplay_cdevsw, NULL);	/* Wscons Display */
-	DEVSWIO_CONFIG_INIT(devsw, NWSKBD, NULL, &wskbd_cdevsw, NULL);			/* Wscons Keyboard */
-	DEVSWIO_CONFIG_INIT(devsw, NWSMOUSE, NULL, &wsmouse_cdevsw, NULL);		/* Wscons Mouse */
-	DEVSWIO_CONFIG_INIT(devsw, NWSMUX, NULL, &wsmux_cdevsw, NULL);			/* Wscons Multiplexor */
-	DEVSWIO_CONFIG_INIT(devsw, NWSFONT, NULL, &wsfont_cdevsw, NULL);		/* Wsfont */
-
-	DEVSWIO_CONFIG_INIT(devsw, NEVDEV, NULL, &evdev_cdevsw, NULL);		    	/* Evdev Keyboard & Mouse*/
-}
-#endif /* deprecated */

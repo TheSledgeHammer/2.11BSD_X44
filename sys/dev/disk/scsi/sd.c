@@ -150,7 +150,7 @@ dev_type_write(sdwrite);
 dev_type_ioctl(sdioctl);
 dev_type_strategy(sdstrategy);
 dev_type_dump(sddump);
-dev_type_size(sdsize);
+dev_type_psize(sdsize);
 
 const struct bdevsw sd_bdevsw = {
 		.d_open = sdopen,

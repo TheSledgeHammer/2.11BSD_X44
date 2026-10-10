@@ -138,7 +138,7 @@ struct swdevt {
 #define SW_FAKE			0x20		/* fake: still being built */
 #define sw_freed		sw_flags	/* XXX compat */
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 extern struct swdevt swdevt[];
 
@@ -177,7 +177,7 @@ typedef int 		dev_type_reset_t(int);
 typedef int 		dev_type_kqfilter_t(dev_t, struct knote *);
 typedef int 		dev_type_discard_t(dev_t, off_t, off_t);
 typedef int 		dev_type_dump_t(dev_t, daddr_t, caddr_t, size_t);
-typedef int 		dev_type_size_t(dev_t);
+typedef int 		dev_type_psize_t(dev_t);
 /* tty specific */
 typedef int 		dev_type_tty_open_t(dev_t, struct tty *);
 typedef int 		dev_type_tty_close_t(struct tty *, int);
@@ -207,7 +207,7 @@ typedef int 		dev_type_tty_poll_t(struct tty *, int, struct proc *);
 #define	dev_type_kqfilter(n)    dev_type_kqfilter_t n
 #define dev_type_discard(n)	dev_type_discard_t n
 #define	dev_type_dump(n)	dev_type_dump_t n
-#define	dev_type_size(n)	dev_type_size_t n
+#define	dev_type_psize(n)	dev_type_psize_t n
 /* tty specific */
 #define	dev_type_tty_open(n)	dev_type_tty_open_t n
 #define	dev_type_tty_close(n)	dev_type_tty_close_t n
@@ -224,7 +224,7 @@ dev_type_strategy(bdev_strategy);
 //dev_type_discard(bdev_discard);
 dev_type_root(bdev_root);
 dev_type_dump(bdev_dump);
-dev_type_size(bdev_size);
+dev_type_psize(bdev_psize);
 
 /* cdevsw-specific types */
 dev_type_open(cdev_open);
@@ -274,7 +274,7 @@ dev_type_modem(line_modem);
 #define	nokqfilter		seltrue_kqfilter
 #define	nodiscard		((dev_type_discard_t *)enodev)
 #define	nodump			((dev_type_dump_t *)enodev)
-#define	nosize			((dev_type_size_t *)enodev)
+#define	nopsize			((dev_type_psize_t *)enodev)
 /* tty specific */
 #define nottyopen       ((dev_type_tty_open_t *)enodev)
 #define nottyclose      ((dev_type_tty_close_t *)enodev)
@@ -302,7 +302,7 @@ dev_type_modem(line_modem);
 #define	nullkqfilter	((dev_type_kqfilter_t *)nullop)
 #define	nulldiscard		((dev_type_discard_t *)nullop)
 #define	nulldump		((dev_type_dump_t *)nullop)
-#define	nullsize		((dev_type_size_t *)nullop)
+#define	nullpsize		((dev_type_psize_t *)nullop)
 /* tty specific */
 #define nullttyopen     ((dev_type_tty_open_t *)nullop)
 #define nullttyclose    ((dev_type_tty_close_t *)nullop)

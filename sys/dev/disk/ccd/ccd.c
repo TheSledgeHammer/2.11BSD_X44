@@ -198,7 +198,7 @@ dev_type_write(ccdwrite);
 dev_type_ioctl(ccdioctl);
 dev_type_strategy(ccdstrategy);
 dev_type_dump(ccddump);
-dev_type_size(ccdsize);
+dev_type_psize(ccdsize);
 
 const struct bdevsw ccd_bdevsw = {
 	.d_open = ccdopen,

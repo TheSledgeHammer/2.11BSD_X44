@@ -84,8 +84,9 @@ static const unsigned char flags[NOPT] = {
 		RBX_VERBOSE
 };
 
-static const char *const dev_nm[NDEV] = { "ad", "da", "fd" };
-static const unsigned char dev_maj[NDEV] = { 30, 4, 2 };
+static const char *const dev_nm[NDEV] = { "sd", "wd", "fd" };
+static const unsigned char dev_bmaj[NDEV] = { 3, 0, 2 };
+static const unsigned char dev_cmaj[NDEV] = { 10, 3, 9 };
 
 static struct dsk {
     unsigned drive;
@@ -231,7 +232,12 @@ dskmakebootdev(void)
 
 	error = bios2dev(&major, dsk.type, dsk.unit);
 	if ((error != 0) && (major < 0)) {
-		major = dev_maj[dsk.type];
+		/* block device */
+		major = dev_bmaj[dsk.type];
+		if (major < 0) {
+			/* character device */
+			major = dev_cmaj[dsk.type];
+		}
 	}
 #ifdef DISK_SLICES
 	return (MAKEBOOTDEV2(major, dsk.slice, dsk.unit, dsk.part));

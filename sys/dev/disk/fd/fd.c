@@ -212,7 +212,7 @@ const struct bdevsw fd_bdevsw = {
 	.d_strategy = fd_strategy,
 	.d_ioctl = fd_ioctl,
 	.d_dump = nodump,
-	.d_psize = nosize,
+	.d_psize = nopsize,
 	.d_type = D_DISK
 };
 

@@ -115,7 +115,7 @@ const struct bdevsw st_bdevsw = {
 		.d_strategy = ststrategy,
 		.d_ioctl = stioctl,
 		.d_dump = stdump,
-		.d_psize = nosize,
+		.d_psize = nopsize,
 		.d_discard = nodiscard,
 		.d_type = D_TAPE
 };

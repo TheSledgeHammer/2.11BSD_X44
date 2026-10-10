@@ -222,7 +222,7 @@ static dev_type_write(vndwrite);
 static dev_type_ioctl(vndioctl);
 static dev_type_strategy(vndstrategy);
 static dev_type_dump(vnddump);
-static dev_type_size(vndsize);
+static dev_type_psize(vndsize);
 
 const struct bdevsw vnd_bdevsw = {
 		.d_open = vndopen,

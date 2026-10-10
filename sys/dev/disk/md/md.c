@@ -113,7 +113,7 @@ dev_type_read(mdread);
 dev_type_write(mdwrite);
 dev_type_ioctl(mdioctl);
 dev_type_strategy(mdstrategy);
-dev_type_size(mdsize);
+dev_type_psize(mdsize);
 
 const struct bdevsw md_bdevsw = {
 	.d_open = mdopen,

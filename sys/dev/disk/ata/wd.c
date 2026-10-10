@@ -150,7 +150,7 @@ dev_type_write(wdwrite);
 dev_type_ioctl(wdioctl);
 dev_type_strategy(wdstrategy);
 dev_type_dump(wddump);
-dev_type_size(wdsize);
+dev_type_psize(wdsize);
 
 const struct bdevsw wd_bdevsw = {
 	.d_open = wdopen,

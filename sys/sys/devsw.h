@@ -69,25 +69,7 @@
 #define _SYS_DEVSW_H_
 
 #include <sys/conf.h>
-#include <sys/queue.h>
 #include <sys/uio.h>
-
-/*
- * device switch table
- */
-struct devswtable {
-	dev_t							dv_major;	/* device switch major */
-    void                			*dv_data;	/* device switch data */
-    int								dv_type;	/* device switch type */
-};
-
-struct devswtable_head;
-TAILQ_HEAD(devswtable_head, devswtable_entry);
-struct devswtable_entry {
-	TAILQ_ENTRY(devswtable_entry)  	dve_link;
-	struct devswtable				*dve_devswtable;
-};
-typedef struct devswtable_entry		*devswtable_entry_t;
 
 /* devsw size */
 #define	MAXDEVSW		512	/* the maximum of major device number */
@@ -103,11 +85,6 @@ typedef struct devswtable_entry		*devswtable_entry_t;
 #define CDEVTYPE 		0x02
 #define LINETYPE 		0x04
 
-/* conversion macros */
-#define DTOB(dv)  		((const struct bdevsw *)(dv)->dv_data)
-#define DTOC(dv)  		((const struct cdevsw *)(dv)->dv_data)
-#define DTOL(dv)  		((const struct linesw *)(dv)->dv_data)
-
 struct buf;
 struct proc;
 struct tty;
@@ -118,12 +95,11 @@ struct cdevsw;
 struct linesw;
 
 #ifdef _KERNEL
-/* devswtable & devsw_io */
-extern struct devswtable 		sys_devsw;
 
-void							devswtable_init(void);
-int								devswtable_configure(struct devswtable *, dev_t, const struct bdevsw *, const struct cdevsw *, const struct linesw *);
-const int                       devsw_nelems(int);
+void 							devsw_io_init(void);
+int								devsw_io_configure(dev_t, const struct bdevsw *,
+									const struct cdevsw *, const struct linesw *);
+const int                       devsw_io_nelems(int);
 int								devsw_io_iskmemdev(dev_t);
 int								devsw_io_iszerodev(dev_t);
 int								devsw_io_isdisk(dev_t, int);
@@ -137,19 +113,15 @@ const struct bdevsw 			*bdevsw_lookup(dev_t);
 const struct cdevsw 			*cdevsw_lookup(dev_t);
 const struct linesw 			*linesw_lookup(dev_t);
 
-#define devnum(type)			devsw_nelems(type)
+#define devnum(type)			devsw_io_nelems(type)
 #define iskmemdev(dev)			devsw_io_iskmemdev(dev)
 #define iszerodev(dev)			devsw_io_iszerodev(dev)
 #define isdisk(dev, type)		devsw_io_isdisk(dev, type)
 #define chrtoblk(cdev) 			devsw_io_chrtoblk(cdev)
 #define blktochr(bdev)			devsw_io_blktochr(bdev)
 
-/* macro: machine autoconfiguration */
-#define DEVSWIO_CONFIG_INIT(devsw, major, bdev, cdev, line) 	\
-	(devswtable_configure(devsw, major, bdev, cdev, line))
+#define DEVSW_IO_CONFIG_INIT(major, bdev, cdev, line) 	\
+	(devsw_io_configure(major, bdev, cdev, line))
 #endif /* _KERNEL */
-
-/* machine/conf.c */
-void conf_init(struct devswtable *);
 
 #endif /* _SYS_DEVSW_H_ */

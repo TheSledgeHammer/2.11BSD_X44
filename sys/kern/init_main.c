@@ -204,7 +204,7 @@ main(framep)
 	/*
 	 * Initialize device switch tables
 	 */
-	devswtable_init();
+	devsw_io_init();
 
 	/*
 	 * Initialize kernel environment & resource structures

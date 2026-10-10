@@ -65,7 +65,7 @@ const struct bdevsw swap_bdevsw = {
 		.d_strategy = swstrategy,
 		.d_ioctl = noioctl,
 		.d_dump = nodump,
-		.d_psize = nosize,
+		.d_psize = nopsize,
 		.d_discard = nodiscard,
 		.d_type = D_OTHER
 };

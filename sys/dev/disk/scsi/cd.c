@@ -174,7 +174,7 @@ dev_type_write(cdwrite);
 dev_type_ioctl(cdioctl);
 dev_type_strategy(cdstrategy);
 dev_type_dump(cddump);
-dev_type_size(cdsize);
+dev_type_psize(cdsize);
 
 const struct bdevsw cd_bdevsw = {
 		.d_open = cdopen,
