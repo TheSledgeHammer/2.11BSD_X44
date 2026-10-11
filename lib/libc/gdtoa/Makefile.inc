@@ -65,11 +65,17 @@ SRCS+= 	strtold.c
 SRCS+= 	strtopx.c
 .endif
 
+.if ${MACHINE_ARCH} == "m68k"
+.if ${MACHINE_ARCH} != "m68000"
+SRCS+=	strtopxL.c
+.endif
+.endif
+
 # public interfaces
 SRCS+=	strtod.c
 
 # private interfaces interfacing to libc
-SRCS+=	dtoa.c
+SRCS+=	dtoa.c hdtoa.c ldtoa.c gdtoa.c
 
 # private interfaces
 SRCS+= 	dmisc.c \

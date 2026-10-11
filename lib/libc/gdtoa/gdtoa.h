@@ -113,8 +113,17 @@ extern "C" {
 #endif
 
 #define	dtoa		__dtoa
+#define	gdtoa		__gdtoa
+#define	ldtoa		__ldtoa
+#define	hldtoa		__hldtoa
+#define	hdtoa		__hdtoa
 
 extern char *dtoa ANSI((double, int, int, int *, int *, char **));
+extern char *hdtoa ANSI((double, const char *, int, int *, int *, char **));
+extern char *ldtoa ANSI((long double *, int, int, int *, int *, char **));
+extern char *hldtoa ANSI((long double, const char *, int, int *, int *, char **));
+extern char *gdtoa ANSI((FPI *, int, ULong *, int *, int, int, int *, char **));
+
 extern float  strtof ANSI((CONST char *, char **));
 extern double strtod ANSI((CONST char *, char **));
 extern int strtodg ANSI((CONST char *, char **, CONST FPI *, Long *, ULong *));
@@ -123,16 +132,19 @@ extern int	strtord  ANSI((CONST char *, char **, int, double *));
 extern int 	strtordd ANSI((CONST char *, char **, int, double *));
 extern int	strtorf  ANSI((CONST char *, char **, int, float *));
 extern int	strtorx  ANSI((CONST char *, char **, int, void *));
+extern int	strtorxL ANSI((CONST char*, char**, int, void*));
 #if 1
 extern int	strtopd  ANSI((CONST char *, char **, double *));
 extern int 	strtopdd ANSI((CONST char *, char **, double *));
 extern int	strtopf  ANSI((CONST char *, char **, float *));
 extern int	strtopx  ANSI((CONST char *, char **, void *));
+extern int	strtorxL ANSI((CONST char*, char**, int, void*));
 #else
-#define strtopd(s,se,x) strtord(s,se,1,x)
-#define strtopdd(s,se,x)strtordd(s,se,1,x)
-#define strtopf(s,se,x) strtorf(s,se,1,x)
-#define strtopx(s,se,x) strtorx(s,se,1,x)
+#define strtopd(s,se,x)  strtord(s,se,1,x)
+#define strtopdd(s,se,x) strtordd(s,se,1,x)
+#define strtopf(s,se,x)  strtorf(s,se,1,x)
+#define strtopx(s,se,x)  strtorx(s,se,1,x)
+#define strtopxL(s,se,x) strtorxL(s,se,1,x)
 #endif
 
 #ifdef __cplusplus

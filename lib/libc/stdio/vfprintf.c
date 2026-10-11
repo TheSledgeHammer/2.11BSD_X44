@@ -280,23 +280,8 @@ static int exponent(char *, int, int);
 #define	SIZEINT		0x200		/* (signed) size_t */
 #define	ZEROPAD		0x400		/* zero (as opposed to blank) pad */
 #define FPT		0x800		/* Floating point number */
-/*
-int vfprintf_unlocked(FILE *, const char *, va_list);
 
-int
-vfprintf(fp, fmt0, ap)
-	FILE *fp;
-	const char *fmt0;
-	va_list ap;
- {
-    int ret;
-
-    FLOCKFILE(fp);
-    ret = vfprintf_unlocked(fp, fmt0, ap);
-    FUNLOCKFILE(fp);
-	return (ret);
- }
-*/
+int vfprintf_l_unlocked(FILE *fp, locale_t locale, const char *fmt0, va_list ap);
 
 int
 vfprintf(FILE *fp, const char *fmt0, va_list ap)
@@ -306,6 +291,17 @@ vfprintf(FILE *fp, const char *fmt0, va_list ap)
 
 int
 vfprintf_l(FILE *fp, locale_t locale, const char *fmt0, va_list ap)
+{
+	int ret;
+
+	FLOCKFILE(fp);
+	ret = vfprintf_l_unlocked(fp, locale, fmt0, ap);
+	FUNLOCKFILE(fp);
+	return (ret);
+}
+
+int
+vfprintf_l_unlocked(FILE *fp, locale_t locale, const char *fmt0, va_list ap)
 {
 	const char *fmt; 		/* format string */
 	int ch; 			/* character from fmt */

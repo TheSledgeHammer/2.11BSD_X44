@@ -530,6 +530,7 @@ extern void ULtof ANSI((ULong*, ULong*, Long, int));
 extern void ULtod ANSI((ULong*, ULong*, Long, int));
 extern void ULtodd ANSI((ULong *, ULong *, Long, int));
 extern void ULtox ANSI((UShort*, ULong*, Long, int));
+extern void ULtoxL ANSI((ULong*, ULong*, Long, int));
 
 extern Bigint *Balloc ANSI((int));
 extern void Bfree ANSI((Bigint*));
