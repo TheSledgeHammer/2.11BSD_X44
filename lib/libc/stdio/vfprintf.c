@@ -314,14 +314,14 @@ vfprintf_l_unlocked(FILE *fp, locale_t locale, const char *fmt0, va_list ap)
 	int prec; 			/* precision from format (%.3d), or -1 */
 	char sign; 			/* sign prefix (' ', '+', '-', or \0) */
 #ifdef FLOATING_POINT
-	struct lconv *lc;
-	char *decimal_point;
+	struct lconv *lc;		/* locale conversion */
+	char *decimal_point;	/* locale specific decimal point */
 	char softsign;			/* temporary negative sign for floats */
 	double _double;			/* double precision arguments %[eEfgG] */
 	int expt;			/* integer value of exponent */
 	int expsize;			/* character count for expstr */
 	int ndig;			/* actual number of digits returned by cvt */
-	char expstr[7];			/* buffer for exponent string */
+	char expstr[MAXEXPDIG+1]; /* buffer for exponent string */
 #endif
 	u_long	ulval;			/* integer arguments %[diouxX] */
 	u_quad_t uqval;			/* %q integers */

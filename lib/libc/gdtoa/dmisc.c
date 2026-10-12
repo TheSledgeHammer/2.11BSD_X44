@@ -33,6 +33,77 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#ifndef MULTIPLE_THREADS
+char *dtoa_result;
+#endif
+
+char *
+#ifdef KR_headers
+rv_alloc(i) size_t i;
+#else
+rv_alloc(size_t i)
+#endif
+{
+	size_t j;
+	int k, *r;
+
+	j = sizeof(ULong);
+	for(k = 0;
+		sizeof(Bigint) - sizeof(ULong) - sizeof(int) + j <= i;
+		j <<= 1)
+			k++;
+	r = (int*)(void*)Balloc(k);
+	if (r == NULL)
+		return NULL;
+	*r = k;
+	return
+#ifndef MULTIPLE_THREADS
+	dtoa_result =
+#endif
+		(char *)(void *)(r+1);
+}
+
+char *
+#ifdef KR_headers
+nrv_alloc(s, rve, n) CONST char *s; char **rve; size_t n;
+#else
+nrv_alloc(CONST char *s, char **rve, size_t n)
+#endif
+{
+	char *rv, *t;
+
+	t = rv = rv_alloc(n);
+	if (t == NULL)
+		return NULL;
+	while((*t = *s++) !=0)
+		t++;
+	if (rve)
+		*rve = t;
+	return rv;
+}
+
+/* freedtoa(s) must be used to free values s returned by dtoa
+ * when MULTIPLE_THREADS is #defined.  It should be used in all cases,
+ * but for consistency with earlier versions of dtoa, it is optional
+ * when MULTIPLE_THREADS is not defined.
+ */
+
+void
+#ifdef KR_headers
+freedtoa(s) char *s;
+#else
+freedtoa(char *s)
+#endif
+{
+	Bigint *b = (Bigint *)(void *)((int *)(void *)s - 1);
+	b->maxwds = 1 << (b->k = *(int*)(void*)b);
+	Bfree(b);
+#ifndef MULTIPLE_THREADS
+	if (s == dtoa_result)
+		dtoa_result = 0;
+#endif
+}
+
 int
 quorem
 #ifdef KR_headers
