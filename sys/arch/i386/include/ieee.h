@@ -107,8 +107,8 @@ struct ieee_double {
 #define	EXT_FRACBITS	(EXT_FRACLBITS + EXT_FRACHBITS)
 
 #define	EXT_TO_ARRAY32(u, a) do {		\
-	(a)[0] = (uint32_t)(u).ext_fracl;	\
-	(a)[1] = (uint32_t)(u).ext_frach;	\
+	(a)[0] = (uint32_t)(u)->ext_fracl;	\
+	(a)[1] = (uint32_t)(u)->ext_frach;	\
 } while(/*CONSTCOND*/0)
 
 /*
