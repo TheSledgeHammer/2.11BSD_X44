@@ -41,12 +41,17 @@ char 		*__getcwd(char *, size_t);
 #endif
 const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
 const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
-char 		*__dtoa(double, int, int, int *, int *, char **);
 int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
 
 int 		__getlogin(char *, u_int);
 void 		_resumecontext(void);
 int 		_swapcontext(ucontext_t *, const ucontext_t *);
+
+char 		*__dtoa(double, int, int, int *, int *, char **);
+void        __freedtoa(char *);
+char        *__hldtoa(long double, const char *, int, int *, int *,  char **);
+char        *__ldtoa(long double *, int, int, int *, int *, char **);
+char        *__hdtoa(double, const char *, int, int *, int *, char **);
 
 //extern char *__minbrk;
 //int 		__setlogin(const char *);
