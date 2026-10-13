@@ -67,15 +67,14 @@ ldtoa(long double *ld, int mode, int ndigits, int *decpt, int *sign, char **rve)
 	};
 	int be, kind;
 	char *ret;
-	union ieee_ext_u u;
+	struct ieee_ext *u = (struct ieee_ext *)ld;
 	uint32_t bits[(LDBL_MANT_DIG + 31) / 32];
 
-	u.extu_ld = *ld;
-	*sign = u.extu_ext.ext_sign;
-	be = u.extu_ext.ext_exp - (LDBL_MAX_EXP - 1) - (LDBL_MANT_DIG - 1);
+	*sign = u->ext_sign;
+	be = u->ext_exp - (LDBL_MAX_EXP - 1) - (LDBL_MANT_DIG - 1);
 	EXT_TO_ARRAY32(u, bits);
 
-	switch (fpclassify(u.extu_ld)) {
+	switch (fpclassify(*ld)) {
 	case FP_NORMAL:
 		kind = STRTOG_Normal;
 #ifdef	LDBL_IMPLICIT_NBIT

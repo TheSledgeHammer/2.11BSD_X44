@@ -40,18 +40,6 @@ __RCSID("$NetBSD: hdtoa.c,v 1.6 2008/03/21 23:13:48 christos Exp $");
 #include <machine/ieee.h>
 #else
 #include <machine/vaxfp.h>
-#define ieee_double_u vax_dfloating_u
-#define dblu_d dfltu_d
-#define dblu_dbl dfltu_dflt
-#define dbl_sign dflt_sign
-#define dbl_exp dflt_exp
-#define dbl_frach dflt_frach
-#define dbl_fracm dflt_fracm
-#define dbl_fracl dflt_fracl
-#define DBL_FRACHBITS	DFLT_FRACHBITS
-#define DBL_FRACMBITS	DFLT_FRACMBITS
-#define DBL_FRACLBITS	DFLT_FRACLBITS
-#define DBL_EXPBITS	DFLT_EXPBITS
 #endif
 #include "gdtoaimp.h"
 
@@ -146,23 +134,22 @@ hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign,
     char **rve)
 {
 	static const int sigfigs = (DBL_MANT_DIG + 3) / 4;
-	union ieee_double_u u;
+	struct ieee_double *u = (struct ieee_double *)&d;
 	char *s, *s0;
 	size_t bufsize;
 
-	u.dblu_d = d;
-	*sign = u.dblu_dbl.dbl_sign;
+	*sign = u->dbl_sign;
 
 	switch (fpclassify(d)) {
 	case FP_NORMAL:
-		*decpt = u.dblu_dbl.dbl_exp - DBL_ADJ;
+		*decpt = u->dbl_exp - DBL_ADJ;
 		break;
 	case FP_ZERO:
 		*decpt = 1;
 		return (nrv_alloc("0", rve, 1));
 	case FP_SUBNORMAL:
-		u.dblu_d *= 0x1p514;
-		*decpt = u.dblu_dbl.dbl_exp - (514 + DBL_ADJ);
+		d *= 0x1p514;
+		*decpt = u->dbl_exp - (514 + DBL_ADJ);
 		break;
 	case FP_INFINITE:
 		*decpt = INT_MAX;
@@ -199,18 +186,18 @@ hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign,
 	for (s = s0 + bufsize - 1; s > s0 + sigfigs - 1; s--)
 		*s = 0;
 	for (; s > s0 + sigfigs - (DBL_FRACLBITS / 4) - 1 && s > s0; s--) {
-		*s = u.dblu_dbl.dbl_fracl & 0xf;
-		u.dblu_dbl.dbl_fracl >>= 4;
+		*s = u->dbl_fracl & 0xf;
+		u->dbl_fracl >>= 4;
 	}
 #ifdef DBL_FRACMBITS
 	for (; s > s0; s--) {
-		*s = u.dblu_dbl.dbl_fracm & 0xf;
-		u.dblu_dbl.dbl_fracm >>= 4;
+		*s = u->dbl_fracm & 0xf;
+		u->dbl_fracm >>= 4;
 	}
 #endif
 	for (; s > s0; s--) {
-		*s = u.dblu_dbl.dbl_frach & 0xf;
-		u.dblu_dbl.dbl_frach >>= 4;
+		*s = u->dbl_frach & 0xf;
+		u->dbl_frach >>= 4;
 	}
 
 	/*
@@ -219,7 +206,7 @@ hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign,
 	 * (partial) nibble, which is dealt with by the next
 	 * statement.  We also tack on the implicit normalization bit.
 	 */
-	*s = u.dblu_dbl.dbl_frach | (1U << ((DBL_MANT_DIG - 1) % 4));
+	*s = u->dbl_frach | (1U << ((DBL_MANT_DIG - 1) % 4));
 
 	/* If ndigits < 0, we are expected to auto-size the precision. */
 	if (ndigits < 0) {
@@ -228,7 +215,7 @@ hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign,
 	}
 
 	if (sigfigs > ndigits && s0[ndigits] != 0)
-		dorounding(s0, ndigits, u.dblu_dbl.dbl_sign, decpt);
+		dorounding(s0, ndigits, u->dbl_sign, decpt);
 
 	s = s0 + ndigits;
 	if (rve != NULL)
@@ -250,23 +237,22 @@ hldtoa(long double e, const char *xdigs, int ndigits, int *decpt, int *sign,
     char **rve)
 {
 	static const int sigfigs = (LDBL_MANT_DIG + 3) / 4;
-	union ieee_ext_u u;
+	struct ieee_ext *u = (struct ieee_ext *)&e;
 	char *s, *s0;
 	size_t bufsize;
 
-	u.extu_ld = e;
-	*sign = u.extu_ext.ext_sign;
+	*sign = u->ext_sign;
 
 	switch (fpclassify(e)) {
 	case FP_NORMAL:
-		*decpt = u.extu_ext.ext_exp - LDBL_ADJ;
+		*decpt = u->ext_exp - LDBL_ADJ;
 		break;
 	case FP_ZERO:
 		*decpt = 1;
 		return (nrv_alloc("0", rve, 1));
 	case FP_SUBNORMAL:
-		u.extu_ld *= 0x1p514L;
-		*decpt = u.extu_ext.ext_exp - (514 + LDBL_ADJ);
+		e *= 0x1p514L;
+		*decpt = u->ext_exp - (514 + LDBL_ADJ);
 		break;
 	case FP_INFINITE:
 		*decpt = INT_MAX;
@@ -303,24 +289,24 @@ hldtoa(long double e, const char *xdigs, int ndigits, int *decpt, int *sign,
 	for (s = s0 + bufsize - 1; s > s0 + sigfigs - 1; s--)
 		*s = 0;
 	for (; s > s0 + sigfigs - (EXT_FRACLBITS / 4) - 1 && s > s0; s--) {
-		*s = u.extu_ext.ext_fracl & 0xf;
-		u.extu_ext.ext_fracl >>= 4;
+		*s = u->ext_fracl & 0xf;
+		u->ext_fracl >>= 4;
 	}
 #ifdef EXT_FRACHMBITS
 	for (; s > s0; s--) {
-		*s = u.extu_ext.ext_frachm & 0xf;
-		u.extu_ext.ext_frachm >>= 4;
+		*s = u->ext_frachm & 0xf;
+		u->ext_frachm >>= 4;
 	}
 #endif
 #ifdef EXT_FRACLMBITS
 	for (; s > s0; s--) {
-		*s = u.extu_ext.ext_fraclm & 0xf;
-		u.extu_ext.ext_fraclm >>= 4;
+		*s = u->ext_fraclm & 0xf;
+		u->ext_fraclm >>= 4;
 	}
 #endif
 	for (; s > s0; s--) {
-		*s = u.extu_ext.ext_frach & 0xf;
-		u.extu_ext.ext_frach >>= 4;
+		*s = u->ext_frach & 0xf;
+		u->ext_frach >>= 4;
 	}
 
 	/*
@@ -329,7 +315,7 @@ hldtoa(long double e, const char *xdigs, int ndigits, int *decpt, int *sign,
 	 * (partial) nibble, which is dealt with by the next
 	 * statement.  We also tack on the implicit normalization bit.
 	 */
-	*s = u.extu_ext.ext_frach | (1U << ((LDBL_MANT_DIG - 1) % 4));
+	*s = u->ext_frach | (1U << ((LDBL_MANT_DIG - 1) % 4));
 
 	/* If ndigits < 0, we are expected to auto-size the precision. */
 	if (ndigits < 0) {
@@ -338,7 +324,7 @@ hldtoa(long double e, const char *xdigs, int ndigits, int *decpt, int *sign,
 	}
 
 	if (sigfigs > ndigits && s0[ndigits] != 0)
-		dorounding(s0, ndigits, u.extu_ext.ext_sign, decpt);
+		dorounding(s0, ndigits, u->ext_sign, decpt);
 
 	s = s0 + ndigits;
 	if (rve != NULL)

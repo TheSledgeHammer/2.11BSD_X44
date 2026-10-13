@@ -123,7 +123,7 @@ extern char *dtoa ANSI((double, int, int, int *, int *, char **));
 extern char *hdtoa ANSI((double, const char *, int, int *, int *, char **));
 extern char *ldtoa ANSI((long double *, int, int, int *, int *, char **));
 extern char *hldtoa ANSI((long double, const char *, int, int *, int *, char **));
-extern char *gdtoa ANSI((FPI *, int, ULong *, int *, int, int, int *, char **));
+extern char *gdtoa ANSI((CONST FPI *, int, ULong *, int *, int, int, int *, char **));
 extern void freedtoa ANSI((char *));
 
 extern float  strtof ANSI((CONST char *, char **));
