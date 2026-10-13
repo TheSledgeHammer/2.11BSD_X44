@@ -110,8 +110,14 @@ __RCSID("$NetBSD: vfwprintf.c,v 1.42 2026/09/21 19:12:51 kre Exp $");
 #include "fvwrite.h"
 #include "extern.h"
 
+#define FLOATING_POINT
+
+#ifdef FLOATING_POINT
 static int grouping_init(int, int, int, const char *);
+#endif
+#ifdef notyet
 static int __sprint(FILE *, locale_t, struct __suio *);
+#endif
 static int __sbprintf(FILE *, locale_t, const wchar_t *, va_list);
 static wint_t __xfputwc(wchar_t, FILE *, locale_t);
 static wchar_t *__mbsconv(char *, int, locale_t);
@@ -120,6 +126,7 @@ int vfwprintf_l_unlocked(FILE *, locale_t, const wchar_t *, va_list);
 static const char xdigs_lower[16] = "0123456789abcdef";
 static const char xdigs_upper[16] = "0123456789ABCDEF";
 
+#ifdef FLOATING_POINT
 /*
  * Initialize the thousands' grouping state in preparation to print a
  * number with ndigits digits. This routine returns the total number
@@ -145,7 +152,9 @@ grouping_init(int ndigits, int nseps, int nrepeats, const char *grouping)
 	}
 	return (nseps + nrepeats);
 }
+#endif
 
+#ifdef notyet
 /*
  * Flush out all the vectors defined by the given uio,
  * then reset it so that it can be reused.
@@ -177,6 +186,7 @@ __sprint(FILE *fp, locale_t locale, struct __suio *uio)
 	uio->uio_iovcnt = 0;
 	return (0);
 }
+#endif
 
 /*
  * Helper function for `fprintf to unbuffered unix file': creates a
@@ -232,7 +242,7 @@ __xfputwc(wchar_t wc, FILE *fp, locale_t locale)
 	size_t len;
 
 	if ((fp->_flags & __SSTR) == 0) {
-		return (__fputwc(wc, fp));
+		return (fputwc(wc, fp));
 	}
 
 	mbs = initial;
@@ -253,7 +263,7 @@ __xfputwc(wchar_t wc, FILE *fp, locale_t locale)
  */
 #define	to_digit(c)	((c) - '0')
 #define is_digit(c)	((unsigned)to_digit(c) <= 9)
-#define	to_char(n)	(CHAR_T)((n) + '0')
+#define	to_char(n)	(wchar_t)((n) + '0')
 
 /*
  * Convert an unsigned long to ASCII for printf purposes, returning
@@ -262,10 +272,10 @@ __xfputwc(wchar_t wc, FILE *fp, locale_t locale)
  * use the given digits.
  */
 static wchar_t *
-__ultoa(u_long val, wchar_t *endp, int base, int octzero, const char *xdigs,
+__ultoa(u_long val, const wchar_t *endp, int base, int octzero, const char *xdigs,
     int needgrp, char thousep, const char *grp)
 {
-	wchar_t *cp = endp;
+	wchar_t *cp = __UNCONST(endp);
 	long sval;
 	int ndig;
 
@@ -340,10 +350,10 @@ __ultoa(u_long val, wchar_t *endp, int base, int octzero, const char *xdigs,
 
 /* Identical to __ultoa, but for quads. */
 static wchar_t *
-__uqtoa(u_quad_t val, wchar_t *endp, int base, int octzero, const char *xdigs,
+__uqtoa(u_quad_t val, const wchar_t *endp, int base, int octzero, const char *xdigs,
 		int needgrp, char thousep, const char *grp)
 {
-	wchar_t *cp = endp;
+	wchar_t *cp = __UNCONST(endp);
 	quad_t sval;
 	int ndig;
 
@@ -414,10 +424,10 @@ __uqtoa(u_quad_t val, wchar_t *endp, int base, int octzero, const char *xdigs,
 
 /* Identical to __ultoa, but for intmax_t. */
 static wchar_t *
-__ujtoa(uintmax_t val, wchar_t *endp, int base, int octzero, const char *xdigs,
+__ujtoa(uintmax_t val, const wchar_t *endp, int base, int octzero, const char *xdigs,
 		int needgrp, char thousep, const char *grp)
 {
-	wchar_t *cp = endp;
+	wchar_t *cp = __UNCONST(endp);
 	intmax_t sval;
 	int ndig;
 
@@ -575,9 +585,9 @@ union fparg {
 #define	BUF		(MAXEXP+MAXFRACT+1)	/* + decimal point */
 #define	DEFPREC	6
 
-static char *ldcvt(long double, int, int, int, wchar_t *, int *, int, int *);
-static char *dcvt(double, int, int, int, wchar_t *, int *, int, int *);
-static char *cvt(union fparg *, int, int, wchar_t *, int *, int, int *);
+static char *ldcvt(long double, const char *, int, int, int, wchar_t *, int *, int, int *);
+static char *dcvt(double, const char *, int, int, int, wchar_t *, int *, int, int *);
+static char *cvt(union fparg *, const char *, int, int, wchar_t *, int *, int, int *);
 static int exponent(wchar_t *, int, int);
 
 #else /* no FLOATING_POINT */
@@ -605,6 +615,9 @@ static int exponent(wchar_t *, int, int);
 #define	GROUPING	0x2000		/* use grouping ("'" flag) */
 					/* C99 additional size modifiers: */
 
+int vfwprintf(FILE *fp, const wchar_t *fmt0, va_list ap);
+int vfwprintf_l(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap);
+
 int
 vfwprintf(FILE *fp, const wchar_t *fmt0, va_list ap)
 {
@@ -629,7 +642,7 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	int ch; 				/* character from fmt */
 	int n; 					/* handy integers (short term usage) */
 	const wchar_t *cp; 		/* handy char pointer (short term usage) */
-	wchar_t *bp; 			/* handy char pointer (short term usage) */
+	const wchar_t *bp; 		/* handy char pointer (short term usage) */
 	int flags; 				/* flags as above */
 	int ret; 				/* return value accumulator */
 	int width; 				/* width from format (%8d), or 0 */
@@ -966,7 +979,7 @@ reswitch:
 			}
 
 			flags |= FPT;
-			dtoaresult = cvt(&fparg, prec, flags, &softsign, &expt, ch, &ndig);
+			dtoaresult = cvt(&fparg, xdigs, prec, flags, &softsign, &expt, ch, &ndig);
 			if (dtoaresult == NULL) {
 				errno = ENOMEM;
 				ret = WEOF;
@@ -1013,7 +1026,7 @@ fp_begin:
 			}
 
 			flags |= FPT;
-			dtoaresult = cvt(&fparg, prec, flags, &softsign, &expt, ch, &ndig);
+			dtoaresult = cvt(&fparg, xdigs, prec, flags, &softsign, &expt, ch, &ndig);
 			if (dtoaresult == NULL) {
 				errno = ENOMEM;
 				ret = WEOF;
@@ -1072,13 +1085,14 @@ fp_common:
 				if (flags & ALT) {
 					++size;
 				}
-			} else if (grouping && expt > 0) {
-				/* space for thousands' grouping */
-				nseps = nrepeats = 0;
-				size += grouping_init(expt, nseps, nrepeats, grouping);
 			} else {
 				size = ndig + (expt > 0 ? 1 : 2 - expt);
 			}
+            if (grouping && expt > 0) {
+				/* space for thousands' grouping */
+				nseps = nrepeats = 0;
+				size += grouping_init(expt, nseps, nrepeats, grouping);
+			} 
 			if (softsign) {
 				sign = '-';
 			}
@@ -1121,7 +1135,7 @@ fp_common:
 			 * defined manner.''
 			 *	-- ANSI X3J11
 			 */
-			ujval = (uintmax_t)va_arg(ap, void *);
+			ujval = (uintmax_t)(uintptr_t)va_arg(ap, void *);
 			base = 16;
 			xdigs = xdigs_lower;
 			flags = (flags & ~QUADINT) | HEXPREFIX;
@@ -1421,17 +1435,19 @@ error:
 #ifdef FLOATING_POINT
 
 static char *
-ldcvt(long double value, int mode, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, int *length)
+ldcvt(long double value, const char *xdigs, int mode, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, int *length)
 {
 	int dsgn;
 	char *digits, *bp, *rve;
 
-	if ((ch == 'a' || ch == 'A') && (flags & LONGDBL)) {
-		digits = __hldtoa(value, mode, ndigits, decpt, &dsgn, &rve);
+    digits = NULL;
+    dsgn = 0;
+	if ((ch == 'a' || ch == 'A')) {
+		digits = __hldtoa(value, xdigs, ndigits, decpt, &dsgn, &rve);
 		goto out;
 	}
-	if ((ch == 'g' || ch == 'G') && (flags & LONGDBL)) {
-		digits = __ldtoa(value, mode, ndigits, decpt, &dsgn, &rve);
+	if ((ch == 'g' || ch == 'G')) {
+		digits = __ldtoa(&value, mode, ndigits, decpt, &dsgn, &rve);
 		goto out;
 	}
 
@@ -1462,13 +1478,15 @@ out:
 }
 
 static char *
-dcvt(double value, int mode, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, int *length)
+dcvt(double value, const char *xdigs, int mode, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, int *length)
 {
 	int dsgn;
 	char *digits, *bp, *rve;
-
+    
+    digits = NULL;
+    dsgn = 0;
 	if ((ch == 'a' || ch == 'A')) {
-		digits = __hdtoa(value, mode, ndigits, decpt, &dsgn, &rve);
+		digits = __hdtoa(value, xdigs, ndigits, decpt, &dsgn, &rve);
 		goto out;
 	}
 	if ((ch == 'g' || ch == 'G')) {
@@ -1506,7 +1524,7 @@ out:
 }
 
 static char *
-cvt(union fparg *fp, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, int *length)
+cvt(union fparg *fp, const char *xdigs, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, int *length)
 {
 	int mode;
 	char *digits;
@@ -1529,9 +1547,9 @@ cvt(union fparg *fp, int ndigits, int flags, wchar_t *sign, int *decpt, int ch, 
 	}
 
 	if ((flags & LONGDBL)) {
-		digits = ldcvt(fp->ldbl, mode, ndigits, flags, sign, decpt, ch, length);
+		digits = ldcvt(fp->ldbl, xdigs, mode, ndigits, flags, sign, decpt, ch, length);
 	} else {
-		digits = dcvt(fp->dbl, mode, ndigits, flags, sign, decpt, ch, length);
+		digits = dcvt(fp->dbl, xdigs, mode, ndigits, flags, sign, decpt, ch, length);
 	}
 	return (digits);
 }
