@@ -43,11 +43,12 @@
 #include <ctype.h>
 #include <wchar.h>
 
+#include "xprint.h"
+
 #ifdef FLOATING_POINT
 #include <locale.h>
 #include <math.h>
 #include "floatio.h"
-#include "xprint.h"
 
 static char *ldcvt(long double, const char *, int, int, int, CHAR_T *, int *, int, int *);
 static char *dcvt(double, const char *, int, int, int, CHAR_T *, int *, int, int *);
