@@ -110,14 +110,10 @@ __RCSID("$NetBSD: vfwprintf.c,v 1.42 2026/09/21 19:12:51 kre Exp $");
 #include "fvwrite.h"
 #include "extern.h"
 
-#define FLOATING_POINT
-
 #ifdef FLOATING_POINT
 static int grouping_init(int, int, int, const char *);
 #endif
-#ifdef notyet
 static int __sprint(FILE *, locale_t, struct __suio *);
-#endif
 static int __sbprintf(FILE *, locale_t, const wchar_t *, va_list);
 static wint_t __xfputwc(wchar_t, FILE *, locale_t);
 static wchar_t *__mbsconv(char *, int, locale_t);
@@ -135,7 +131,7 @@ static const char xdigs_upper[16] = "0123456789ABCDEF";
 static int
 grouping_init(int ndigits, int nseps, int nrepeats, const char *grouping)
 {
-	int lead;		/* sig figs before decimal or group sep */
+	int lead; /* sig figs before decimal or group sep */
 
 	lead = ndigits;
 	while (*grouping != CHAR_MAX) {
@@ -154,7 +150,6 @@ grouping_init(int ndigits, int nseps, int nrepeats, const char *grouping)
 }
 #endif
 
-#ifdef notyet
 /*
  * Flush out all the vectors defined by the given uio,
  * then reset it so that it can be reused.
@@ -173,6 +168,11 @@ __sprint(FILE *fp, locale_t locale, struct __suio *uio)
 	_DIAGASSERT(fp != NULL);
 	_DIAGASSERT(uio != NULL);
 
+	if (uio->uio_resid == 0) {
+		uio->uio_iovcnt = 0;
+		return (0);
+	}
+
 	iov = uio->uio_iov;
 	for (; uio->uio_resid != 0; uio->uio_resid -= len, iov++) {
 		p = (wchar_t *)iov->iov_base;
@@ -183,10 +183,10 @@ __sprint(FILE *fp, locale_t locale, struct __suio *uio)
 			}
 		}
 	}
+	uio->uio_resid = 0;
 	uio->uio_iovcnt = 0;
 	return (0);
 }
-#endif
 
 /*
  * Helper function for `fprintf to unbuffered unix file': creates a
@@ -285,7 +285,7 @@ __ultoa(u_long val, const wchar_t *endp, int base, int octzero, const char *xdig
 	 */
 	switch (base) {
 	case 10:
-		if (val < 10) {	/* many numbers are 1 digit */
+		if (val < 10) { /* many numbers are 1 digit */
 			*--cp = to_char(val);
 			return (cp);
 		}
@@ -310,8 +310,8 @@ __ultoa(u_long val, const wchar_t *endp, int base, int octzero, const char *xdig
 			 * should be performed.
 			 */
 			if (needgrp && ndig == *grp
-			    && (unsigned char)*grp != (unsigned char)CHAR_MAX
-			    && sval > 9) {
+					&& (unsigned char)*grp != (unsigned char)CHAR_MAX
+					&& sval > 9) {
 				*--cp = thousep;
 				ndig = 0;
 				/*
@@ -319,7 +319,7 @@ __ultoa(u_long val, const wchar_t *endp, int base, int octzero, const char *xdig
 				 * use *grp character (last grouping rule)
 				 * for all next cases
 				 */
-				if (*(grp+1) != '\0')
+				if (*(grp + 1) != '\0')
 					grp++;
 			}
 			sval /= 10;
@@ -337,12 +337,12 @@ __ultoa(u_long val, const wchar_t *endp, int base, int octzero, const char *xdig
 
 	case 16:
 		do {
-			*--cp = xdigs[(size_t)val & 15];
+			*--cp = xdigs[(size_t) val & 15];
 			val >>= 4;
 		} while (val);
 		break;
 
-	default:			/* oops */
+	default: /* oops */
 		abort();
 	}
 	return (cp);
@@ -382,10 +382,8 @@ __uqtoa(u_quad_t val, const wchar_t *endp, int base, int octzero, const char *xd
 			 * If (*grp == CHAR_MAX) then no more grouping
 			 * should be performed.
 			 */
-			if (needgrp
-			    && (unsigned char)*grp != (unsigned char)CHAR_MAX
-			    && ndig == *grp
-			    && sval > 9) {
+			if (needgrp && (unsigned char)*grp != (unsigned char)CHAR_MAX
+					&& ndig == *grp && sval > 9) {
 				*--cp = thousep;
 				ndig = 0;
 				/*
@@ -393,7 +391,7 @@ __uqtoa(u_quad_t val, const wchar_t *endp, int base, int octzero, const char *xd
 				 * use *grp character (last grouping rule)
 				 * for all next cases
 				 */
-				if (*(grp+1) != '\0')
+				if (*(grp + 1) != '\0')
 					grp++;
 			}
 			sval /= 10;
@@ -456,10 +454,8 @@ __ujtoa(uintmax_t val, const wchar_t *endp, int base, int octzero, const char *x
 			 * If (*grp == CHAR_MAX) then no more grouping
 			 * should be performed.
 			 */
-			if (needgrp
-			    && (unsigned char)*grp != (unsigned char)CHAR_MAX
-			    && ndig == *grp
-			    && sval > 9) {
+			if (needgrp && (unsigned char)*grp != (unsigned char)CHAR_MAX
+					&& ndig == *grp && sval > 9) {
 				*--cp = thousep;
 				ndig = 0;
 				/*
@@ -467,7 +463,7 @@ __ujtoa(uintmax_t val, const wchar_t *endp, int base, int octzero, const char *x
 				 * use *grp character (last grouping rule)
 				 * for all next cases
 				 */
-				if (*(grp+1) != '\0')
+				if (*(grp + 1) != '\0')
 					grp++;
 			}
 			sval /= 10;
@@ -512,7 +508,7 @@ __mbsconv(char *mbsarg, int prec, locale_t locale)
 	size_t insize, nchars, nconv;
 
 	if (mbsarg == NULL)
-		return NULL;
+		return (NULL);
 
 	/*
 	 * Supplied argument is a multibyte string; convert it to wide
@@ -528,8 +524,7 @@ __mbsconv(char *mbsarg, int prec, locale_t locale)
 		mbs = initial;
 		while (nchars != (size_t)prec) {
 			nconv = mbrlen_l(p, MB_CUR_MAX, &mbs, locale);
-			if (nconv == 0 || nconv == (size_t)-1 ||
-			    nconv == (size_t)-2)
+			if (nconv == 0 || nconv == (size_t)-1 || nconv == (size_t)-2)
 				break;
 			p += nconv;
 			nchars++;
@@ -561,11 +556,11 @@ __mbsconv(char *mbsarg, int prec, locale_t locale)
 		p += nconv;
 		insize -= nconv;
 	}
-	if (nconv == (size_t) - 1 || nconv == (size_t) - 2) {
+	if (nconv == (size_t)-1 || nconv == (size_t)-2) {
 		int serrno = errno;
 		free(convbuf);
 		errno = serrno;
-		return NULL;
+		return (NULL);
 	}
 	*wcp = L'\0';
 
@@ -607,7 +602,7 @@ static int exponent(wchar_t *, int, int);
 #define	LLONGINT	QUADINT		/* long long integer */
 #define	SHORTINT	0x040		/* short integer */
 #define	MAXINT		0x080		/* (unsigned) intmax_t */
-#define	PTRDIFFT	0x100		/* (unsigned) ptrdiff_t */
+#define	PTRDIFFINT	0x100		/* (unsigned) ptrdiff_t */
 #define	SIZEINT		0x200		/* (signed) size_t */
 #define	CHARINT     0x400		/* print char using int format */
 #define	ZEROPAD		0x800		/* zero (as opposed to blank) pad */
@@ -627,12 +622,12 @@ vfwprintf(FILE *fp, const wchar_t *fmt0, va_list ap)
 int
 vfwprintf_l(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 {
-    int ret;
+	int ret;
 
-    FLOCKFILE(fp);
-    ret = vfwprintf_l_unlocked(fp, locale, fmt0, ap);
-    FUNLOCKFILE(fp);
-    return (ret);
+	FLOCKFILE(fp);
+	ret = vfwprintf_l_unlocked(fp, locale, fmt0, ap);
+	FUNLOCKFILE(fp);
+	return (ret);
 }
 
 int
@@ -640,7 +635,7 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 {
 	const wchar_t *fmt; 	/* format string */
 	int ch; 				/* character from fmt */
-	int n; 					/* handy integers (short term usage) */
+	int m, n; 				/* handy integers (short term usage) */
 	const wchar_t *cp; 		/* handy char pointer (short term usage) */
 	const wchar_t *bp; 		/* handy char pointer (short term usage) */
 	int flags; 				/* flags as above */
@@ -661,6 +656,7 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	wchar_t expstr[MAXEXPDIG+2]; /* buffer for exponent string */
 	int nseps;				/* number of group separators with ' */
 	int nrepeats;			/* number of repeats of the last group */
+	int n2;
 #endif
 	u_long ulval;			/* integer arguments %[diouxX] */
 	uintmax_t ujval;		/* %j, %ll, %q, %t, %z integers */
@@ -671,7 +667,10 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	int size;				/* size of converted field or string */
 	int prsize;             /* max size of printed field */
 	const char *xdigs; 		/* digits for %[xX] conversion */
-	int n2, n3;
+#define NIOV 8
+	struct __suio uio;		/* output information: summary */
+	struct __siov iov[NIOV];/* ... and individual io vectors */
+	struct __siov *iovp;	/* for PRINT macro */
 	wchar_t buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
 	wchar_t ox[2]; 			/* space for 0x hex-prefix */
 	wchar_t *convbuf; 		/* multibyte to wide conversion result */
@@ -688,12 +687,17 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	static const wchar_t zeroes[PADSIZE] =
 	{'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0'};
 
-#define	PRINT(ptr, len)	do {			\
-	for (n3 = 0; n3 < (len); n3++)		\
-		if (__xfputwc((ptr)[n3], fp, locale) == WEOF) { \
-			fp->_flags |= __SERR;		\
-			goto error;					\
-		}								\
+#define	PRINT(ptr, len)	do {				\
+	iovp->iov_base = __UNCONST(ptr); 		\
+	iovp->iov_len = (len); 					\
+	uio.uio_resid += (len); 				\
+	iovp++; 								\
+	if (++uio.uio_iovcnt >= NIOV) { 		\
+		if (__sprint(fp, locale, &uio))	{	\
+			goto error;						\
+		}									\
+		iovp = iov;							\
+	}										\
 } while (0)
 #define	PAD(howmany, with)	do {	\
 	if ((n = (howmany)) > 0) {		\
@@ -703,8 +707,16 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 		}							\
 		PRINT(with, n);				\
 	}								\
-} while (/*CONSTCOND*/0)
-#define	FLUSH()
+} while (0)
+#define	FLUSH() do { 						\
+	if (uio.uio_resid && 					\
+			__sprint(fp, locale, &uio)) {	\
+		goto error;							\
+	}										\
+	uio.uio_iovcnt = 0; 					\
+	iovp = iov;								\
+} while (0)
+#ifdef FLOATING_POINT
 #define	PRINTANDPAD(p, ep, len, with) do {	\
 	ptrdiff_t td = (ep) - (p);				\
 	n2 = (int)td;       					\
@@ -714,6 +726,7 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 		PRINT((p), n2);						\
 	PAD((len) - (n2 > 0 ? n2 : 0), (with));	\
 } while (0)
+#endif
 
 	/*
 	 * To extend shorts properly, we need both signed and unsigned
@@ -724,27 +737,47 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	    flags&SHORTINT ? (long)(short)va_arg(ap, int) : 	\
 	    flags&CHARINT ? (long)(char)va_arg(ap, int) : 		\
 	    (long)va_arg(ap, int))
-#define	UARG() 									\
+#define	UARG() 												\
 	(flags&LONGINT ? va_arg(ap, u_long) : 					\
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    flags&CHARINT ? (u_long)(u_char)va_arg(ap, int) : 	\
 	    (u_long)va_arg(ap, u_int))
-#define	INTMAX_SIZE	(MAXINT|SIZEINT|PTRDIFFT|LLONGINT)
+#define	INTMAX_SIZE	(MAXINT|SIZEINT|PTRDIFFINT|LLONGINT)
 #define SJARG() 											\
 	(flags&MAXINT ? va_arg(ap, intmax_t) : 					\
 	    flags&SIZEINT ? (intmax_t)va_arg(ap, ssize_t) : 	\
-	    flags&PTRDIFFT ? (intmax_t)va_arg(ap, ptrdiff_t) : 	\
+	    flags&PTRDIFFINT ? (intmax_t)va_arg(ap, ptrdiff_t) : \
 	    (intmax_t)va_arg(ap, quad_t))
 #define	UJARG() 											\
 	(flags&MAXINT ? va_arg(ap, uintmax_t) : 				\
 	    flags&SIZEINT ? (uintmax_t)va_arg(ap, size_t) : 	\
-	    flags&PTRDIFFT ? (uintmax_t)va_arg(ap, ptrdiff_t) : \
+	    flags&PTRDIFFINT ? (uintmax_t)va_arg(ap, ptrdiff_t) : \
 	    (uintmax_t)va_arg(ap, u_quad_t))
+
+	/*
+	 * Append a digit to a value and check for overflow.
+	 */
+#define APPEND_DIGIT(val, dig) do { 		\
+	if ((val) > INT_MAX / 10) 				\
+		errno = EOVERFLOW;					\
+		ret = WEOF;							\
+		goto error; 						\
+	(val) *= 10; 							\
+	if ((val) > INT_MAX - to_digit((dig))) 	\
+		errno = EOVERFLOW;					\
+		ret = WEOF;							\
+		goto error; 						\
+	(val) += to_digit((dig)); 				\
+} while (0)
+
+	/* Check for hexprefix */
+#define ISHEX(flags) \
+	((flags & HEXPREFIX) || ox[1])
 
 	_DIAGASSERT(fp != NULL);
 	_DIAGASSERT(fmt0 != NULL);
 
-    _SET_ORIENTATION(fp, -1);
+	_SET_ORIENTATION(fp, -1);
 
 	thousands_sep = '\0';
 	grouping = NULL;
@@ -754,19 +787,23 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	nseps = nrepeats = 0;
 #endif
 
-    convbuf = NULL;
+	convbuf = NULL;
 	/* sorry, fprintf(read_only_file, "") returns WEOF, not 0 */
 	if (cantwrite(fp)) {
 		return (WEOF);
 	}
 
 	/* optimise fprintf(stderr) (and other unbuffered Unix files) */
-	if ((fp->_flags & (__SNBF|__SWR|__SRW)) == (__SNBF|__SWR) && fp->_file >= 0) {
-        ret = __sbprintf(fp, locale, fmt0, ap);
+	if ((fp->_flags & (__SNBF | __SWR | __SRW)) == (__SNBF | __SWR)
+			&& fp->_file >= 0) {
+		ret = __sbprintf(fp, locale, fmt0, ap);
 		return (ret);
 	}
 
 	fmt = fmt0;
+	uio.uio_iov = iovp = iov;
+	uio.uio_resid = 0;
+	uio.uio_iovcnt = 0;
 	ret = 0;
 	ulval = 0;
 	ujval = 0;
@@ -779,14 +816,17 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 		for (cp = fmt; (ch = *fmt) != '\0' && ch != '%'; fmt++) {
 			/* void */;
 		}
-		if ((n = fmt - cp) != 0) {
-			if ((unsigned)ret + n > INT_MAX) {
+		m = fmt - cp;
+		if (m != 0) {
+			if (m < 0 || (unsigned)m + ret > INT_MAX) {
+				errno = EOVERFLOW;
 				ret = WEOF;
 				goto error;
 			}
-			PRINT(cp, n);
-			ret += n;
+			PRINT(cp, m);
+			ret += m;
 		}
+		n = m;
 		if (ch == '\0')
 			goto done;
 		fmt++;		/* skip over '%' */
@@ -825,7 +865,9 @@ reswitch:
 			if (width >= 0)
 				goto rflag;
 			if (width == INT_MIN) {
-				goto rflag;
+				errno = EOVERFLOW;
+				ret = WEOF;
+				goto error;
 			}
 			width = -width;
 			/* FALLTHROUGH */
@@ -855,7 +897,7 @@ reswitch:
 			}
 			n = 0;
 			while (is_digit(ch)) {
-				n = 10 * n + to_digit(ch);
+				APPEND_DIGIT(n, ch);
 				ch = *fmt++;
 			}
 			prec = n < 0 ? -1 : n;
@@ -879,12 +921,9 @@ reswitch:
 		case '9':
 			n = 0;
 			do {
-				n = 10 * n + to_digit(ch);
+				APPEND_DIGIT(n, ch);
 				ch = *fmt++;
 			} while (is_digit(ch));
-			if (ch == '$') {
-				goto rflag;
-			}
 			width = n;
 			goto reswitch;
 #ifdef FLOATING_POINT
@@ -914,7 +953,7 @@ reswitch:
 			flags |= LLONGINT;	/* not necessarily */
 			goto rflag;
 		case 't':
-			flags |= PTRDIFFT;
+			flags |= PTRDIFFINT;
 			goto rflag;
 		case 'z':
 			flags |= SIZEINT;
@@ -979,7 +1018,8 @@ reswitch:
 			}
 
 			flags |= FPT;
-			dtoaresult = cvt(&fparg, xdigs, prec, flags, &softsign, &expt, ch, &ndig);
+			dtoaresult = cvt(&fparg, xdigs, prec, flags, &softsign, &expt, ch,
+					&ndig);
 			if (dtoaresult == NULL) {
 				errno = ENOMEM;
 				ret = WEOF;
@@ -1007,7 +1047,6 @@ reswitch:
 			if (prec == 0) {
 				prec = 1;
 			}
-
 			if (prec == -1) {
 				prec = DEFPREC;
 			}
@@ -1026,7 +1065,8 @@ fp_begin:
 			}
 
 			flags |= FPT;
-			dtoaresult = cvt(&fparg, xdigs, prec, flags, &softsign, &expt, ch, &ndig);
+			dtoaresult = cvt(&fparg, xdigs, prec, flags, &softsign, &expt, ch,
+					&ndig);
 			if (dtoaresult == NULL) {
 				errno = ENOMEM;
 				ret = WEOF;
@@ -1088,11 +1128,11 @@ fp_common:
 			} else {
 				size = ndig + (expt > 0 ? 1 : 2 - expt);
 			}
-            if (grouping && expt > 0) {
+			if (grouping && expt > 0) {
 				/* space for thousands' grouping */
 				nseps = nrepeats = 0;
 				size += grouping_init(expt, nseps, nrepeats, grouping);
-			} 
+			}
 			if (softsign) {
 				sign = '-';
 			}
@@ -1101,7 +1141,7 @@ fp_common:
 		case 'n':
 			if (flags & MAXINT)
 				*va_arg(ap, intmax_t *) = ret;
-			else if (flags & PTRDIFFT)
+			else if (flags & PTRDIFFINT)
 				*va_arg(ap, ptrdiff_t *) = ret;
 			else if (flags & SIZEINT)
 				*va_arg(ap, ssize_t *) = ret;	/* XXX */
@@ -1145,48 +1185,53 @@ fp_common:
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 's':
-		if ((flags & LONGINT) != 0) {
-			cp = va_arg(ap, wchar_t *);
-			if (cp == NULL)
-				cp = L"(null)";
-		} else {
-			char *mc;
+			if ((flags & LONGINT) != 0) {
+				cp = va_arg(ap, wchar_t*);
+				if (cp == NULL)
+					cp = L"(null)";
+			} else {
+				char *mc;
 
-			if (convbuf != NULL)
-				free(convbuf);
-			mc = va_arg(ap, char *);
-			if (mc == NULL)
-				cp = L"(null)";
-			else {
-				convbuf = __mbsconv(mc, prec, locale);
-				if (convbuf == NULL) {
-					fp->_flags |= __SERR;
+				if (convbuf != NULL)
+					free(convbuf);
+				mc = va_arg(ap, char *);
+				if (mc == NULL)
+					cp = L"(null)";
+				else {
+					convbuf = __mbsconv(mc, prec, locale);
+					if (convbuf == NULL) {
+						fp->_flags |= __SERR;
+						goto error;
+					}
+					cp = convbuf;
+				}
+			}
+
+			if (prec >= 0) {
+				/*
+				 * can't use STRLEN; can only look for the
+				 * NUL in the first `prec' characters, and
+				 * STRLEN() will go further.
+				 */
+				const wchar_t *p = wmemchr(cp, 0, (size_t)prec);
+
+				if (p != NULL) {
+					size = (int)(p - cp);
+					if (size > prec)
+						size = prec;
+				} else
+					size = prec;
+			} else {
+				size_t rlen = wcslen(cp);
+				if (rlen > INT_MAX) {
+					errno = EOVERFLOW;
+					ret = WEOF;
 					goto error;
 				}
-				cp = convbuf;
+				size = (int)rlen;
 			}
-		}
-
-		if (prec >= 0) {
-			/*
-			 * can't use STRLEN; can only look for the
-			 * NUL in the first `prec' characters, and
-			 * STRLEN() will go further.
-			 */
-			const wchar_t *p = wmemchr(cp, 0, (size_t)prec);
-
-			if (p != NULL) {
-				size = (int)(p - cp);
-				if (size > prec)
-					size = prec;
-			} else
-				size = prec;
-		} else {
-			size_t rlen = wcslen(cp);
-			size = (int)rlen;
-		}
-		sign = '\0';
-		break;
+			sign = '\0';
+			break;
 		case 'U':
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
@@ -1210,7 +1255,8 @@ hex:
 				ulval = UARG();
 			base = 16;
 			/* leading 0x/X only if non-zero */
-			if ((flags & ALT) && (flags & INTMAX_SIZE ? ujval != 0 : ulval != 0)) {
+			if ((flags & ALT)
+					&& (flags & INTMAX_SIZE ? ujval != 0 : ulval != 0)) {
 				flags |= HEXPREFIX;
 				ox[1] = ch;
 			}
@@ -1254,7 +1300,7 @@ number:
 			if (size > BUF) /* should never happen */
 				abort();
 			break;
-		default:	 /* "%?" prints ?, unless ? is NUL */
+		default: /* "%?" prints ?, unless ? is NUL */
 			if (ch == '\0')
 				goto done;
 			/* pretend it was %c with argument ch */
@@ -1282,13 +1328,13 @@ number:
 		fieldsz = size;
 		if (sign)
 			fieldsz++;
-		else if (ox[1] || (flags & HEXPREFIX))
+		else if (ISHEX(flags))
 			fieldsz += 2;
 
 		realsz = dprec > size ? dprec : size;
 		if (sign)
 			realsz++;
-		else if (ox[1] || (flags & HEXPREFIX))
+		else if (ISHEX(flags))
 			realsz += 2;
 
 		prsize = width > realsz ? width : realsz;
@@ -1304,7 +1350,7 @@ number:
 		/* prefix */
 		if (sign) {
 			PRINT(&sign, 1);
-		} else if (ox[1] || (flags & HEXPREFIX)) {
+		} else if (ISHEX(flags)) {
 			ox[0] = '0';
 			ox[1] = ch;
 			PRINT(ox, 2);
@@ -1417,6 +1463,11 @@ number:
 			PAD(width - realsz, blanks);
 
 		/* finally, adjust ret */
+		if (width > INT_MAX - ret) {
+			errno = EOVERFLOW;
+			ret = WEOF;
+			goto error;
+		}
 		ret += width > realsz ? width : realsz;
 
 		FLUSH(); /* copy out the I/O vectors */
@@ -1440,8 +1491,8 @@ ldcvt(long double value, const char *xdigs, int mode, int ndigits, int flags, wc
 	int dsgn;
 	char *digits, *bp, *rve;
 
-    digits = NULL;
-    dsgn = 0;
+	digits = NULL;
+	dsgn = 0;
 	if ((ch == 'a' || ch == 'A')) {
 		digits = __hldtoa(value, xdigs, ndigits, decpt, &dsgn, &rve);
 		goto out;
@@ -1458,7 +1509,8 @@ out:
 	} else {
 		*sign = '\000';
 	}
-	if (((ch != 'a' && ch != 'A') && (ch != 'g' && ch != 'G')) || (flags & ALT)) { /* Print trailing zeros */
+	if (((ch != 'a' && ch != 'A') && (ch != 'g' && ch != 'G'))
+			|| (flags & ALT)) { /* Print trailing zeros */
 		bp = digits + ndigits;
 		if (ch == 'f') {
 			if (*digits == '0' && value) {
@@ -1484,7 +1536,7 @@ dcvt(double value, const char *xdigs, int mode, int ndigits, int flags, wchar_t 
 	char *digits, *bp, *rve;
     
     digits = NULL;
-    dsgn = 0;
+	dsgn = 0;
 	if ((ch == 'a' || ch == 'A')) {
 		digits = __hdtoa(value, xdigs, ndigits, decpt, &dsgn, &rve);
 		goto out;
@@ -1504,7 +1556,8 @@ out:
 	} else {
 		*sign = '\000';
 	}
-	if (((ch != 'a' && ch != 'A') && (ch != 'g' && ch != 'G')) || (flags & ALT)) { /* Print trailing zeros */
+	if (((ch != 'a' && ch != 'A') && (ch != 'g' && ch != 'G'))
+			|| (flags & ALT)) { /* Print trailing zeros */
 		bp = digits + ndigits;
 		if (ch == 'f') {
 			if (*digits == '0' && value) {
@@ -1547,9 +1600,11 @@ cvt(union fparg *fp, const char *xdigs, int ndigits, int flags, wchar_t *sign, i
 	}
 
 	if ((flags & LONGDBL)) {
-		digits = ldcvt(fp->ldbl, xdigs, mode, ndigits, flags, sign, decpt, ch, length);
+		digits = ldcvt(fp->ldbl, xdigs, mode, ndigits, flags, sign, decpt, ch,
+				length);
 	} else {
-		digits = dcvt(fp->dbl, xdigs, mode, ndigits, flags, sign, decpt, ch, length);
+		digits = dcvt(fp->dbl, xdigs, mode, ndigits, flags, sign, decpt, ch,
+				length);
 	}
 	return (digits);
 }
