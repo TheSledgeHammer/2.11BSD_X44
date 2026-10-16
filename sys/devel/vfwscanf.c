@@ -86,8 +86,8 @@ ccltable(wchar_t *tab, const wchar_t **start, const wchar_t **end, locale_t loca
 			len++;
 		}
 	}
-	start = &tab[wctob_l(0, locale)];
-	end = &tab[wctob(len-1, locale)];
+	*start = &tab[wctob_l(0, locale)];
+	*end = &tab[wctob_l(len-1, locale)];
 }
 
 static int
