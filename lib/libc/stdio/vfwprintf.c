@@ -223,8 +223,6 @@ __xfputwc(wchar_t wc, FILE *fp, locale_t locale)
 	return (__sfvwrite(fp, &uio) != EOF ? (wint_t)wc : WEOF);
 }
 
-
-
 /*
  * Convert a multibyte character string argument for the %s format to a wide
  * string representation. ``prec'' specifies the maximum number of bytes
@@ -305,9 +303,6 @@ __mbsconv(char *mbsarg, int prec, locale_t locale)
 #include <math.h>
 #include "floatio.h"
 #endif /* FLOATING_POINT */
-
-int vfwprintf(FILE *fp, const wchar_t *fmt0, va_list ap);
-int vfwprintf_l(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap);
 
 int
 vfwprintf(FILE *fp, const wchar_t *fmt0, va_list ap)
@@ -438,16 +433,16 @@ vfwprintf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    flags&CHARINT ? (u_long)(u_char)va_arg(ap, int) : 	\
 	    (u_long)va_arg(ap, u_int))
-#define	INTMAX_SIZE	(MAXINT|SIZEINT|PTRDIFFINT|LLONGINT)
+#define	INTMAX_SIZE	(MAXINT|SIZEINT|PTRDIFFT|LLONGINT)
 #define SJARG() 											\
 	(flags&MAXINT ? va_arg(ap, intmax_t) : 					\
 	    flags&SIZEINT ? (intmax_t)va_arg(ap, ssize_t) : 	\
-	    flags&PTRDIFFINT ? (intmax_t)va_arg(ap, ptrdiff_t) : \
+	    flags&PTRDIFFT ? (intmax_t)va_arg(ap, ptrdiff_t) : \
 	    (intmax_t)va_arg(ap, quad_t))
 #define	UJARG() 											\
 	(flags&MAXINT ? va_arg(ap, uintmax_t) : 				\
 	    flags&SIZEINT ? (uintmax_t)va_arg(ap, size_t) : 	\
-	    flags&PTRDIFFINT ? (uintmax_t)va_arg(ap, ptrdiff_t) : \
+	    flags&PTRDIFFT ? (uintmax_t)va_arg(ap, ptrdiff_t) : \
 	    (uintmax_t)va_arg(ap, u_quad_t))
 
 	/*
@@ -649,7 +644,7 @@ reswitch:
 			flags |= LLONGINT;	/* not necessarily */
 			goto rflag;
 		case 't':
-			flags |= PTRDIFFINT;
+			flags |= PTRDIFFT;
 			goto rflag;
 		case 'z':
 			flags |= SIZEINT;
@@ -837,7 +832,7 @@ fp_common:
 		case 'n':
 			if (flags & MAXINT)
 				*va_arg(ap, intmax_t *) = ret;
-			else if (flags & PTRDIFFINT)
+			else if (flags & PTRDIFFT)
 				*va_arg(ap, ptrdiff_t *) = ret;
 			else if (flags & SIZEINT)
 				*va_arg(ap, ssize_t *) = ret;	/* XXX */

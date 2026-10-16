@@ -78,7 +78,7 @@ int exponent(CHAR_T *, int, int);
 #define	LLONGINT	QUADINT		/* long long integer */
 #define	SHORTINT	0x040		/* short integer */
 #define	MAXINT		0x080		/* (unsigned) intmax_t */
-#define	PTRDIFFINT	0x100		/* (unsigned) ptrdiff_t */
+#define	PTRDIFFT	0x100		/* (unsigned) ptrdiff_t */
 #define	SIZEINT		0x200		/* (signed) size_t */
 #define	CHARINT     0x400		/* print char using int format */
 #define	ZEROPAD		0x800		/* zero (as opposed to blank) pad */

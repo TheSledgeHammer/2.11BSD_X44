@@ -148,13 +148,13 @@ __sbprintf(FILE *fp, locale_t locale, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE fake;
-    struct __sfileext fakeext;
+	struct __sfileext fakeext;
 	unsigned char buf[BUFSIZ];
 
 	_DIAGASSERT(fp != NULL);
 	_DIAGASSERT(fmt != NULL);
 
-    _FILEEXT_SETUP(&fake, &fakeext);
+	_FILEEXT_SETUP(&fake, &fakeext);
 
 	/* copy the important variables */
 	fake._flags = fp->_flags & ~__SNBF;
@@ -370,16 +370,16 @@ vfprintf_l_unlocked(FILE *fp, locale_t locale, const char *fmt0, va_list ap)
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    flags&CHARINT ? (u_long)(u_char)va_arg(ap, int) : 	\
 	    (u_long)va_arg(ap, u_int))
-#define	INTMAX_SIZE	(MAXINT|SIZEINT|PTRDIFFINT|LLONGINT)
+#define	INTMAX_SIZE	(MAXINT|SIZEINT|PTRDIFFT|LLONGINT)
 #define SJARG() 											\
 	(flags&MAXINT ? va_arg(ap, intmax_t) : 					\
 	    flags&SIZEINT ? (intmax_t)va_arg(ap, ssize_t) : 	\
-	    flags&PTRDIFFINT ? (intmax_t)va_arg(ap, ptrdiff_t) : \
+	    flags&PTRDIFFT ? (intmax_t)va_arg(ap, ptrdiff_t) : \
 	    (intmax_t)va_arg(ap, quad_t))
 #define	UJARG() 											\
 	(flags&MAXINT ? va_arg(ap, uintmax_t) : 				\
 	    flags&SIZEINT ? (uintmax_t)va_arg(ap, size_t) : 	\
-	    flags&PTRDIFFINT ? (uintmax_t)va_arg(ap, ptrdiff_t) : \
+	    flags&PTRDIFFT ? (uintmax_t)va_arg(ap, ptrdiff_t) : \
 	    (uintmax_t)va_arg(ap, u_quad_t))
 
 	/*
@@ -580,7 +580,7 @@ reswitch:
 			flags |= LLONGINT;	/* not necessarily */
 			goto rflag;
 		case 't':
-			flags |= PTRDIFFINT;
+			flags |= PTRDIFFT;
 			goto rflag;
 		case 'z':
 			flags |= SIZEINT;
@@ -780,7 +780,7 @@ fp_common:
 		case 'n':
 			if (flags & MAXINT)
 				*va_arg(ap, intmax_t *) = ret;
-			else if (flags & PTRDIFFINT)
+			else if (flags & PTRDIFFT)
 				*va_arg(ap, ptrdiff_t *) = ret;
 			else if (flags & SIZEINT)
 				*va_arg(ap, ssize_t *) = ret;	/* XXX */
@@ -1051,13 +1051,13 @@ number:
 
 #else /* OLD_PROPER */
 				if ((fparg.dbl == 0) || ((fparg.ldbl == 0) && (flags & LONGDBL))) {
-					PRINT(L"0", 1);
+					PRINT("0", 1);
 					if (expt < ndig || (flags & ALT) != 0) {
 						PRINT(decimal_point, 1);
 						PAD(ndig - 1, zeroes);
 					}
 				} else if (expt <= 0) {
-					PRINT(L"0", 1);
+					PRINT("0", 1);
 					if (prec || (flags & ALT)) {
 						PRINT(decimal_point, 1);
 					}
@@ -1072,7 +1072,7 @@ number:
 				} else {
 					PRINT(cp, expt);
 					cp += expt;
-					PRINT(L".", 1);
+					PRINT(".", 1);
 					PRINT(cp, ndig - expt);
 				}
 			} else { /* 'e' or 'E' */

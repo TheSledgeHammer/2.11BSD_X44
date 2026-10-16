@@ -93,6 +93,7 @@ static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 
 #define	PFXOK		0x100	/* 0x prefix is (still) legal */
 #define	NZDIGITS	0x200	/* no zero digits detected */
+#define	HAVESIGN	0x10000	/* sign detected */
 
 /*
  * Conversion types.
@@ -626,25 +627,25 @@ literal:
 				u_long res;
 
 				*p = 0;
-				res = (*ccfn)(buf, (char**) NULL, base);
+				res = (*ccfn)(buf, (char **)NULL, base);
 				if (flags & POINTER)
-					*va_arg(ap, void**) = (void*) res;
+					*va_arg(ap, void **) = (void *)res;
 				else if (flags & SHORTSHORT)
-					*va_arg(ap, char*) = (char) res;
+					*va_arg(ap, char *) = (char)res;
 				else if (flags & SHORT)
-					*va_arg(ap, short*) = (short) res;
+					*va_arg(ap, short *) = (short)res;
 				else if (flags & LONG)
-					*va_arg(ap, long*) = (long) res;
+					*va_arg(ap, long *) = (long)res;
 				else if (flags & LONGLONG)
-					*va_arg(ap, quad_t*) = res;
+					*va_arg(ap, quad_t *) = res;
 				else if (flags & INTMAXT)
-					*va_arg(ap, intmax_t*) = res;
+					*va_arg(ap, intmax_t *) = res;
 				else if (flags & PTRDIFFT)
-					*va_arg(ap, ptrdiff_t*) = (ptrdiff_t) res;
+					*va_arg(ap, ptrdiff_t *) = (ptrdiff_t)res;
 				else if (flags & SIZET)
-					*va_arg(ap, size_t*) = (size_t) res;
+					*va_arg(ap, size_t *) = (size_t)res;
 				else
-					*va_arg(ap, int*) = (int) res;
+					*va_arg(ap, int *) = (int)res;
 				nassigned++;
 			}
 			nread += p - buf;
