@@ -38,19 +38,11 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <inttypes.h>
 #include <locale.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
 #include <wchar.h>
-#include <wctype.h>
 
-#include "reentrant.h"
 #include "setlocale.h"
-#include "local.h"
 #include "xscan.h"
 
 #define __collate_load_error /*CONSTCOND*/0
