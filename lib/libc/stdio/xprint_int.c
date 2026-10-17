@@ -34,20 +34,11 @@
 #include <sys/types.h>
 
 #include <assert.h>
-#include <inttypes.h>
 #include <locale.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <wchar.h>
-#include <wctype.h>
-
-#include "reentrant.h"
-#include "setlocale.h"
-#include "local.h"
 
 #include "xprint.h"
 
