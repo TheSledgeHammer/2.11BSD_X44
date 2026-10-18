@@ -41,15 +41,26 @@ static char sccsid[] = "@(#)strcoll.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include <assert.h>
+#include <locale.h>
 #include <string.h>
+
+#include "setlocale.h"
 
 /*
  * Compare strings according to LC_COLLATE category of current locale.
  */
 int
-strcoll(s1, s2)
-	const char *s1, *s2;
+strcoll(const char *s1, const char *s2)
 {
 	/* LC_COLLATE is unimplemented, hence always "C" */
+	return (strcoll_l(s1, s2, __get_locale()));
+}
+
+int
+strcoll_l(const char *s1, const char *s2, locale_t locale)
+{
+	/* LC_COLLATE is unimplemented, hence always "C" */
+	/* LINTED */ (void)locale;
 	return (strcmp(s1, s2));
 }

@@ -54,8 +54,7 @@ __collate_range_cmp(int c1, int c2, locale_t locale)
 
 	s1[0] = c1;
 	s2[0] = c2;
-    locale = __get_locale();
-	return (strcoll(s1, s2));
+	return (strcoll_l(s1, s2, locale));
 }
 
 /*

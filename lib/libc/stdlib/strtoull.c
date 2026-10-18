@@ -50,6 +50,7 @@ __RCSID("$NetBSD: strtoull.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 
 #ifdef _LIBC
 __weak_alias(strtoull, _strtoull)
+__weak_alias(strtoull_l, _strtoull_l)
 #endif
 
 /*
@@ -60,10 +61,11 @@ __weak_alias(strtoull, _strtoull)
  */
 /* LONGLONG */
 unsigned long long int
-strtoull(nptr, endptr, base)
+strtoull_l(nptr, endptr, base, locale)
 	const char *nptr;
 	char **endptr;
 	int base;
+	locale_t locale;
 {
 	const char *s;
 	/* LONGLONG */
@@ -80,7 +82,7 @@ strtoull(nptr, endptr, base)
 	s = nptr;
 	do {
 		c = (unsigned char) *s++;
-	} while (isspace(c));
+	} while (isspace_l(c, locale));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -103,10 +105,10 @@ strtoull(nptr, endptr, base)
 	/* LONGLONG */
 	cutlim = (int)(ULLONG_MAX % (unsigned long long int)base);
 	for (acc = 0, any = 0;; c = (unsigned char) *s++) {
-		if (isdigit(c))
+		if (isdigit_l(c, locale))
 			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		else if (isalpha_l(c, locale))
+			c -= isupper_l(c, locale) ? 'A' - 10 : 'a' - 10;
 		else
 			break;
 		if (c >= base)
@@ -130,4 +132,13 @@ strtoull(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
+}
+
+unsigned long long int
+strtoull(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
+ {
+	return (strtoull_l(nptr, endptr, base, __get_locale()));
 }

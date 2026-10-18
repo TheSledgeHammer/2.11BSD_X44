@@ -292,7 +292,7 @@ wctype_l(property, locale)
 	rl = _RUNE_LOCALE(locale);
 	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
 		if (!strcmp(rl->wctype[i].name, property)) {
-			return ((wctype_t) &rl->wctype[i]);
+			return ((wctype_t)&rl->wctype[i]);
 		}
 	}
 	return ((wctype_t) NULL);
@@ -311,5 +311,5 @@ iswctype_l(c, charclass, locale)
 		return (0);
 	}
 
-	return (__isctype_wl(c, ((_WCTypeEntry*) charclass)->mask, locale));
+	return (__isctype_wl(c, ((_WCTypeEntry *)charclass)->mask, locale));
 }

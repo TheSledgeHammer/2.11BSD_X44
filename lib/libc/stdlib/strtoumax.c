@@ -45,9 +45,13 @@ __RCSID("$NetBSD: strtoumax.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 #ifdef __weak_alias
 __weak_alias(strtoumax, _strtoumax)
+__weak_alias(strtoumax_l, _strtoumax_l)
 #endif
 
 /*
@@ -57,10 +61,11 @@ __weak_alias(strtoumax, _strtoumax)
  * alphabets and digits are each contiguous.
  */
 uintmax_t
-strtoumax(nptr, endptr, base)
+strtoumax_l(nptr, endptr, base, locale)
 	const char *nptr;
 	char **endptr;
 	int base;
+	locale_t locale;
 {
 	const char *s;
 	uintmax_t acc, cutoff;
@@ -75,8 +80,8 @@ strtoumax(nptr, endptr, base)
 	 */
 	s = nptr;
 	do {
-		c = (unsigned char) *s++;
-	} while (isspace(c));
+		c = (unsigned char)*s++;
+	} while (isspace_l(c, locale));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -96,11 +101,11 @@ strtoumax(nptr, endptr, base)
 
 	cutoff = UINTMAX_MAX / (uintmax_t)base;
 	cutlim = (int)(UINTMAX_MAX % (uintmax_t)base);
-	for (acc = 0, any = 0;; c = (unsigned char) *s++) {
-		if (isdigit(c))
+	for (acc = 0, any = 0;; c = (unsigned char)*s++) {
+		if (isdigit_l(c, locale))
 			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		else if (isalpha_l(c, locale))
+			c -= isupper_l(c, locale) ? 'A' - 10 : 'a' - 10;
 		else
 			break;
 		if (c >= base)
@@ -123,4 +128,13 @@ strtoumax(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
+}
+
+uintmax_t
+strtoumax(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
+{
+	return (strtoumax_l(nptr, endptr, base, __get_locale()));
 }

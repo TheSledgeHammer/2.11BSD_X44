@@ -55,6 +55,13 @@ typedef	_BSD_SIZE_T_	size_t;
 #include <sys/null.h>
 
 #include <sys/cdefs.h>
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+typedef struct _locale		*locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+#endif /* _POSIX_C_SOURCE || _NETBSD_SOURCE */
+
 __BEGIN_DECLS
 void	*memchr(const void *, int, size_t);
 void	*memrchr(const void *, int, size_t);
@@ -70,6 +77,9 @@ char	*strcat(char * __restrict, const char * __restrict);
 char	*strchr(const char *, int);
 int	 	strcmp(const char *, const char *);
 int	 	strcoll(const char *, const char *);
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+int	 	strcoll_l(const char *, const char *, locale_t);
+#endif /* _POSIX_C_SOURCE || __BSD_VISIBLE */
 char	*strcpy(char * __restrict, const char * __restrict);
 size_t	strcspn(const char *, const char *);
 char 	*strerror(int);

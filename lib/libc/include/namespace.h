@@ -66,11 +66,13 @@
 #define strtof					_strtof
 #define strtoi					_strtoi
 #define strtoimax				_strtoimax
+#define strtoimax_l				_strtoimax_l
 #define strtold					_strtold
 #define strtou					_strtou
 #define strtoll					_strtoll
 #define strtoull				_strtoull
 #define strtoumax				_strtoumax
+#define strtoumax_l				_strtoumax_l
 #define sys_errlist				_sys_errlist
 #define sys_nerr				_sys_nerr
 #define sys_nsiglist				_sys_nsiglist

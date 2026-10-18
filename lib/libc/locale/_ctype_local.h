@@ -1,9 +1,14 @@
-/*-
- * Copyright (c) 1990, 1993
+/*
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * This code is derived from software contributed to Berkeley by
- * Chris Torek.
+ * Paul Borman at Krystal Technologies.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,61 +39,13 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _XSCAN_H_
-#define _XSCAN_H_
+#ifndef _CTYPE_LOCAL_H_
+#define _CTYPE_LOCAL_H_
 
-#ifndef NARROW
-#define U_CHAR_T wchar_t
-#define U_INT_T wint_t
-#else
-#define U_CHAR_T u_char
-#define U_INT_T u_int
-#endif
-
-#define CCLTABMAXLEN 256 	/* Maximum length of character class table */
-#define	BUF			513		/* Maximum length of numeric string. */
-
-/*
- * Flags used during conversion.
- */
-#define	LONG		0x01	/* l: long or double */
-#define	LONGDBL		0x02	/* L: long double */
-#define	SHORT		0x04	/* h: short */
-#define	SUPPRESS	0x08	/* *: suppress assignment */
-#define	POINTER		0x10	/* p: void * (as hex) */
-#define	NOSKIP		0x20	/* [ or c: do not skip blanks */
-#define	LONGLONG	0x400	/* ll: quad_t (+ deprecated q: quad) */
-#define	INTMAXT		0x800	/* j: intmax_t */
-#define	PTRDIFFT	0x1000	/* t: ptrdiff_t */
-#define	SIZET		0x2000	/* z: size_t */
-#define	SHORTSHORT	0x4000	/* hh: char */
-#define	UNSIGNED	0x8000	/* %[oupxX] conversions */
-
-/*
- * The following are used in numeric conversions only:
- * SIGNOK, NDIGITS, DPTOK, and EXPOK are for floating point;
- * SIGNOK, NDIGITS, PFXOK, and NZDIGITS are for integral.
- */
-#define	SIGNOK		0x40	/* +/- is (still) legal */
-#define	NDIGITS		0x80	/* no digits detected */
-
-#define	DPTOK		0x100	/* (float) decimal point is still legal */
-#define	EXPOK		0x200	/* (float) exponent (e+3, etc) still legal */
-
-#define	PFXOK		0x100	/* 0x prefix is (still) legal */
-#define	NZDIGITS	0x200	/* no zero digits detected */
-
-/*
- * Conversion types.
- */
-#define	CT_CHAR		0	/* %c conversion */
-#define	CT_CCL		1	/* %[...] conversion */
-#define	CT_STRING	2	/* %s conversion */
-#define	CT_INT		3	/* integer, i.e., strtol or strtoul */
-#define	CT_FLOAT	4	/* floating, i.e., strtod */
-
-extern int __scanfdebug;
-
-const U_CHAR_T *usccl(U_CHAR_T *, const U_CHAR_T *, int *, locale_t);
-
-#endif /* _XSCAN_H_ */
+__BEGIN_DECLS
+int		__istype_l(rune_t, _RuneType, locale_t);
+int 	__isctype_l(rune_t, _RuneType, locale_t);
+rune_t 	__toupper_l(rune_t, locale_t);
+rune_t 	__tolower_l(rune_t, locale_t);
+__END_DECLS
+#endif /* _CTYPE_LOCAL_H_ */

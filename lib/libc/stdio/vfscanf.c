@@ -80,15 +80,6 @@ int vfscanf_l(FILE *, locale_t, const char *, va_list);
 int __svfscanf_l(FILE *, locale_t, const char *, va_list);
 int __svfscanf_l_unlocked(FILE *, locale_t, const char *, va_list);
 
-int isspace_l(int, locale_t);
-
-int
-isspace_l(int c, locale_t locale)
-{
-    locale = __get_locale();
-    return (isspace(c));
-}
-
 int
 vfscanf(FILE *fp, const char *fmt0, va_list ap)
 {

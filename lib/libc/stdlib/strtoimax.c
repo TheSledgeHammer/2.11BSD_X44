@@ -45,9 +45,13 @@ __RCSID("$NetBSD: strtoimax.c,v 1.3 2003/08/07 16:43:44 agc Exp $");
 #include <errno.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 #ifdef __weak_alias
 __weak_alias(strtoimax, _strtoimax)
+__weak_alias(strtoimax_l, _strtoimax_l)
 #endif
 
 /*
@@ -57,10 +61,11 @@ __weak_alias(strtoimax, _strtoimax)
  * alphabets and digits are each contiguous.
  */
 intmax_t
-strtoimax(nptr, endptr, base)
+strtoimax_l(nptr, endptr, base, locale)
 	const char *nptr;
 	char **endptr;
 	int base;
+	locale_t locale;
 {
 	const char *s;
 	intmax_t acc, cutoff;
@@ -72,7 +77,7 @@ strtoimax(nptr, endptr, base)
 
 #ifdef __GNUC__
 	/* This outrageous construct just to shut up a GCC warning. */
-	(void) &acc; (void) &cutoff;
+	(void)&acc; (void)&cutoff;
 #endif
 
 	/*
@@ -82,8 +87,8 @@ strtoimax(nptr, endptr, base)
 	 */
 	s = nptr;
 	do {
-		c = (unsigned char) *s++;
-	} while (isspace(c));
+		c = (unsigned char)*s++;
+	} while (isspace_l(c, locale));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -129,11 +134,11 @@ strtoimax(nptr, endptr, base)
 		}
 		cutlim = -cutlim;
 	}
-	for (acc = 0, any = 0;; c = (unsigned char) *s++) {
-		if (isdigit(c))
+	for (acc = 0, any = 0;; c = (unsigned char)*s++) {
+		if (isdigit_l(c, locale))
 			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		else if (isalpha_l(c, locale))
+			c -= isupper_l(c, locale) ? 'A' - 10 : 'a' - 10;
 		else
 			break;
 		if (c >= base)
@@ -166,4 +171,10 @@ strtoimax(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
+}
+
+intmax_t
+strtoimax(nptr, endptr, base)
+{
+	return (strtoimax_l(nptr, endptr, base, __get_locale()));
 }

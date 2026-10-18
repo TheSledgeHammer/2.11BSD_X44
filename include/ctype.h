@@ -100,6 +100,44 @@ int	isphonogram(int);
 int	isrune(int);
 int	isspecial(int);
 #endif
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
+#  ifndef __LOCALE_T_DECLARED
+typedef struct _locale		*locale_t;
+#  define __LOCALE_T_DECLARED
+#  endif
+
+int	isalnum_l(int, locale_t);
+int	isalpha_l(int, locale_t);
+int	isblank_l(int, locale_t);
+int	iscntrl_l(int, locale_t);
+int	isdigit_l(int, locale_t);
+int	isgraph_l(int, locale_t);
+int	islower_l(int, locale_t);
+int	isprint_l(int, locale_t);
+int	ispunct_l(int, locale_t);
+int	isspace_l(int, locale_t);
+int	isupper_l(int, locale_t);
+int	isxdigit_l(int, locale_t);
+int	tolower_l(int, locale_t);
+int	toupper_l(int, locale_t);
+
+#if __ISO_C_VISIBLE >= 1999
+int	isblank_l(int, locale_t);
+#endif
+
+#if __BSD_VISIBLE
+int	isascii_l(int, locale_t);
+int	toascii_l(int, locale_t);
+int	digittoint_l(int, locale_t);
+int	ishexnumber_l(int, locale_t);
+int	isideogram_l(int, locale_t);
+int	isnumber_l(int, locale_t);
+int	isphonogram_l(int, locale_t);
+int	isrune_l(int, locale_t);
+int	isspecial_l(int, locale_t);
+#endif
+#endif
 __END_DECLS
 
 #define	isalpha(c)		__istype((c), (_CTYPE_U|_CTYPE_L))
