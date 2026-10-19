@@ -47,11 +47,16 @@ __RCSID("$NetBSD: strtoull.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 #ifdef _LIBC
 __weak_alias(strtoull, _strtoull)
 __weak_alias(strtoull_l, _strtoull_l)
 #endif
+
+unsigned long long int strtoull_l(const char *, char **, int, locale_t);
 
 /*
  * Convert a string to an unsigned long long integer.
