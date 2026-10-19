@@ -33,11 +33,25 @@
 #include <rune.h>
 
 wint_t	_towctrans_ext(wint_t, _WCTransEntry *);
+wint_t _towctrans_ext_lower(wint_t, struct _WCTransEntry *);
+wint_t _towctrans_ext_upper(wint_t, struct _WCTransEntry *);
 
 static __inline wint_t
 _towctrans(wint_t c, _WCTransEntry *te)
 {
-	return (_CRMASK(c) ? te->cached[(rune_t)c]:_towctrans_ext(c, te));
+	return (_CRMASK(c) ? te->cached[(rune_t)c] : _towctrans_ext(c, te));
+}
+
+static __inline wint_t
+_towctrans_lower(wint_t c, _WCTransEntry *te)
+{
+	return (_CRMASK(c) ? te->cached[(rune_t)c] : _towctrans_ext_lower(c, te));
+}
+
+static __inline wint_t
+_towctrans_upper(wint_t c, _WCTransEntry *te)
+{
+	return (_CRMASK(c) ? te->cached[(rune_t)c] : _towctrans_ext_upper(c, te));
 }
 
 static __inline struct _WCTransEntry *

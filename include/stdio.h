@@ -507,9 +507,11 @@ typedef struct _locale		*locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
 __BEGIN_DECLS
-int  	doprnt_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
+int doprnt_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
+int doscan_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
+int vfscanf_l(FILE * __restrict, locale_t, const char * __restrict, va_list);
 int	vfprintf_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
-int  	vdprintf_l(int, locale_t, const char * __restrict, __va_list);
+int vdprintf_l(int, locale_t, const char * __restrict, __va_list);
 int	dprintf_l(int, locale_t, const char * __restrict, ...);
 __END_DECLS
 #endif

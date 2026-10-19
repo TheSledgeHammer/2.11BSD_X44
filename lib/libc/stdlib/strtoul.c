@@ -38,10 +38,22 @@ static char sccsid[] = "@(#)strtoul.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#ifdef _LIBC
+#include "namespace.h"
+#endif
+
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <locale.h>
+
+#include "setlocale.h"
+
+#ifdef _LIBC
+__weak_alias(strtoul, _strtoul)
+__weak_alias(strtoul_l, _strtoul_l)
+#endif
 
 /*
  * Convert a string to an unsigned long integer.
@@ -50,10 +62,11 @@ static char sccsid[] = "@(#)strtoul.c	8.1.1 (2.11BSD) 1996/1/11";
  * alphabets and digits are each contiguous.
  */
 unsigned long
-strtoul(nptr, endptr, base)
+strtoul_l(nptr, endptr, base, locale)
 	const char *nptr;
 	char **endptr;
-	register int base;
+	int base;
+	locale_t locale;
 {
 	register const char *s = nptr;
 	register unsigned long acc;
@@ -66,7 +79,7 @@ strtoul(nptr, endptr, base)
 	 */
 	do {
 		c = *s++;
-	} while (isspace(c));
+	} while (isspace_l(c, locale));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -107,4 +120,13 @@ strtoul(nptr, endptr, base)
 	if (endptr != 0)
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
+}
+
+unsigned long
+strtoul(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	register int base;
+{
+	return (strtoul_l(nptr, endptr, base, __get_locale()));
 }

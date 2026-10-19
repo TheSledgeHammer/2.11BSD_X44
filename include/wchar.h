@@ -169,6 +169,11 @@ wint_t fputwc(wchar_t, FILE *);
 int fputws(const wchar_t * __restrict, FILE * __restrict);
 int fwide (FILE *, int);
 int vfwprintf(FILE * __restrict, const wchar_t * __restrict, __va_list);
+#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) > 199901L || \
+    (__cplusplus - 0) >= 201103L || defined(__BSD_VISIBLE) || \
+    (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600
+int vfwscanf(FILE * __restrict, const wchar_t * __restrict, __va_list);
+#endif
 wchar_t *wcsdup(const wchar_t *);
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
@@ -190,6 +195,7 @@ size_t wcrtomb_l(char * __restrict, wchar_t, mbstate_t * __restrict, locale_t);
 size_t wcsrtombs_l(char * __restrict, const wchar_t ** __restrict, size_t, mbstate_t * __restrict, locale_t);
 int wctob_l(wint_t, locale_t);
 
+int vfwscanf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, __va_list);
 int vfwprintf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, __va_list);
 #endif /* __BSD_VISIBLE */
 __END_DECLS

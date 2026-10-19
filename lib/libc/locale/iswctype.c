@@ -245,7 +245,7 @@ wctrans(charclass)
 
 	for (i = 0; i < _WCTRANS_NINDEXES; i++) {
 		if (!strcmp(rl->wctrans[i].name, charclass)) {
-			return ((wctrans_t) &rl->wctrans[i]);
+			return ((wctrans_t)&rl->wctrans[i]);
 		}
 	}
 	return ((wctrans_t) NULL);
@@ -260,7 +260,7 @@ towctrans(c, desc)
 		errno = EINVAL;
 		return (c);
 	}
-	return (_towctrans(c, (_WCTransEntry*) desc));
+	return (_towctrans(c, (_WCTransEntry *)desc));
 }
 
 wctype_t
@@ -272,7 +272,7 @@ wctype(property)
 
 	for (i = 0; i < _WCTYPE_NINDEXES; i++) {
 		if (!strcmp(rl->wctype[i].name, property)) {
-			return ((wctype_t) &rl->wctype[i]);
+			return ((wctype_t)&rl->wctype[i]);
 		}
 	}
 	return ((wctype_t) NULL);
@@ -286,9 +286,9 @@ iswctype(c, charclass)
 	/*
 	 * SUSv3: If charclass is 0, iswctype() shall return 0.
 	 */
-	if (charclass == (wctype_t) 0) {
+	if (charclass == (wctype_t)0) {
 		return (0);
 	}
 
-	return (__isctype_w(c, ((_WCTypeEntry*) charclass)->mask));
+	return (__isctype_w(c, ((_WCTypeEntry *)charclass)->mask));
 }

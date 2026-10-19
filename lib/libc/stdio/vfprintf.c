@@ -111,7 +111,6 @@ __RCSID("$NetBSD: vfwprintf.c,v 1.42 2026/09/21 19:12:51 kre Exp $");
 static int __sprint(FILE *, locale_t, struct __suio *);
 static int __sbprintf(FILE *, locale_t, const char *, va_list);
 static char *__wcsconv(wchar_t *, int, locale_t);
-int vfprintf_l_unlocked(FILE *, locale_t, const char *, va_list);
 
 static const char xdigs_lower[16] = "0123456789abcdef";
 static const char xdigs_upper[16] = "0123456789ABCDEF";

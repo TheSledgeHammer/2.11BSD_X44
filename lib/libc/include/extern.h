@@ -39,8 +39,8 @@ __BEGIN_DECLS
 #if __SSP_FORTIFY_LEVEL > 0
 char 		*__getcwd(char *, size_t);
 #endif
-const char 	*__strerror(int , char *, size_t);	/* TODO: Resolve  */
-const char 	*__strsignal(int , char *, size_t); /* TODO: Resolve  */
+const char 	*__strerror(int , char *, size_t);
+const char 	*__strsignal(int , char *, size_t);
 int 		__sysctl(int *, unsigned int, void *, size_t *, void *, size_t);
 
 int 		__getlogin(char *, u_int);

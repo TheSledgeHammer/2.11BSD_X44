@@ -318,8 +318,23 @@ void	  arc4random_addrandom(unsigned char *, int);
 typedef struct _locale *locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
+double		strtod_l(const char * __restrict, char ** __restrict, locale_t);
+float		strtof_l(const char * __restrict, char ** __restrict, locale_t);
+long double	strtold_l(const char * __restrict, char ** __restrict, locale_t);
+long	 strtol_l(const char * __restrict, char ** __restrict, int, locale_t);
+unsigned long
+	 strtoul_l(const char * __restrict, char ** __restrict, int, locale_t);
+/* LONGLONG */
+long long int
+	strtoll_l(const char * __restrict, char ** __restrict, int, locale_t);
+/* LONGLONG */
+unsigned long long int
+	strtoull_l(const char * __restrict, char ** __restrict, int, locale_t);
 
 #if defined(__BSD_VISIBLE)
+quad_t	 strtoq_l(const char * __restrict, char ** __restrict, int, locale_t);
+u_quad_t strtouq_l(const char * __restrict, char ** __restrict, int, locale_t);
+
 int	mblen_l(const char *, size_t, locale_t);
 size_t	mbstowcs_l(wchar_t * __restrict, const char * __restrict, size_t, locale_t);
 int	wctomb_l(char *, wchar_t, locale_t);

@@ -40,12 +40,26 @@ __RCSID("$NetBSD: strtouq.c,v 1.17 2003/08/07 16:43:45 agc Exp $");
 
 #include <sys/types.h>
 
+#ifdef _LIBC
+#include "namespace.h"
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <locale.h>
+
+#include "setlocale.h"
+
+#ifdef _LIBC
+#ifdef __weak_alias
+__weak_alias(strtouq, _strtouq)
+__weak_alias(strtouq_l, _strtouq_l)
+#endif
+#endif
 
 /*
  * Convert a string to an unsigned quad integer.
@@ -54,10 +68,11 @@ __RCSID("$NetBSD: strtouq.c,v 1.17 2003/08/07 16:43:45 agc Exp $");
  * alphabets and digits are each contiguous.
  */
 u_quad_t
-strtouq(nptr, endptr, base)
+strtouq_l(nptr, endptr, base, locale)
 	const char *nptr;
 	char **endptr;
 	int base;
+	locale_t locale;
 {
 	const char *s;
 	u_quad_t acc, cutoff;
@@ -72,8 +87,8 @@ strtouq(nptr, endptr, base)
 	 */
 	s = nptr;
 	do {
-		c = (unsigned char) *s++;
-	} while (isspace(c));
+		c = (unsigned char)*s++;
+	} while (isspace_l(c, locale));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -93,7 +108,7 @@ strtouq(nptr, endptr, base)
 
 	cutoff = UQUAD_MAX / (u_quad_t)base;
 	cutlim = (int)(UQUAD_MAX % (u_quad_t)base);
-	for (acc = 0, any = 0;; c = (unsigned char) *s++) {
+	for (acc = 0, any = 0;; c = (unsigned char)*s++) {
 		if (isdigit(c))
 			c -= '0';
 		else if (isalpha(c))
@@ -120,4 +135,13 @@ strtouq(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
+}
+
+u_quad_t
+strtouq(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
+{
+	return (strtouq_l(nptr, endptr, base, __get_locale()));
 }

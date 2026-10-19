@@ -76,10 +76,6 @@ static size_t parsefloat(FILE *, char *, char *, locale_t);
 #endif
 static const char *sccl(char *, const char *, locale_t);
 
-int vfscanf_l(FILE *, locale_t, const char *, va_list);
-int __svfscanf_l(FILE *, locale_t, const char *, va_list);
-int __svfscanf_l_unlocked(FILE *, locale_t, const char *, va_list);
-
 int
 vfscanf(FILE *fp, const char *fmt0, va_list ap)
 {

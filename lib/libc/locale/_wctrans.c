@@ -84,14 +84,32 @@ _towctrans_ext(wint_t c, struct _WCTransEntry *te)
 	_RuneEntry *re = rr->ranges;
 
 	if (c == WEOF)
-		return(c);
+		return (c);
 
 	for (x = 0; x < rr->nranges; ++x, ++re) {
 		/* XXX assumes wchar_t = int */
 		if ((rune_t)c < re->min)
-			return(c);
+			return (c);
 		if ((rune_t)c <= re->max)
-			return(re->map + (rune_t)c - re->min);
+			return (re->map + (rune_t)c - re->min);
 	}
-	return(c);
+	return (c);
+}
+
+wint_t
+_towctrans_ext_lower(wint_t c, struct _WCTransEntry *te)
+{
+	if (te->extmap != &_CurrentRuneLocale->maplower_ext) {
+		return (___tolower_mb(c));
+	}
+	return (_towctrans_ext(c, te));
+}
+
+wint_t
+_towctrans_ext_upper(wint_t c, struct _WCTransEntry *te)
+{
+	if (te->extmap != &_CurrentRuneLocale->mapupper_ext) {
+		return (___toupper_mb(c));
+	}
+	return (_towctrans_ext(c, te));
 }

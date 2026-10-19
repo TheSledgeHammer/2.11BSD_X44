@@ -65,7 +65,7 @@ __toupper_wl(c, locale)
 	locale_t locale;
 {
 	_RuneLocale *rl = _RUNE_LOCALE(locale);
-	return (_towctrans(c, _wctrans_upper(rl)));
+	return (_towctrans_upper(c, _wctrans_upper(rl)));
 }
 
 wint_t
@@ -74,7 +74,7 @@ __tolower_wl(c, locale)
 	locale_t locale;
 {
 	_RuneLocale *rl = _RUNE_LOCALE(locale);
-	return (_towctrans(c, _wctrans_lower(rl)));
+	return (_towctrans_lower(c, _wctrans_lower(rl)));
 }
 
 _RuneType

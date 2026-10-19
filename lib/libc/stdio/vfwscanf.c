@@ -74,10 +74,6 @@ static int parsefloat(FILE *, wchar_t *, wchar_t *, locale_t);
 #endif
 static const wchar_t *swcl(wchar_t *, const wchar_t *, int *, locale_t);
 
-int vfwscanf(FILE *, const wchar_t *, va_list);
-int vfwscanf_l(FILE *, locale_t, const wchar_t *, va_list);
-int vfwscanf_l_unlocked(FILE *, locale_t, const wchar_t *, va_list);
-
 static void
 ccltable(wchar_t *tab, const wchar_t **start, const wchar_t **end, locale_t locale)
 {

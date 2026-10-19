@@ -52,10 +52,14 @@ __RCSID("$NetBSD: strtoll.c,v 1.6 2003/10/27 00:12:42 lukem Exp $");
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtoll, _strtoll)
+__weak_alias(strtoll_l, _strtoll_l)
 #endif
 #endif
 
@@ -68,10 +72,11 @@ __weak_alias(strtoll, _strtoll)
  */
 /* LONGLONG */
 long long int
-strtoll(nptr, endptr, base)
+strtoll_l(nptr, endptr, base, locale)
 	const char *nptr;
 	char **endptr;
 	int base;
+	locale_t locale;
 {
 	const char *s;
 	/* LONGLONG */
@@ -84,7 +89,7 @@ strtoll(nptr, endptr, base)
 
 #ifdef __GNUC__
 	/* This outrageous construct just to shut up a GCC warning. */
-	(void) &acc; (void) &cutoff;
+	(void)&acc; (void)&cutoff;
 #endif
 
 	/*
@@ -94,8 +99,8 @@ strtoll(nptr, endptr, base)
 	 */
 	s = nptr;
 	do {
-		c = (unsigned char) *s++;
-	} while (isspace(c));
+		c = (unsigned char)*s++;
+	} while (isspace_l(c, locale));
 	if (c == '-') {
 		neg = 1;
 		c = *s++;
@@ -141,7 +146,7 @@ strtoll(nptr, endptr, base)
 		}
 		cutlim = -cutlim;
 	}
-	for (acc = 0, any = 0;; c = (unsigned char) *s++) {
+	for (acc = 0, any = 0;; c = (unsigned char)*s++) {
 		if (isdigit(c))
 			c -= '0';
 		else if (isalpha(c))
@@ -179,4 +184,14 @@ strtoll(nptr, endptr, base)
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
 }
+
+long long int
+strtoll(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
+{
+	return (strtoll_l(nptr, endptr, base, __get_locale()));
+}
+
 #endif

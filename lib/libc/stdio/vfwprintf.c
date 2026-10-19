@@ -110,7 +110,6 @@ static int __sprint(FILE *, locale_t, struct __suio *);
 static int __sbprintf(FILE *, locale_t, const wchar_t *, va_list);
 static wint_t __xfputwc(wchar_t, FILE *, locale_t);
 static wchar_t *__mbsconv(char *, int, locale_t);
-int vfwprintf_l_unlocked(FILE *, locale_t, const wchar_t *, va_list);
 
 static const char xdigs_lower[16] = "0123456789abcdef";
 static const char xdigs_upper[16] = "0123456789ABCDEF";

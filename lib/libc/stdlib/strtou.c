@@ -45,20 +45,24 @@ __RCSID("$NetBSD: strtou.c,v 1.3 2019/11/28 12:33:23 roy Exp $");
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 #ifdef _LIBC
 __weak_alias(strtou, _strtou)
-//__weak_alias(strtou_l, _strtou_l)
+__weak_alias(strtou_l, _strtou_l)
 #endif
 
 #if !HAVE_DECL_STRTOU
 
 uintmax_t
-strtou(nptr, endptr, base, lo, hi, rstatus)
+strtou_l(nptr, endptr, base, lo, hi, rstatus, locale)
 	const char *nptr;
 	char **endptr;
 	uintmax_t lo, hi;
 	int base, *rstatus;
+	locale_t locale;
 {
 	int serrno;
 	uintmax_t im;
@@ -79,7 +83,7 @@ strtou(nptr, endptr, base, lo, hi, rstatus)
 	serrno = errno;
 	errno = 0;
 
-	im = strtoumax(nptr, endptr, base);
+	im = strtoumax_l(nptr, endptr, base, locale);
 
 	*rstatus = errno;
 	errno = serrno;
@@ -105,6 +109,16 @@ strtou(nptr, endptr, base, lo, hi, rstatus)
 	}
 
 	return (im);
+}
+
+uintmax_t
+strtou(nptr, endptr, base, lo, hi, rstatus)
+	const char *nptr;
+	char **endptr;
+	uintmax_t lo, hi;
+	int base, *rstatus;
+{
+	return (strtou_l(nptr, endptr, base, lo, hi, rstatus, __get_locale()));
 }
 
 #endif

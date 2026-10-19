@@ -397,10 +397,10 @@ ___toupper_mb(c)
 	if (c < 0 || c == WEOF)
 		return (c);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
-		if (c < re->min)
+		if ((rune_t)c < re->min)
 			return (c);
-		if (c <= re->max)
-			return (re->map + c - re->min);
+		if ((rune_t)c <= re->max)
+			return (re->map + (rune_t)c - re->min);
 	}
 	return (c);
 }
@@ -435,10 +435,10 @@ ___tolower_mb(c)
 	if (c < 0 || c == WEOF)
 		return (c);
 	for (x = 0; x < rr->nranges; ++x, ++re) {
-		if (c < re->min)
+		if ((rune_t)c < re->min)
 			return (c);
-		if (c <= re->max)
-			return (re->map + c - re->min);
+		if ((rune_t)c <= re->max)
+			return (re->map + (rune_t)c - re->min);
 	}
 	return (c);
 }

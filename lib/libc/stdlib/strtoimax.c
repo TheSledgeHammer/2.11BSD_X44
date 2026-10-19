@@ -135,10 +135,10 @@ strtoimax_l(nptr, endptr, base, locale)
 		cutlim = -cutlim;
 	}
 	for (acc = 0, any = 0;; c = (unsigned char)*s++) {
-		if (isdigit_l(c, locale))
+		if (isdigit(c))
 			c -= '0';
-		else if (isalpha_l(c, locale))
-			c -= isupper_l(c, locale) ? 'A' - 10 : 'a' - 10;
+		else if (isalpha(c))
+			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
 		else
 			break;
 		if (c >= base)

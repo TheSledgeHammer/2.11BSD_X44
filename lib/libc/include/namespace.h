@@ -75,8 +75,8 @@
 #define strtoumax_l				_strtoumax_l
 #define sys_errlist				_sys_errlist
 #define sys_nerr				_sys_nerr
-#define sys_nsiglist				_sys_nsiglist
-#define sys_nsigname				_sys_nsigname
+#define sys_nsiglist			_sys_nsiglist
+#define sys_nsigname			_sys_nsigname
 #define sys_siglist				_sys_siglist
 #define sys_signame				_sys_signame
 #define verr					_verr

@@ -32,11 +32,22 @@
 
 #include <sys/cdefs.h>
 
+#include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>
 
 #include "reentrant.h"
 #include "local.h"
+
+int
+doscan_l(iop, locale, fmt, argp)
+	FILE *iop;
+	locale_t locale;
+	const char *fmt;
+	va_list argp;
+{
+	return (__svfscanf_l(iop, locale, fmt, argp));
+}
 
 int
 doscan(iop, fmt, argp)

@@ -54,7 +54,7 @@ extern FILE		*__sfp (void);
 extern int		__srefill(FILE *);
 extern int		__sread(void *, char *, int);
 extern int		__swrite(void *, char const *, int);
-extern fpos_t		__sseek(void *, fpos_t, int);
+extern fpos_t	__sseek(void *, fpos_t, int);
 extern int		__sclose(void *);
 extern void		__sinit(void);
 extern void		_cleanup(void);
@@ -62,12 +62,18 @@ extern void		(*__cleanup) (void);
 extern void		__smakebuf(FILE *);
 extern int		__swhatbuf(FILE *, size_t *, int *);
 extern int		_fwalk(int (*)(FILE *));
-extern char    		*_mktemp(char *);
+extern char    	*_mktemp(char *);
 extern int		__swsetup(FILE *);
 extern int		__sflags(const char *, int *);
 extern int		__svfscanf(FILE * __restrict, const char * __restrict, __va_list);
+extern int 		__svfscanf_l(FILE * __restrict, locale_t, const char * __restrict, va_list);
+extern int 		__svfscanf_l_unlocked(FILE * __restrict, locale_t, const char * __restrict, va_list);
 
-extern char     	*__gets(char *);
+extern int 		vfwscanf_l_unlocked(FILE * __restrict, locale_t, const wchar_t * __restrict, va_list);
+extern int 		vfprintf_l_unlocked(FILE *, locale_t, const char *, va_list);
+extern int 		vfwprintf_l_unlocked(FILE *, locale_t, const wchar_t *, va_list);
+
+extern char     *__gets(char *);
 
 extern int		__sdidinit;
 
