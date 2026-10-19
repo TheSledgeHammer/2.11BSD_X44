@@ -175,6 +175,9 @@ strtoimax_l(nptr, endptr, base, locale)
 
 intmax_t
 strtoimax(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
 {
 	return (strtoimax_l(nptr, endptr, base, __get_locale()));
 }
