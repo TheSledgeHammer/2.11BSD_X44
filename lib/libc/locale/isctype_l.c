@@ -245,7 +245,7 @@ tolower_l(c, locale)
 
 #undef toupper_l
 int
-toupper(c, locale)
+toupper_l(c, locale)
 	int c;
 	locale_t locale;
 {
