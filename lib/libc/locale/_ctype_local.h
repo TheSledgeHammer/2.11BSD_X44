@@ -43,8 +43,8 @@
 #define _CTYPE_LOCAL_H_
 
 __BEGIN_DECLS
-int		__istype_l(rune_t, _RuneType, locale_t);
-int 	__isctype_l(rune_t, _RuneType, locale_t);
+int		__istype_l(rune_t, unsigned long, locale_t);
+int 	__isctype_l(rune_t, unsigned long, locale_t);
 rune_t 	__toupper_l(rune_t, locale_t);
 rune_t 	__tolower_l(rune_t, locale_t);
 __END_DECLS
