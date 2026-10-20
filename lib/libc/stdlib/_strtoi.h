@@ -34,12 +34,9 @@
 #define __STRTOI_H_
 
 #if HAVE_NBTOOL_CONFIG_H
+
 __INT
-_FUNCNAME(nptr, endptr, base, lo, hi, rstatus)
-	const char *nptr;
-	char **endptr;
-	__INT lo, hi;
-	int base, *rstatus;
+_FUNCNAME(const char *nptr, char **endptr, int base, __INT lo, __INT hi, int *rstatus)
 
 #else
 
@@ -47,12 +44,7 @@ _FUNCNAME(nptr, endptr, base, lo, hi, rstatus)
 #include "setlocale.h"
 
 __INT
-_FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, locale)
-	const char *nptr;
-	char **endptr;
-	__INT lo, hi;
-	int base, *rstatus;
-	locale_t locale;
+_FUNCNAME_L(const char *nptr, char **endptr, int base, __INT lo, __INT hi, int *rstatus, locale_t locale)
 #endif
 {
 	int serrno;
@@ -75,7 +67,7 @@ _FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, locale)
 	errno = 0;
 
 #if HAVE_NBTOOL_CONFIG_H
-    im = __WRAPPED(nptr, endptr, base);
+	im = __WRAPPED(nptr, endptr, base);
 #else
 	im = __WRAPPED_L(nptr, endptr, base, locale);
 #endif
@@ -105,17 +97,5 @@ _FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, locale)
 
 	return (im);
 }
-
-/*
-__INT
-_FUNCNAME(nptr, endptr, base, lo, hi, rstatus)
-	const char *nptr;
-	char **endptr;
-	__INT lo, hi;
-	int base, *rstatus;
-{
-	return (_FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, __get_locale()));
-}
-*/
 
 #endif /* __STRTOI_H_ */

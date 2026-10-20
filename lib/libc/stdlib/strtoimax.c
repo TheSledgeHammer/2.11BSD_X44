@@ -45,10 +45,7 @@ __RCSID("$NetBSD: strtoimax.c,v 1.3 2003/08/07 16:43:44 agc Exp $");
 #include <errno.h>
 #include <inttypes.h>
 #include <stddef.h>
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
+
 #ifdef __weak_alias
 __weak_alias(strtoimax, _strtoimax)
 __weak_alias(strtoimax_l, _strtoimax_l)
@@ -65,7 +62,6 @@ __weak_alias(strtoimax_l, _strtoimax_l)
 #define	__INT		intmax_t
 #define	__INT_MIN	INTMAX_MIN
 #define	__INT_MAX	INTMAX_MAX
-
 #include "_strtol.h"
 
 #ifdef notyet

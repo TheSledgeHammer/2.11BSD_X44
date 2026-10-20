@@ -42,14 +42,12 @@ static char sccsid[] = "@(#)strtoul.c	8.1.1 (2.11BSD) 1996/1/11";
 #include "namespace.h"
 #endif
 
+#include <assert.h>
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
+
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtoul, _strtoul)
@@ -68,7 +66,6 @@ __weak_alias(strtoul_l, _strtoul_l)
 #define _FUNCNAME 	strtoul
 #define	__UINT		unsigned long
 #define	__UINT_MAX	ULONG_MAX
-
 #include "_strtoul.h"
 
 #ifdef notyet

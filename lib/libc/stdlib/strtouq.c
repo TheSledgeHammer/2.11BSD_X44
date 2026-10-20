@@ -49,11 +49,8 @@ __RCSID("$NetBSD: strtouq.c,v 1.17 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
-//#include <stddef.h>
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
+#include <stddef.h>
+
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtouq, _strtouq)

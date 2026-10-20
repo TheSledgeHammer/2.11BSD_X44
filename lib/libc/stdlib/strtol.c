@@ -42,14 +42,12 @@ static char sccsid[] = "@(#)strtol.c	8.1.1 (2.11BSD) 1996/1/11";
 #include "namespace.h"
 #endif
 
+#include <assert.h>
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
+
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtol, _strtol)
@@ -69,7 +67,6 @@ __weak_alias(strtol_l, _strtol_l)
 #define	__INT		long
 #define	__INT_MIN	LONG_MIN
 #define	__INT_MAX	LONG_MAX
-
 #include "_strtol.h"
 
 #ifdef notyet

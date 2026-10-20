@@ -47,10 +47,7 @@ __RCSID("$NetBSD: strtoull.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
+
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtoull, _strtoull)
@@ -68,7 +65,6 @@ __weak_alias(strtoull_l, _strtoull_l)
 #define _FUNCNAME 	strtoull
 #define	__UINT		unsigned long long int
 #define	__UINT_MAX	ULLONG_MAX
-
 #include "_strtoul.h"
 
 #ifdef notyet

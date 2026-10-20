@@ -53,10 +53,6 @@ __RCSID("$NetBSD: strtoll.c,v 1.6 2003/10/27 00:12:42 lukem Exp $");
 #include <stdlib.h>
 #include <stddef.h>
 
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtoll, _strtoll)
@@ -78,7 +74,6 @@ __weak_alias(strtoll_l, _strtoll_l)
 #define	__INT		long long int
 #define	__INT_MIN	LLONG_MIN
 #define	__INT_MAX	LLONG_MAX
-
 #include "_strtol.h"
 #endif
 

@@ -34,16 +34,11 @@
 #ifndef __STRTOL_H_
 #define __STRTOL_H_
 
-//#ifndef HAVE_NBTOOL_CONFIG_H
 #include <locale.h>
 #include "setlocale.h"
 
 __INT
-_FUNCNAME_L(nptr, endptr, base, locale)
-	const char *nptr;
-	char **endptr;
-	int base;
-	locale_t locale;
+_FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 {
 	const char *s = nptr;
 	__INT acc, cutoff;
@@ -120,13 +115,9 @@ _FUNCNAME_L(nptr, endptr, base, locale)
 }
 
 __INT
-_FUNCNAME(nptr, endptr, base)
-	const char *nptr;
-	char **endptr;
-	int base;
+_FUNCNAME(const char *nptr, char **endptr, int base)
 {
 	return (_FUNCNAME_L(nptr, endptr, base, __get_locale()));
 }
 
-//#endif
 #endif /* __STRTOL_H_ */

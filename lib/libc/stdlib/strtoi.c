@@ -41,14 +41,10 @@ __RCSID("$NetBSD: strtoi.c,v 1.3 2019/11/28 12:33:23 roy Exp $");
 #include "namespace.h"
 #endif
 
-#include <stddef.h>
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
-/*
-#include <locale.h>
-#include "setlocale.h"
-*/
+#include <stddef.h>
 
 #ifdef _LIBC
 #ifdef __weak_alias
@@ -65,7 +61,6 @@ __weak_alias(strtoi_l, _strtoi_l)
 #define __WRAPPED   strtoimax
 #include "_strtoi.h"
 #endif
-
 
 #ifdef notyet
 intmax_t

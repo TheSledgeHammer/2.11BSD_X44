@@ -38,11 +38,7 @@
 #include "setlocale.h"
 
 __UINT
-_FUNCNAME_L(nptr, endptr, base, locale)
-	const char *nptr;
-	char **endptr;
-	int base;
-	locale_t locale;
+_FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 {
 	const char *s = nptr;
 	__UINT acc, cutoff;
@@ -101,10 +97,7 @@ _FUNCNAME_L(nptr, endptr, base, locale)
 }
 
 __UINT
-_FUNCNAME(nptr, endptr, base)
-	const char *nptr;
-	char **endptr;
-	int base;
+_FUNCNAME(const char *nptr, char **endptr, int base)
 {
 	return (_FUNCNAME_L(nptr, endptr, base, __get_locale()));
 }
