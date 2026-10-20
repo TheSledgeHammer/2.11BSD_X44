@@ -37,6 +37,9 @@
 #ifndef __WCSTOUL_H_
 #define __WCSTOUL_H_
 
+#include <locale.h>
+#include "setlocale.h"
+
 /*
  * function template for wcstoul, wcstoull and wcstoumax.
  *

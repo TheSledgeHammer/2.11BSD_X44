@@ -40,6 +40,6 @@
 #define	_FUNCNAME_L		wcstold_l
 #define _FUNCNAME		wcstold
 #define __DOUBLE		long double
-#define _STRTOD_FUNC	strtold
+#define _STRTOD_FUNC	strtold_l
 
 #include "_wcstod.h"

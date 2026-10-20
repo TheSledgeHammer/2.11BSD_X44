@@ -31,6 +31,9 @@
 #ifndef __WCSTOD_H_
 #define __WCSTOD_H_
 
+#include <locale.h>
+#include "setlocale.h"
+
 #define _L(x)   ((const wchar_t *)__CONCAT(L,x))
 #define _LC(x)  (*(const wchar_t *)__CONCAT(L,x))
 
