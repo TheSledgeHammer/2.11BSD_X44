@@ -33,12 +33,15 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
- int
+#include <locale.h>
+#include "setlocale.h"
+
+int
 #ifdef KR_headers
-strtopf(s, sp, f)
- 	 CONST char *s; char **sp; float *f;
+strtopf_l(s, sp, f, loc)
+ 	 CONST char *s; char **sp; float *f; locale_t loc;
 #else
-strtopf(CONST char *s, char **sp, float *f)
+strtopf_l(CONST char *s, char **sp, float *f, locale_t loc)
 #endif
 {
 	static FPI fpi = { 24, 1-127-24+1,  254-127-24+1, 1, SI };
@@ -46,7 +49,7 @@ strtopf(CONST char *s, char **sp, float *f)
 	Long exp;
 	int k;
 
-	k = strtodg(s, sp, &fpi, &exp, bits);
+	k = strtodg_l(s, sp, &fpi, &exp, bits, loc);
 	if (k == STRTOG_NoMemory)
 		return k;
 	L = (ULong*) f;
@@ -75,4 +78,15 @@ strtopf(CONST char *s, char **sp, float *f)
 	if (k & STRTOG_Neg)
 		L[0] |= 0x80000000L;
 	return k;
+}
+
+int
+#ifdef KR_headers
+strtopf(s, sp, f)
+	 CONST char *s; char **sp; float *f;
+#else
+strtopf(CONST char *s, char **sp, float *f)
+#endif
+{
+	return (strtopf_l(s, sp, f, __get_locale()));
 }

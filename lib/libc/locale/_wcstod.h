@@ -44,9 +44,10 @@
  */
 
 __DOUBLE
-_FUNCNAME(nptr, endptr)
+_FUNCNAME_L(nptr, endptr, loc)
 	const wchar_t *nptr;
 	wchar_t **endptr;
+	locale_t loc;
 {
 	const wchar_t *src;
 	size_t size;
@@ -61,7 +62,7 @@ _FUNCNAME(nptr, endptr)
 	src = nptr;
 
 	/* skip space first */
-	while (iswspace(*src)) {
+	while (iswspace_l(*src, loc)) {
 		src++;
 	}
 
@@ -111,7 +112,7 @@ _FUNCNAME(nptr, endptr)
 
 		s = start;
 		memset(&st, 0, sizeof(st));
-		size_converted = wcsrtombs(buf, &s, size, &st);
+		size_converted = wcsrtombs_l(buf, &s, size, &st, loc);
 		if (size != size_converted) {
 			/* XXX should not happen */
 			free(buf);
@@ -120,7 +121,7 @@ _FUNCNAME(nptr, endptr)
 		}
 
 		buf[size] = 0;
-		result = _STRTOD_FUNC(buf, &end);
+		result = _STRTOD_FUNC(buf, &end, loc);
 
 		free(buf);
 
@@ -140,4 +141,11 @@ _FUNCNAME(nptr, endptr)
 	return (0);
 }
 
+__DOUBLE
+_FUNCNAME(nptr, endptr)
+	const wchar_t *nptr;
+	wchar_t **endptr;
+{
+	return (_FUNCNAME_L(nptr, endptr, __get_locale()));
+}
 #endif /* __WCSTOD_H_ */

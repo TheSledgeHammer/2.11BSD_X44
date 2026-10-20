@@ -33,6 +33,9 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#include <locale.h>
+#include "setlocale.h"
+
 void
 #ifdef KR_headers
 ULtof(L, bits, exp, k)
@@ -69,10 +72,10 @@ ULtof(ULong *L, ULong *bits, Long exp, int k)
 
 int
 #ifdef KR_headers
-strtorf(s, sp, rounding, f)
- 	 CONST char *s; char **sp; int rounding; float *f;
+strtorf_l(s, sp, rounding, f, loc)
+ 	 CONST char *s; char **sp; int rounding; float *f; locale_t loc;
 #else
-strtorf(CONST char *s, char **sp, int rounding, float *f)
+strtorf_l(CONST char *s, char **sp, int rounding, float *f, locale_t loc)
 #endif
 {
 	static FPI fpi0 = { 24, 1-127-24+1,  254-127-24+1, 1, SI };
@@ -87,9 +90,20 @@ strtorf(CONST char *s, char **sp, int rounding, float *f)
 		fpi1.rounding = rounding;
 		fpi = &fpi1;
 	}
-	k = strtodg(s, sp, fpi, &exp, bits);
+	k = strtodg_l(s, sp, fpi, &exp, bits, loc);
 	if (k == STRTOG_NoMemory)
 		return k;
 	ULtof((ULong*) f, bits, exp, k);
 	return k;
+}
+
+int
+#ifdef KR_headers
+strtorf(s, sp, rounding, f)
+ 	 CONST char *s; char **sp; int rounding; float *f;
+#else
+strtorf(CONST char *s, char **sp, int rounding, float *f)
+#endif
+{
+	return (strtorf_l(s, sp, rounding, f, __get_locale()));
 }

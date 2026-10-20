@@ -894,10 +894,11 @@ match_failure:
 static const char *
 sccl(char *tab, const char *fmt, locale_t locale)
 {
-    int cclcompl;			/* ccl is complemented? */
+	int cclcompl; /* ccl is complemented? */
 
-    cclcompl = 0;
-	return ((const char *)usccl((u_char *)tab, (const u_char *)fmt, &cclcompl, locale));
+	cclcompl = 0;
+	return ((const char *)usccl((u_char *)tab, (const u_char *)fmt, &cclcompl,
+			locale));
 }
 
 #ifdef FLOATING_POINT

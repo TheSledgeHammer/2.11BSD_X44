@@ -52,10 +52,11 @@ __RCSID("$NetBSD: strtoll.c,v 1.6 2003/10/27 00:12:42 lukem Exp $");
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
+
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtoll, _strtoll)
@@ -64,6 +65,24 @@ __weak_alias(strtoll_l, _strtoll_l)
 #endif
 
 #if !HAVE_DECL_STRTOLL
+
+/*
+ * Convert a string to a long long integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+/* LONGLONG */
+#define _FUNCNAME_L strtoll_l
+#define _FUNCNAME 	strtoll
+#define	__INT		long long int
+#define	__INT_MIN	LLONG_MIN
+#define	__INT_MAX	LLONG_MAX
+
+#include "_strtol.h"
+#endif
+
+#ifdef notyet
 /*
  * Convert a string to a long long integer.
  *

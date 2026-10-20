@@ -33,6 +33,9 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#include <locale.h>
+#include "setlocale.h"
+
 void
 #ifdef KR_headers
 ULtod(L, bits, expt, k)
@@ -75,10 +78,10 @@ ULtod(ULong *L, ULong *bits, Long expt, int k)
 
 int
 #ifdef KR_headers
-strtord(s, sp, rounding, d)
- 	 CONST char *s; char **sp; int rounding; double *d;
+strtord_l(s, sp, rounding, d, loc)
+ 	 CONST char *s; char **sp; int rounding; double *d; locale_t loc;
 #else
-strtord(CONST char *s, char **sp, int rounding, double *d)
+strtord_l(CONST char *s, char **sp, int rounding, double *d, locale_t loc)
 #endif
 {
 	static CONST FPI fpi0 = { 53, 1-1023-53+1, 2046-1023-53+1, 1, SI };
@@ -94,9 +97,20 @@ strtord(CONST char *s, char **sp, int rounding, double *d)
 		fpi1.rounding = rounding;
 		fpi = &fpi1;
 	}
-	k = strtodg(s, sp, fpi, &expt, bits);
+	k = strtodg_l(s, sp, fpi, &expt, bits, loc);
 	if (k == STRTOG_NoMemory)
 		return k;
 	ULtod((/* LINTED */(U *) d)->L, bits, expt, k);
 	return k;
+}
+
+int
+#ifdef KR_headers
+strtord(s, sp, rounding, d)
+ 	 CONST char *s; char **sp; int rounding; double *d;
+#else
+strtord(CONST char *s, char **sp, int rounding, double *d)
+#endif
+{
+	return (strtord_l(s, sp, rounding, d, __get_locale()));
 }

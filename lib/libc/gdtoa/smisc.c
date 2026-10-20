@@ -36,10 +36,10 @@ THIS SOFTWARE.
  Bigint *
 s2b
 #ifdef KR_headers
-(s, nd0, nd, y9)
- 	 CONST char *s; int nd0, nd; ULong y9;
+(s, nd0, nd, y9, dplen)
+ 	 CONST char *s; int nd0, nd; ULong y9; size_t dplen;
 #else
-(CONST char *s, int nd0, int nd, ULong y9)
+(CONST char *s, int nd0, int nd, ULong y9, size_t dplen)
 #endif
 {
 	Bigint *b;
@@ -71,9 +71,9 @@ s2b
 			if (b == NULL)
 				return NULL;
 		} while (++i < nd0);
-		s++;
+		s+=dplen;
 	} else
-		s += 10;
+		s += dplen + 9;
 	for (; i < nd; i++) {
 		b = multadd(b, 10, *s++ - '0');
 		if (b == NULL)

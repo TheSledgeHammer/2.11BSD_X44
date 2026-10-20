@@ -45,15 +45,29 @@ __RCSID("$NetBSD: strtoumax.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <inttypes.h>
 #include <stddef.h>
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef __weak_alias
 __weak_alias(strtoumax, _strtoumax)
 __weak_alias(strtoumax_l, _strtoumax_l)
 #endif
 
+/*
+ * Convert a string to an uintmax_t.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+#define _FUNCNAME_L strtoumax_l
+#define _FUNCNAME 	strtoumax
+#define	__UINT		uintmax_t
+#define	__UINT_MAX	UINTMAX_MAX
+
+#include "_strtoul.h"
+
+#ifdef notyet
 /*
  * Convert a string to an uintmax_t.
  *
@@ -138,3 +152,4 @@ strtoumax(nptr, endptr, base)
 {
 	return (strtoumax_l(nptr, endptr, base, __get_locale()));
 }
+#endif

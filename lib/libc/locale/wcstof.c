@@ -37,8 +37,9 @@
 #include <wchar.h>
 #include <wctype.h>
 
+#define	_FUNCNAME_L		wcstof_l
 #define _FUNCNAME		wcstof
 #define __DOUBLE		float
-#define _STRTOD_FUNC	strtof
+#define _STRTOD_FUNC	strtof_l
 
 #include "_wcstod.h"

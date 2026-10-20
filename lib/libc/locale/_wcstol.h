@@ -37,6 +37,9 @@
 #ifndef __WCSTOL_H_
 #define __WCSTOL_H_
 
+#include <locale.h>
+#include "setlocale.h"
+
 /*
  * function template for wcstol, wcstoll and wcstoimax.
  *
@@ -48,10 +51,11 @@
  */
 
 __INT
-_FUNCNAME(nptr, endptr, base)
+_FUNCNAME_L(nptr, endptr, base, loc)
 	const wchar_t *nptr;
 	wchar_t **endptr;
 	int base;
+	locale_t loc;
 {
 	const wchar_t *s;
 	__INT acc, cutoff;
@@ -79,8 +83,8 @@ _FUNCNAME(nptr, endptr, base)
 	 */
 	s = nptr;
 	do {
-		wc = (wchar_t) *s++;
-	} while (iswspace(wc));
+		wc = (wchar_t)*s++;
+	} while (iswspace_l(wc, loc));
 	if (wc == L'-') {
 		neg = 1;
 		wc = *s++;
@@ -111,7 +115,7 @@ _FUNCNAME(nptr, endptr, base)
 		}
 		cutlim = -cutlim;
 	}
-	for (acc = 0, any = 0;; wc = (wchar_t) *s++) {
+	for (acc = 0, any = 0;; wc = (wchar_t)*s++) {
 		i = __wctoint(wc);
 		if (i == -1)
 			break;
@@ -145,6 +149,15 @@ _FUNCNAME(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);
+}
+
+__INT
+_FUNCNAME(nptr, endptr, base)
+	const wchar_t *nptr;
+	wchar_t **endptr;
+	int base;
+{
+	return (_FUNCNAME_L(nptr, endptr, base, __get_locale()));
 }
 
 #endif /* __WCSTOL_H_ */

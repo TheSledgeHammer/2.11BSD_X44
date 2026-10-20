@@ -35,15 +35,19 @@ __RCSID("$NetBSD: wcsxfrm.c,v 1.1 2003/03/02 22:18:16 tshiozak Exp $");
 
 #include <assert.h>
 #include <wchar.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 /*
  * Compare strings with using collating information.
  */
 size_t
-wcsxfrm(s1, s2, n)
+wcsxfrm_l(s1, s2, n, loc)
 	wchar_t *s1;
 	const wchar_t *s2;
 	size_t n;
+	locale_t loc;
 {
 	size_t len;
 
@@ -61,4 +65,13 @@ wcsxfrm(s1, s2, n)
 		/* thus, do nothing */;
 
 	return (len);
+}
+
+size_t
+wcsxfrm(s1, s2, n)
+	wchar_t *s1;
+	const wchar_t *s2;
+	size_t n;
+{
+	return (wcsxfrm_l(s1, s2, n, __get_locale()));
 }

@@ -15,6 +15,7 @@ __RCSID("$NetBSD: wcstoul.c,v 1.2 2003/03/11 09:21:24 tshiozak Exp $");
 
 #include "__wctoint.h"
 
+#define	_FUNCNAME_L	wcstoul_l
 #define	_FUNCNAME	wcstoul
 #define	__UINT		unsigned long
 #define	__UINT_MAX	ULONG_MAX

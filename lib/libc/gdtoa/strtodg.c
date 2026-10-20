@@ -34,6 +34,7 @@ THIS SOFTWARE.
 #include "gdtoaimp.h"
 
 #ifdef USE_LOCALE
+#include <locale.h>
 #include "setlocale.h"
 #endif
 
@@ -321,12 +322,12 @@ mantbits(U *d)
 #endif /* !VAX */
 
 int
-strtodg
+strtodg_l
 #ifdef KR_headers
-(s00, se, fpi, expt, bits)
-	CONST char *s00; char **se; CONST FPI *fpi; Long *expt; ULong *bits;
+(s00, se, fpi, expt, bits, loc)
+	CONST char *s00; char **se; CONST FPI *fpi; Long *expt; ULong *bits; locale_t loc;
 #else
-(CONST char *s00, char **se, CONST FPI *fpi, Long *expt, ULong *bits)
+(CONST char *s00, char **se, CONST FPI *fpi, Long *expt, ULong *bits, locale_t loc)
 #endif
 {
 	int abe, abits, asub;
@@ -340,6 +341,10 @@ strtodg
 	Long L;
 	ULong y, z;
 	Bigint *ab, *bb, *bb1, *bd, *bd0, *bs, *delta, *rvb, *rvb0;
+#ifdef USE_LOCALE /*{{*/
+	char *decimalpoint = localeconv_l(loc)->decimal_point;
+	size_t dplen = strlen(decimalpoint);
+#endif /*USE_LOCALE}}*/
 
 	e2 = 0; /* XXX gcc */
 
@@ -402,7 +407,7 @@ break2:
 			z = 10 * z + c - '0';
 	nd0 = nd;
 #ifdef USE_LOCALE
-	if (c == *localeconv()->decimal_point)
+	if (c == *decimalpoint)
 #else
 	if (c == '.')
 #endif
@@ -691,7 +696,7 @@ ufl:
 
 	/* Put digits into bd: true value = bd * 10^e */
 
-	bd0 = s2b(s0, nd0, nd, y);
+	bd0 = s2b(s0, nd0, nd, y, dplen);
 
 	for (;;) {
 		bd = Balloc(bd0->k);
@@ -1045,4 +1050,16 @@ ret:
 		Bfree(rvb);
 	}
 	return irv;
+}
+
+int
+strtodg
+#ifdef KR_headers
+(s00, se, fpi, expt, bits)
+	CONST char *s00; char **se; CONST FPI *fpi; Long *expt; ULong *bits;
+#else
+(CONST char *s00, char **se, CONST FPI *fpi, Long *expt, ULong *bits)
+#endif
+{
+	return (strtodg_l(s00, se, fpi, expt, bits, __get_locale()));
 }

@@ -50,16 +50,31 @@ __RCSID("$NetBSD: strtouq.c,v 1.17 2003/08/07 16:43:45 agc Exp $");
 #include <limits.h>
 #include <stdlib.h>
 #include <stddef.h>
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtouq, _strtouq)
 __weak_alias(strtouq_l, _strtouq_l)
 #endif
 #endif
+
+/*
+ * Convert a string to an unsigned quad integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+#define _FUNCNAME_L strtouq_l
+#define _FUNCNAME 	strtouq
+#define	__UINT		u_quad_t
+#define	__UINT_MAX	UQUAD_MAX
+
+#include "_strtoul.h"
+
+#ifdef notyet
 
 /*
  * Convert a string to an unsigned quad integer.
@@ -145,3 +160,4 @@ strtouq(nptr, endptr, base)
 {
 	return (strtouq_l(nptr, endptr, base, __get_locale()));
 }
+#endif

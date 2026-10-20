@@ -33,6 +33,9 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#include <locale.h>
+#include "setlocale.h"
+
 #undef _0
 #undef _1
 
@@ -55,10 +58,10 @@ THIS SOFTWARE.
 
 int
 #ifdef KR_headers
-strtopx(s, sp, V)
- 	 CONST char *s; char **sp; void *V;
+strtopx_l(s, sp, V, loc)
+ 	 CONST char *s; char **sp; void *V; locale_t loc;
 #else
-strtopx(CONST char *s, char **sp, void *V)
+strtopx_l(CONST char *s, char **sp, void *V, locale_t loc)
 #endif
 {
 	static const FPI fpi = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI };
@@ -67,7 +70,7 @@ strtopx(CONST char *s, char **sp, void *V)
 	int k;
 	UShort *L = (UShort*)V;
 
-	k = strtodg(s, sp, &fpi, &expt, bits);
+	k = strtodg_l(s, sp, &fpi, &expt, bits, loc);
 	if (k == STRTOG_NoMemory)
 		return k;
 	switch (k & STRTOG_Retmask) {
@@ -106,4 +109,15 @@ strtopx(CONST char *s, char **sp, void *V)
 	if (k & STRTOG_Neg)
 		L[_0] |= 0x8000;
 	return k;
+}
+
+int
+#ifdef KR_headers
+strtopx(s, sp, V)
+ 	 CONST char *s; char **sp; void *V;
+#else
+strtopx(CONST char *s, char **sp, void *V)
+#endif
+{
+	return (strtopx_l(s, sp, V, get_locale()));
 }

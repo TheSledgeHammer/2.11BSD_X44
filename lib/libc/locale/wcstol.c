@@ -15,6 +15,7 @@ __RCSID("$NetBSD: wcstol.c,v 1.2 2003/03/11 09:21:23 tshiozak Exp $");
 
 #include "__wctoint.h"
 
+#define	_FUNCNAME_L	wcstol_l
 #define	_FUNCNAME	wcstol
 #define	__INT		long
 #define	__INT_MIN	LONG_MIN

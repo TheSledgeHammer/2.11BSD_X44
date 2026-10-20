@@ -45,17 +45,26 @@ __RCSID("$NetBSD: strtou.c,v 1.3 2019/11/28 12:33:23 roy Exp $");
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef _LIBC
+#ifdef __weak_alias
 __weak_alias(strtou, _strtou)
 __weak_alias(strtou_l, _strtou_l)
 #endif
+#endif
 
 #if !HAVE_DECL_STRTOU
+#define _FUNCNAME_L strtou_l
+#define _FUNCNAME 	strtou
+#define	__UINT		uintmax_t
 
+#include "_strtou.h"
+#endif
+
+#ifdef notyet
 uintmax_t
 strtou_l(nptr, endptr, base, lo, hi, rstatus, locale)
 	const char *nptr;

@@ -563,9 +563,18 @@ extern double ratio ANSI((Bigint *, Bigint *));
 extern void rshift ANSI((Bigint *, int));
 extern Bigint *set_ones ANSI((Bigint *, int));
 extern char *rv_alloc ANSI((size_t));
-extern Bigint *s2b ANSI((CONST char *, int, int, ULong));
+extern Bigint *s2b ANSI((CONST char *, int, int, ULong, size_t));
 extern Bigint *sum ANSI((Bigint *, Bigint *));
 extern int trailz ANSI((CONST Bigint *));
+
+extern float strtof_l ANSI((CONST char *, char **, locale_t));
+extern double strtod_l ANSI((const char *, char **, locale_t));
+extern int strtodg_l ANSI((CONST char *, char **, CONST FPI *, Long *, ULong *, locale_t));
+extern int strtord_l  ANSI((CONST char *, char **, int, double *, locale_t));
+extern int strtordd_l ANSI((CONST char *, char **, int, double *, locale_t));
+extern int strtorf_l  ANSI((CONST char *, char **, int, float *, locale_t));
+extern int strtorx_l  ANSI((CONST char *, char **, int, void *, locale_t));
+extern int strtorxL_l ANSI((CONST char *, char **, int, void *, locale_t));
 
 #ifdef __cplusplus
 }

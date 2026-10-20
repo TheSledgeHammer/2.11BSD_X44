@@ -46,14 +46,32 @@ static char sccsid[] = "@(#)strtoul.c	8.1.1 (2.11BSD) 1996/1/11";
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef _LIBC
+#ifdef __weak_alias
 __weak_alias(strtoul, _strtoul)
 __weak_alias(strtoul_l, _strtoul_l)
 #endif
+#endif
+
+/*
+ * Convert a string to an unsigned long integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+
+#define _FUNCNAME_L strtoul_l
+#define _FUNCNAME 	strtoul
+#define	__UINT		unsigned long
+#define	__UINT_MAX	ULONG_MAX
+
+#include "_strtoul.h"
+
+#ifdef notyet
 
 /*
  * Convert a string to an unsigned long integer.
@@ -130,3 +148,4 @@ strtoul(nptr, endptr, base)
 {
 	return (strtoul_l(nptr, endptr, base, __get_locale()));
 }
+#endif

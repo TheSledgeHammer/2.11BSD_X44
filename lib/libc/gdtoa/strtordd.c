@@ -33,6 +33,9 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#include <locale.h>
+#include "setlocale.h"
+
  void
 #ifdef KR_headers
 ULtodd(L, bits, exp, k) ULong *L; ULong *bits; Long exp; int k;
@@ -166,10 +169,10 @@ ULtodd(ULong *L, ULong *bits, Long exp, int k)
 
 int
 #ifdef KR_headers
-strtordd(s, sp, rounding, dd)
- 	 CONST char *s; char **sp; int rounding; double *dd;
+strtordd_l(s, sp, rounding, dd, loc)
+ 	 CONST char *s; char **sp; int rounding; double *dd; locale_t loc;
 #else
-strtordd(CONST char *s, char **sp, int rounding, double *dd)
+strtordd_l(CONST char *s, char **sp, int rounding, double *dd, locale_t loc)
 #endif
 {
 #ifdef Sudden_Underflow
@@ -188,9 +191,20 @@ strtordd(CONST char *s, char **sp, int rounding, double *dd)
 		fpi1.rounding = rounding;
 		fpi = &fpi1;
 	}
-	k = strtodg(s, sp, fpi, &exp, bits);
+	k = strtodg_l(s, sp, fpi, &exp, bits, loc);
 	if (k == STRTOG_NoMemory)
 		return k;
 	ULtodd((ULong*) dd, bits, exp, k);
 	return k;
+}
+
+int
+#ifdef KR_headers
+strtordd(s, sp, rounding, dd)
+ 	 CONST char *s; char **sp; int rounding; double *dd;
+#else
+strtordd(CONST char *s, char **sp, int rounding, double *dd)
+#endif
+{
+	return (strtordd_l(s, sp, rounding, dd, __get_locale()));
 }

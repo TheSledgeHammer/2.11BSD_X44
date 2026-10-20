@@ -16,6 +16,7 @@ __RCSID("$NetBSD: wcstoimax.c,v 1.1 2003/03/11 09:21:23 tshiozak Exp $");
 
 #include "__wctoint.h"
 
+#define	_FUNCNAME_L	wcstoimax_l
 #define	_FUNCNAME	wcstoimax
 #define	__INT		intmax_t
 #define	__INT_MIN	INTMAX_MIN

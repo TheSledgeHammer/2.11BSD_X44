@@ -33,12 +33,15 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#include <locale.h>
+#include "setlocale.h"
+
 int
 #ifdef KR_headers
-strtopdd(s, sp, dd)
- 	 CONST char *s; char **sp; double *dd;
+strtopdd_l(s, sp, dd, loc)
+ 	 CONST char *s; char **sp; double *dd; locale_t loc;
 #else
-strtopdd(CONST char *s, char **sp, double *dd)
+strtopdd_l(CONST char *s, char **sp, double *dd, locale_t loc)
 #endif
 {
 #ifdef Sudden_Underflow
@@ -55,7 +58,7 @@ strtopdd(CONST char *s, char **sp, double *dd)
 	} U;
 	U *u;
 
-	rv = strtodg(s, sp, &fpi, &exp, bits);
+	rv = strtodg_l(s, sp, &fpi, &exp, bits, loc);
 	if (rv == STRTOG_NoMemory)
 		return rv;
 	u = (U*) dd;
@@ -173,4 +176,15 @@ strtopdd(CONST char *s, char **sp, double *dd)
 		u->L[2 + _0] |= 0x80000000L;
 	}
 	return rv;
+}
+
+int
+#ifdef KR_headers
+strtopdd(s, sp, dd)
+ 	 CONST char *s; char **sp; double *dd;
+#else
+strtopdd(CONST char *s, char **sp, double *dd)
+#endif
+{
+	return (strtopdd_l(s, sp, dd, __get_locale()));
 }

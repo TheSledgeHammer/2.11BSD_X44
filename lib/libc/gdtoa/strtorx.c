@@ -33,6 +33,9 @@ THIS SOFTWARE.
 
 #include "gdtoaimp.h"
 
+#include <locale.h>
+#include "setlocale.h"
+
 #undef _0
 #undef _1
 
@@ -99,10 +102,10 @@ ULtox(UShort *L, ULong *bits, Long exp, int k)
 
 int
 #ifdef KR_headers
-strtorx(s, sp, rounding, L)
- 	 CONST char *s; char **sp; int rounding; void *L;
+strtorx_l(s, sp, rounding, L, loc)
+ 	 CONST char *s; char **sp; int rounding; void *L; locale_t loc;
 #else
-strtorx(CONST char *s, char **sp, int rounding, void *L)
+strtorx_l(CONST char *s, char **sp, int rounding, void *L, locale_t loc)
 #endif
 {
 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI };
@@ -117,9 +120,20 @@ strtorx(CONST char *s, char **sp, int rounding, void *L)
 		fpi1.rounding = rounding;
 		fpi = &fpi1;
 	}
-	k = strtodg(s, sp, fpi, &exp, bits);
+	k = strtodg_l(s, sp, fpi, &exp, bits, loc);
 	if (k == STRTOG_NoMemory)
 		return k;
 	ULtox((UShort*) L, bits, exp, k);
 	return k;
+}
+
+int
+#ifdef KR_headers
+strtorx(s, sp, rounding, L)
+ 	 CONST char *s; char **sp; int rounding; void *L;
+#else
+strtorx(CONST char *s, char **sp, int rounding, void *L)
+#endif
+{
+	return (strtorx_l(s, sp, rounding, L, __get_locale()));
 }

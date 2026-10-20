@@ -46,10 +46,10 @@ static char sccsid[] = "@(#)strtol.c	8.1.1 (2.11BSD) 1996/1/11";
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef _LIBC
 #ifdef __weak_alias
 __weak_alias(strtol, _strtol)
@@ -57,6 +57,22 @@ __weak_alias(strtol_l, _strtol_l)
 #endif
 #endif
 
+/*
+ * Convert a string to a long integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+
+#define _FUNCNAME_L strtol_l
+#define _FUNCNAME 	strtol
+#define	__INT		long
+#define	__INT_MIN	LONG_MIN
+#define	__INT_MAX	LONG_MAX
+
+#include "_strtol.h"
+
+#ifdef notyet
 /*
  * Convert a string to a long integer.
  *
@@ -153,3 +169,4 @@ strtol(nptr, endptr, base)
 {
 	return (strtol_l(nptr, endptr, base, __get_locale()));
 }
+#endif

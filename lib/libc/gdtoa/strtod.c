@@ -96,16 +96,17 @@
 #include "gdtoaimp.h"
 
 #ifdef USE_LOCALE
+#include <locale.h>
 #include "setlocale.h"
 #endif
 
 double
-strtod
+strtod_l
 #ifdef KR_headers
-(s00, se)
-	CONST char *s00; char **se;
+(s00, se, loc)
+	CONST char *s00; char **se; locale_t loc;
 #else
-(CONST char *s00, char **se)
+(CONST char *s00, char **se, locale_t loc)
 #endif
 {
 	int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dsign,
@@ -119,7 +120,8 @@ strtod
 	Bigint *bb = NULL, *bd = NULL, *bs = NULL, *delta = NULL;/* pacify gcc */
 
 #ifndef KR_headers
-	CONST char decimal_point = localeconv()->decimal_point[0];
+	CONST char decimal_point = localeconv_l(loc)->decimal_point[0];
+	size_t dplen = strlen(decimal_point);
 #else
 	CONST char decimal_point = '.';
 #endif
@@ -143,7 +145,7 @@ strtod
 	}
 
 	/* "INF" or "INFINITY" */
-	if (tolower((unsigned char) *s) == 'i' && strncasecmp(s, "inf", 3) == 0) {
+	if (tolower((unsigned char)*s) == 'i' && strncasecmp(s, "inf", 3) == 0) {
 		if (strncasecmp(s + 3, "inity", 5) == 0)
 			s += 8;
 		else
@@ -155,7 +157,7 @@ strtod
 
 #ifdef IEEE_Arith
 	/* "NAN" or "NAN(n-char-sequence-opt)" */
-	if (tolower((unsigned char) *s) == 'n' && strncasecmp(s, "nan", 3) == 0) {
+	if (tolower((unsigned char)*s) == 'n' && strncasecmp(s, "nan", 3) == 0) {
 		/* Build a quiet NaN. */
 		word0(rv) = NAN_WORD0;
 		word1(rv) = NAN_WORD1;
@@ -400,7 +402,7 @@ strtod
 
 	/* Put digits into bd: true value = bd * 10^e */
 
-	bd0 = s2b(s0, nd0, nd, y);
+	bd0 = s2b(s0, nd0, nd, y, dplen);
 
 	for (;;) {
 		bd = Balloc(bd0->k);
@@ -651,4 +653,16 @@ strtod
 		/* LINTED interface specification */
 		*se = __UNCONST(s);
 	return sign ? -value(rv) : value(rv);
+}
+
+double
+strtod
+#ifdef KR_headers
+(s00, se)
+	CONST char *s00; char **se;
+#else
+(CONST char *s00, char **se)
+#endif
+{
+	return (strtod_l(s00, se, __get_locale()));
 }

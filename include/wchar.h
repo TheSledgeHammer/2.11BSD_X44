@@ -181,6 +181,18 @@ wchar_t *wcsdup(const wchar_t *);
 typedef struct _locale *locale_t;
 #  define __LOCALE_T_DECLARED
 #  endif
+
+int	wcscoll_l(const wchar_t *, const wchar_t *, locale_t);
+size_t wcsxfrm_l(wchar_t *, const wchar_t *, size_t, locale_t);
+float wcstof_l(const wchar_t * __restrict, wchar_t ** __restrict, locale_t);
+double wcstod_l(const wchar_t * __restrict, wchar_t ** __restrict, locale_t);
+long double wcstold_l(const wchar_t * __restrict, wchar_t ** __restrict, locale_t);
+long int wcstol_l(const wchar_t * __restrict, wchar_t ** __restrict, int, locale_t);
+unsigned long int wcstoul_l(const wchar_t * __restrict, wchar_t ** __restrict, int, locale_t);
+/* LONGLONG */
+long long int wcstoll_l(const wchar_t * __restrict, wchar_t ** __restrict, int, locale_t);
+/* LONGLONG */
+unsigned long long int wcstoull_l(const wchar_t * __restrict, wchar_t ** __restrict, int, locale_t);
 int wcwidth_l(wchar_t, locale_t);
 #endif /* _POSIX_C_SOURCE >= 200809 || __BSD_VISIBLE */
 

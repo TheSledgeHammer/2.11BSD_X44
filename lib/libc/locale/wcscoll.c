@@ -35,14 +35,25 @@ __RCSID("$NetBSD: wcscoll.c,v 1.1 2003/03/02 22:18:16 tshiozak Exp $");
 
 #include <assert.h>
 #include <wchar.h>
+#include <locale.h>
+
+#include "setlocale.h"
 
 /*
  * Compare strings with using collating information.
  */
 int
-wcscoll(s1, s2)
+wcscoll_l(s1, s2, loc)
 	const wchar_t *s1, *s2;
+	locale_t loc;
 {
 	/* XXX: LC_COLLATE should be implemented. */
 	return (wcscmp(s1, s2));
+}
+
+int
+wcscoll(s1, s2)
+	const wchar_t *s1, *s2;
+{
+	return (wcscoll_l(s1, s2, __get_locale()));
 }

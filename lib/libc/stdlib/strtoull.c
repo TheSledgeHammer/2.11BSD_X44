@@ -47,17 +47,31 @@ __RCSID("$NetBSD: strtoull.c,v 1.5 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
+/*
 #include <locale.h>
-
 #include "setlocale.h"
-
+*/
 #ifdef _LIBC
+#ifdef __weak_alias
 __weak_alias(strtoull, _strtoull)
 __weak_alias(strtoull_l, _strtoull_l)
 #endif
+#endif
 
-unsigned long long int strtoull_l(const char *, char **, int, locale_t);
+/*
+ * Convert a string to an unsigned long long integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+#define _FUNCNAME_L strtoull_l
+#define _FUNCNAME 	strtoull
+#define	__UINT		unsigned long long int
+#define	__UINT_MAX	ULLONG_MAX
 
+#include "_strtoul.h"
+
+#ifdef notyet
 /*
  * Convert a string to an unsigned long long integer.
  *
@@ -147,3 +161,4 @@ strtoull(nptr, endptr, base)
  {
 	return (strtoull_l(nptr, endptr, base, __get_locale()));
 }
+#endif
