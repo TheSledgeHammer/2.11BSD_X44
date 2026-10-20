@@ -33,7 +33,16 @@
 #ifndef __STRTOI_H_
 #define __STRTOI_H_
 
-#ifndef HAVE_NBTOOL_CONFIG_H
+#if HAVE_NBTOOL_CONFIG_H
+__INT
+_FUNCNAME(nptr, endptr, base, lo, hi, rstatus)
+	const char *nptr;
+	char **endptr;
+	__INT lo, hi;
+	int base, *rstatus;
+
+#else
+
 #include <locale.h>
 #include "setlocale.h"
 
@@ -44,6 +53,7 @@ _FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, locale)
 	__INT lo, hi;
 	int base, *rstatus;
 	locale_t locale;
+#endif
 {
 	int serrno;
 	__INT im;
@@ -64,7 +74,11 @@ _FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, locale)
 	serrno = errno;
 	errno = 0;
 
-	im = strtoimax_l(nptr, endptr, base, locale);
+#if HAVE_NBTOOL_CONFIG_H
+    im = __WRAPPED(nptr, endptr, base);
+#else
+	im = __WRAPPED_L(nptr, endptr, base, locale);
+#endif
 
 	*rstatus = errno;
 	errno = serrno;
@@ -92,6 +106,7 @@ _FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, locale)
 	return (im);
 }
 
+/*
 __INT
 _FUNCNAME(nptr, endptr, base, lo, hi, rstatus)
 	const char *nptr;
@@ -101,6 +116,6 @@ _FUNCNAME(nptr, endptr, base, lo, hi, rstatus)
 {
 	return (_FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, __get_locale()));
 }
+*/
 
-#endif
 #endif /* __STRTOI_H_ */
