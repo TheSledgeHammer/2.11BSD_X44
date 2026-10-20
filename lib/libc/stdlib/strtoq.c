@@ -65,7 +65,7 @@ __weak_alias(strtoq_l, _strtoq_l)
  */
 #define _FUNCNAME_L strtoq_l
 #define _FUNCNAME 	strtoq
-#define	__INT		long
+#define	__INT		quad_t
 #define	__INT_MIN	QUAD_MIN
 #define	__INT_MAX	QUAD_MAX
 

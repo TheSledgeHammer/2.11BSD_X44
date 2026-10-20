@@ -101,7 +101,7 @@ _FUNCNAME_L(nptr, endptr, base, locale)
 }
 
 __UINT
-_FUNCNAME_L(nptr, endptr, base)
+_FUNCNAME(nptr, endptr, base)
 	const char *nptr;
 	char **endptr;
 	int base;

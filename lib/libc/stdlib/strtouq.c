@@ -49,7 +49,7 @@ __RCSID("$NetBSD: strtouq.c,v 1.17 2003/08/07 16:43:45 agc Exp $");
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <stddef.h>
+//#include <stddef.h>
 /*
 #include <locale.h>
 #include "setlocale.h"
@@ -71,7 +71,6 @@ __weak_alias(strtouq_l, _strtouq_l)
 #define _FUNCNAME 	strtouq
 #define	__UINT		u_quad_t
 #define	__UINT_MAX	UQUAD_MAX
-
 #include "_strtoul.h"
 
 #ifdef notyet

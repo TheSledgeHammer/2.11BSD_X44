@@ -34,7 +34,7 @@
 #ifndef __STRTOL_H_
 #define __STRTOL_H_
 
-#ifndef HAVE_NBTOOL_CONFIG_H
+//#ifndef HAVE_NBTOOL_CONFIG_H
 #include <locale.h>
 #include "setlocale.h"
 
@@ -89,7 +89,7 @@ _FUNCNAME_L(nptr, endptr, base, locale)
 	 * Set any if any `digits' consumed; make it negative to indicate
 	 * overflow.
 	 */
-	cutoff = neg ? -(__INT)__INT_MIN : __INT_MAX;
+	cutoff = (__INT)(neg ? __INT_MIN : __INT_MAX);
 	cutlim = cutoff % (__INT)base;
 	cutoff /= (__INT)base;
 	for (acc = 0, any = 0;; c = *s++) {
@@ -128,5 +128,5 @@ _FUNCNAME(nptr, endptr, base)
 	return (_FUNCNAME_L(nptr, endptr, base, __get_locale()));
 }
 
-#endif
+//#endif
 #endif /* __STRTOL_H_ */
