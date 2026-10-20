@@ -119,5 +119,5 @@ strtopx(s, sp, V)
 strtopx(CONST char *s, char **sp, void *V)
 #endif
 {
-	return (strtopx_l(s, sp, V, get_locale()));
+	return (strtopx_l(s, sp, V, __get_locale()));
 }

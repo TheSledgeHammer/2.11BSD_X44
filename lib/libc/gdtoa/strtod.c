@@ -121,7 +121,7 @@ strtod_l
 
 #ifndef KR_headers
 	CONST char decimal_point = localeconv_l(loc)->decimal_point[0];
-	size_t dplen = strlen(decimal_point);
+	size_t dplen = strlen(&decimal_point);
 #else
 	CONST char decimal_point = '.';
 #endif

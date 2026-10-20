@@ -536,7 +536,7 @@ extern Bigint *Balloc ANSI((int));
 extern void Bfree ANSI((Bigint *));
 extern Bigint *multadd ANSI((Bigint *, int, int));
 extern char *nrv_alloc ANSI((CONST char *, char **, size_t));
-extern Bigint *s2b ANSI((CONST char *, int, int, ULong));
+//extern Bigint *s2b ANSI((CONST char *, int, int, ULong));
 extern int hi0bits ANSI((ULong));
 extern int lo0bits ANSI((ULong *));
 extern Bigint *i2b ANSI((int));
@@ -575,6 +575,7 @@ extern int strtordd_l ANSI((CONST char *, char **, int, double *, locale_t));
 extern int strtorf_l  ANSI((CONST char *, char **, int, float *, locale_t));
 extern int strtorx_l  ANSI((CONST char *, char **, int, void *, locale_t));
 extern int strtorxL_l ANSI((CONST char *, char **, int, void *, locale_t));
+extern int strtopx_l ANSI((CONST char *, char **, void *, locale_t));
 
 #ifdef __cplusplus
 }
