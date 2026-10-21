@@ -518,7 +518,8 @@ int	vdprintf_l(int, locale_t, const char * __restrict, __va_list) __printflike(3
 int	dprintf_l(int, locale_t, const char * __restrict, ...) __printflike(3, 4);
 int	snprintf_l(char * __restrict, size_t, locale_t, const char * __restrict, ...) __printflike(4, 5);
 int vsnprintf_l(char * __restrict, size_t, locale_t, const char * __restrict, __va_list) __printflike(4, 0);
-
+int	sprintf_l(char * __restrict, locale_t, const char * __restrict, ...) __printflike(3, 4);
+int	vsprintf_l(char * __restrict, locale_t, const char * __restrict, __va_list) __printflike(3, 0);
 int doscan_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
 int	fscanf_l(FILE * __restrict, locale_t, const char * __restrict, ...) __scanflike(3, 4);
 int	scanf_l(locale_t, const char * __restrict, ...) __scanflike(2, 3);
