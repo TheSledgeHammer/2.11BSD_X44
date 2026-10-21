@@ -44,7 +44,7 @@ _FUNCNAME(const char *nptr, char **endptr, int base, __UINT lo, __UINT hi, int *
 #include "setlocale.h"
 
 __UINT
-_FUNCNAME_L(const char *nptr, char **endptr, int base, __UINT lo, __UINT hi, int *rstatu, locale_t locale)
+_FUNCNAME_L(const char *nptr, char **endptr, int base, __UINT lo, __UINT hi, int *rstatus, locale_t locale)
 #endif
 {
 	int serrno;
