@@ -204,6 +204,7 @@
 #define arc4random_uniform			_arc4random_uniform
 #define asctime_r				_asctime_r
 #define asprintf				_asprintf
+#define asprintf_l		        _asprintf_l
 #define atoll					_atoll
 #define authnone_create				_authnone_create
 #define authunix_create				_authunix_create
@@ -318,6 +319,7 @@
 #define funlockfile				_funlockfile
 #define fnmatch					_fnmatch
 #define fparseln				_fparseln
+#define fprintf_l		        _fprintf_l
 #define fpgetmask				_fpgetmask
 #define fpgetround				_fpgetround
 #define fpgetsticky				_fpgetsticky
@@ -327,6 +329,7 @@
 #define freenetconfigent			_freenetconfigent
 #define freeaddrinfo				_freeaddrinfo
 #define freeifaddrs				_freeifaddrs
+#define fscanf_l		        _fscanf_l
 #define ftok					_ftok
 #define ftruncate				_ftruncate
 #define fts_children				_fts_children
@@ -582,9 +585,9 @@
 #define sl_free					_sl_free
 #define sl_init					_sl_init
 #define sleep					_sleep
-#if __SSP_FORTIFY_LEVEL == 0 && !defined(snprintf)
+//#if __SSP_FORTIFY_LEVEL == 0 && !defined(snprintf)
 #define snprintf				_snprintf
-#endif
+//#endif
 #define snprintf_l				_snprintf_l
 #define sprintf_l				_sprintf_l
 #define sradixsort				_sradixsort
@@ -681,12 +684,14 @@
 #define vis						_vis
 #define	vdprintf				_vdprintf
 #define	vdprintf_l				_vdprintf_l
-#if __SSP_FORTIFY_LEVEL == 0 && !defined(vsnprintf)
+//#if __SSP_FORTIFY_LEVEL == 0 && !defined(vsnprintf)
 #define vsnprintf				_vsnprintf
-#endif
+//#endif
 #define vdprintf_l				_vdprintf_l
 #define vdprintf_l				_vdprintf_l
 #define vfprintf_l				_vfprintf_l
+#define vfscanf 				_vfscanf
+#define vfscanf_l				_vfscanf_l
 #define vfwprintf_l				_vfwprintf_l
 #define vprintf_l				_vprintf_l
 #define vscanf_l				_vscanf_l
