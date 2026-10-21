@@ -141,12 +141,12 @@ union	dinode *getino(ino_t inum, int *);
 struct fs *read_sblock(char *superblock);
 
 /* rdump routines */
-#ifdef RDUMP
+#if defined(RDUMP) || defined(RRESTORE)
 void    rmtclose(void);
 int	    rmthost(const char *host);
 int	    rmtopen(const char *tapedev, int mode);
 int	    rmtwrite(char *buf, int count);
-#endif /* RDUMP */
+#endif /* RDUMP || RRESTORE */
 
 void	interrupt(int signo);	/* in case operator bangs on console */
 
