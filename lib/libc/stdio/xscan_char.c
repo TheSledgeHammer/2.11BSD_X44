@@ -48,13 +48,13 @@
 #define __collate_load_error /*CONSTCOND*/0
 
 static int
-__collate_range_cmp(int c1, int c2, locale_t locale)
+__collate_range_cmp(INT_T c1, INT_T c2, locale_t locale)
 {
-	static char s1[2], s2[2];
+	static CHAR_T s1[2], s2[2];
 
 	s1[0] = c1;
 	s2[0] = c2;
-	return (strcoll_l(s1, s2, locale));
+	return (STRCOLL_L(s1, s2, locale));
 }
 
 /*

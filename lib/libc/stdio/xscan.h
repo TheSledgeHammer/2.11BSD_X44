@@ -40,9 +40,15 @@
 #ifndef NARROW
 #define U_CHAR_T wchar_t
 #define U_INT_T wint_t
+#define CHAR_T wchar_t
+#define INT_T wint_t
+#define STRCOLL_L wcscoll_l
 #else
 #define U_CHAR_T u_char
 #define U_INT_T u_int
+#define CHAR_T char
+#define INT_T int
+#define STRCOLL_L strcoll_l
 #endif
 
 #define CCLTABMAXLEN 256 	/* Maximum length of character class table */
