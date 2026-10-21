@@ -96,4 +96,14 @@ _FUNCNAME_L(const char *nptr, char **endptr, int base, __UINT lo, __UINT hi, int
 	return (im);
 }
 
+#if !defined(HAVE_NBTOOL_CONFIG_H)
+
+__UINT
+_FUNCNAME(const char *nptr, char **endptr, int base, __UINT lo, __UINT hi, int *rstatus)
+{
+    return (_FUNCNAME_L(nptr, endptr, base, lo, hi, rstatus, __get_locale()));
+}
+
+#endif
+
 #endif /* __STRTOU_H_ */
