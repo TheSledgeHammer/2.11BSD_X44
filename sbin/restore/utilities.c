@@ -114,7 +114,7 @@ gentempname(struct entry *ep)
 		i++;
 	if (np == NULL)
 		badentry(ep, "not on ino list");
-	(void) snprintf(name, sizeof(name), "%s%ld%d", TMPHDR, (long) i,
+	(void) snprintf(name, sizeof(name), "%s%ld%ld", TMPHDR, (long) i,
 	    ep->e_ino);
 	return (name);
 }
