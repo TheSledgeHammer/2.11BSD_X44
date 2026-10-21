@@ -52,12 +52,14 @@ static char sccsid[] = "@(#)vsnprintf.c	8.1 (Berkeley) 6/4/93";
 #include "setlocale.h"
 #include "local.h"
 
+/*
 #if __SSP_FORTIFY_LEVEL != 0
 # undef vsnprintf
 # define vsnprintf _vsnprintf
 int      vsnprintf(char * __restrict, size_t, const char * __restrict,
     __va_list) __printflike(3, 0);
 #endif
+*/
 
 #ifdef __weak_alias
 __weak_alias(vsnprintf_l,_vsnprintf_l)
@@ -65,7 +67,7 @@ __weak_alias(vsnprintf,_vsnprintf)
 #endif
 
 int
-vsnprintf_l(char *str, locale_t locale, size_t n, const char *fmt, va_list ap)
+vsnprintf_l(char *str, size_t n, locale_t locale, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE f;
@@ -90,5 +92,5 @@ vsnprintf_l(char *str, locale_t locale, size_t n, const char *fmt, va_list ap)
 int
 vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 {
-	return (vsnprintf_l(str, __get_locale(), n, fmt, ap));
+	return (vsnprintf_l(str, n, __get_locale(), fmt, ap));
 }

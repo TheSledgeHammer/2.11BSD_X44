@@ -63,9 +63,9 @@ __RCSID("$NetBSD: vswscanf.c,v 1.13 2026/08/15 13:39:06 riastradh Exp $");
 
 __weak_alias(vswscanf_l, _vswscanf_l)
 
-static ssize_t
+static int
 /*ARGSUSED*/
-eofread(void *cookie, void *buf, size_t len)
+eofread(void *cookie, char *buf, int len)
 {
 	return (0);
 }

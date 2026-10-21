@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 __weak_alias(vsprintf_l, _vsprintf_l)
 
 int
-vsprintf(char *str, locale_t locale, const char *fmt, va_list ap)
+vsprintf_l(char *str, locale_t locale, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE f;

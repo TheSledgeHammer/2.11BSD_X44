@@ -47,13 +47,14 @@
 #include "reentrant.h"
 #include "setlocale.h"
 #include "local.h"
-
+/*
 #if __SSP_FORTIFY_LEVEL != 0
 # undef snprintf
 # define snprintf _snprintf
 int      snprintf(char * __restrict, size_t, const char * __restrict, ...)
     __printflike(3, 4);
 #endif
+*/
 
 #ifdef __weak_alias
 __weak_alias(snprintf_l,_snprintf_l)
@@ -61,7 +62,7 @@ __weak_alias(snprintf,_snprintf)
 #endif
 
 int
-snprintf_l(char *str, locale_t locale, size_t n, char const *fmt, ...)
+snprintf_l(char *str, size_t n, locale_t locale, char const *fmt, ...)
 {
 	int ret;
 	va_list ap;
@@ -89,5 +90,5 @@ snprintf_l(char *str, locale_t locale, size_t n, char const *fmt, ...)
 int
 snprintf(char *str, size_t n, const char *fmt, ...)
 {
-	return (snprintf_l(str, __get_locale(), n, fmt));
+	return (snprintf_l(str, n, __get_locale(), fmt));
 }
