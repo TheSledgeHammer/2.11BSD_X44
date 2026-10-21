@@ -1,4 +1,4 @@
-/*	$NetBSD: asprintf.c,v 1.7 2000/01/21 19:51:36 mycroft Exp $	*/
+/*	$NetBSD: vswprintf.c,v 1.6 2013/05/19 21:45:00 christos Exp $	*/
 
 /*
  * Copyright (c) 1997 Todd C. Miller <Todd.Miller@courtesan.com>
@@ -29,54 +29,85 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: asprintf.c,v 1.7 2000/01/21 19:51:36 mycroft Exp $");
+#if 0
+__FBSDID("$FreeBSD: src/lib/libc/stdio/vswprintf.c,v 1.6 2005/02/21 19:41:44 fjoe Exp $");
+#else
+__RCSID("$NetBSD: vswprintf.c,v 1.6 2013/05/19 21:45:00 christos Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
 
-#include <assert.h>
+#include <errno.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <errno.h>
+#include <wchar.h>
 #include <stdarg.h>
 
-#ifdef __weak_alias
-__weak_alias(asprintf,_asprintf)
-#endif
+#include "reentrant.h"
+#include "setlocale.h"
+#include "local.h"
+
+__weak_alias(vswprintf_l, _vswprintf_l)
 
 int
-asprintf(char **str, char const *fmt, ...)
+vswprintf_l(wchar_t * __restrict s, size_t n, locale_t locale,
+	    const wchar_t * __restrict fmt, va_list ap)
 {
-	int ret;
-	va_list ap;
+	static const mbstate_t initial;
+	mbstate_t mbs;
 	FILE f;
-	unsigned char *_base;
+	char *mbp;
+	int ret, sverrno;
+	size_t nwc;
+	struct __sfileext fext;
 
-	_DIAGASSERT(str != NULL);
+	if (n == 0) {
+		errno = EINVAL;
+		return (-1);
+	}
 
-	va_start(ap, fmt);
+	_FILEEXT_SETUP(&f, &fext);
 	f._file = -1;
 	f._flags = __SWR | __SSTR | __SALC;
-	f._bf._base = f._p = (unsigned char *)malloc(128);
-	if (f._bf._base == NULL)
-		goto err;
-	f._bf._size = f._w = 127;		/* Leave room for the NUL */
-	ret = vfprintf(&f, fmt, ap);
-	if (ret == -1)
-		goto err;
-	*f._p = '\0';
-	va_end(ap);
-	_base = realloc(f._bf._base, (size_t)(ret + 1));
-	if (_base == NULL)
-		goto err;
-	*str = (char *)_base;
-	return (ret);
-
-err:
-	if (f._bf._base)
+	f._bf._base = f._p = malloc(128);
+	if (f._bf._base == NULL) {
+		errno = ENOMEM;
+		return (-1);
+	}
+	f._bf._size = f._w = 127; /* Leave room for the NUL */
+	ret = vfwprintf_l_unlocked(&f, locale, fmt, ap);
+	if (ret < 0) {
+		sverrno = errno;
 		free(f._bf._base);
-	*str = NULL;
-	errno = ENOMEM;
-	return (-1);
+		errno = sverrno;
+		return (-1);
+	}
+	*f._p = '\0';
+	mbp = (char *)f._bf._base;
+	/*
+	 * XXX Undo the conversion from wide characters to multibyte that
+	 * fputwc() did in __vfwprintf().
+	 */
+	mbs = initial;
+	nwc = mbsrtowcs_l(s, (void *)&mbp, n, &mbs, locale);
+	free(f._bf._base);
+	if (nwc == (size_t)-1) {
+		errno = EILSEQ;
+		return (-1);
+	}
+	if (nwc == n) {
+		s[n - 1] = L'\0';
+		errno = EOVERFLOW;
+		return (-1);
+	}
+
+	return (ret);
+}
+
+int
+vswprintf(wchar_t * __restrict s, size_t n, const wchar_t * __restrict fmt, va_list ap)
+{
+	return (vswprintf_l(s, n, __get_locale(), fmt, ap));
 }

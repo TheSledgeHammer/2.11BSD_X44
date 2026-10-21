@@ -281,6 +281,7 @@
 #define devname					_devname
 #define dirname					_dirname
 #define dn_expand				_dn_expand
+#define dprintf_l				_dprintf_l
 #define drand48					_drand48
 #define endfsent				_endfsent
 #define endgrent				_endgrent
@@ -333,13 +334,15 @@
 #define fts_open				_fts_open
 #define fts_read				_fts_read
 #define fts_set					_fts_set
-#define gai_strerror				_gai_strerror
-#define get_myaddress				_get_myaddress
+#define fwprintf_l				_fwprintf_l
+#define fwscanf_l				_fwscanf_l
+#define gai_strerror			_gai_strerror
+#define get_myaddress			_get_myaddress
 #define getaddrinfo				_getaddrinfo
 #define getbsize				_getbsize
 #define getcwd					_getcwd
-#define getdiskbyname				_getdiskbyname
-#define getdomainname				_getdomainname
+#define getdiskbyname			_getdiskbyname
+#define getdomainname			_getdomainname
 #define getfsent				_getfsent
 #define getfsfile				_getfsfile
 #define getfsspec				_getfsspec
@@ -500,6 +503,7 @@
 #define popen					_popen
 #define posix2time				_posix2time
 #define pread					_pread
+#define printf_l				_printf_l
 #define psignal					_psignal
 #define pthread_atfork				_pthread_atfork
 #define putenv					_putenv
@@ -539,6 +543,7 @@
 #define rpcb_uaddr2taddr			_rpcb_uaddr2taddr
 #define rpcb_unset				_rpcb_unset
 #define scandir					_scandir
+#define scanf_l					_scanf_l
 #define seed48					_seed48
 #define seekdir					_seekdir
 #define send					_send
@@ -577,10 +582,15 @@
 #define sl_free					_sl_free
 #define sl_init					_sl_init
 #define sleep					_sleep
+#if __SSP_FORTIFY_LEVEL == 0 && !defined(snprintf)
 #define snprintf				_snprintf
+#endif
+#define snprintf_l				_snprintf_l
+#define sprintf_l				_sprintf_l
 #define sradixsort				_sradixsort
 #define srand48					_srand48
 #define srandom					_srandom
+#define sscanf_l				_sscanf_l
 #define strcasecmp				_strcasecmp
 #define strdup					_strdup
 #define strncasecmp				_strncasecmp
@@ -628,6 +638,8 @@
 #define svcudp_enablecache			_svcudp_enablecache
 #define svis					_svis
 #define sysarch					_sys_sysarch
+#define swprintf_l				_swprintf_l
+#define swscanf_l				_swscanf_l
 //#define sysctl				_sysctl
 #define sysctlbyname				_sysctlbyname
 #define sysctlgetmibinfo			_sysctlgetmibinfo
@@ -664,15 +676,34 @@
 #define uuid_create_nil				_uuid_create_nil
 #define uuid_is_nil				_uuid_is_nil
 #define valloc					_valloc
-#define vis					_vis
+#define vasprintf				_vasprintf
+#define vasprintf_l				_vasprintf_l
+#define vis						_vis
 #define	vdprintf				_vdprintf
 #define	vdprintf_l				_vdprintf_l
+#if __SSP_FORTIFY_LEVEL == 0 && !defined(vsnprintf)
 #define vsnprintf				_vsnprintf
+#endif
+#define vdprintf_l				_vdprintf_l
+#define vdprintf_l				_vdprintf_l
+#define vfprintf_l				_vfprintf_l
+#define vfwprintf_l				_vfwprintf_l
+#define vprintf_l				_vprintf_l
+#define vscanf_l				_vscanf_l
+#define vsscanf_l				_vsscanf_l
+#define vswscanf_l				_vswscanf_l
+#define vsnprintf_l				_vsnprintf_l
+#define vsprintf_l				_vsprintf_l
+#define vswprintf_l				_vswprintf_l
+#define vwprintf_l				_vwprintf_l
+#define vwscanf_l				_vwscanf_l
 #define vsyslog					_vsyslog
 #define wait					_wait
 #define wait3					_wait3
 #define waitpid					_waitpid
 #define wcsdup					_wcsdup
+#define wprintf_l				_wprintf_l
+#define wscanf_l				_wscanf_l
 #define xdr_accepted_reply			_xdr_accepted_reply
 #define xdr_array				_xdr_array
 #define xdr_authunix_parms			_xdr_authunix_parms

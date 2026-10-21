@@ -22,10 +22,20 @@ static char sccsid[] = "@(#)vprintf.c	5.2 (Berkeley) 6/27/88";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+__weak_alias(vprintf_l, _vprintf_l)
+
+int
+vprintf_l(locale_t locale, const char *fmt, va_list ap)
+{
+	return (doprnt_l(stdout, locale, fmt, ap));
+}
 
 int
 vprintf(const char *fmt, va_list ap)

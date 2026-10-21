@@ -32,20 +32,26 @@
 __RCSID("$NetBSD: vasprintf.c,v 1.7 2000/01/21 19:51:37 mycroft Exp $");
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 //#include <stddef.h>
 
 #include "reentrant.h"
+#include "setlocale.h"
 #include "local.h"
 
+__weak_alias(asprintf, _asprintf)
+__weak_alias(asprintf_l, _asprintf_l)
+__weak_alias(vasprintf, _vasprintf)
+__weak_alias(vasprintf_l, _vasprintf_l)
+
 int
-vasprintf(str, fmt, ap)
-	char **str;
-	const char *fmt;
-	va_list ap;
+vasprintf_l(char **str, locale_t locale, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE f;
@@ -62,7 +68,7 @@ vasprintf(str, fmt, ap)
 	if (f._bf._base == NULL)
 		goto err;
 	f._bf._size = f._w = 127;		/* Leave room for the NUL */
-	ret = doprnt(&f, fmt, ap);
+	ret = doprnt_l(&f, locale, fmt, ap);
 	if (ret == -1)
 		goto err;
 	*f._p = '\0';
@@ -78,4 +84,34 @@ err:
 	*str = NULL;
 	errno = ENOMEM;
 	return (-1);
+}
+
+int
+vasprintf(char **str, const char *fmt, va_list ap)
+{
+	return (vasprintf_l(str, __get_locale(), fmt, ap));
+}
+
+int
+asprintf_l(char **str, locale_t locale, char const *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vasprintf_l(str, locale, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+int
+asprintf(char **str, char const *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vasprintf(str, fmt, ap);
+	va_end(ap);
+	return (ret);
 }

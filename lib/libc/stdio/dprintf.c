@@ -37,18 +37,18 @@
 __RCSID("$NetBSD: dprintf.c,v 1.2 2013/04/19 15:22:25 joerg Exp $");
 #endif /* LIBC_SCCS and not lint */
 
-//#include "namespace.h"
+#include "namespace.h"
 #include <sys/types.h>
 
 #include <stdio.h>
 #include <stdarg.h>
 
 #include "reentrant.h"
-/*
+#include "local.h"
+
 #ifdef __weak_alias
 __weak_alias(dprintf_l, _dprintf_l)
 #endif
-*/
 
 int
 dprintf(int fd, const char * __restrict fmt, ...)
@@ -63,13 +63,13 @@ dprintf(int fd, const char * __restrict fmt, ...)
 }
 
 int
-dprintf_l(int fd, locale_t loc, const char * __restrict fmt, ...)
+dprintf_l(int fd, locale_t locale, const char * __restrict fmt, ...)
 {
 	va_list ap;
 	int ret;
 
 	va_start(ap, fmt);
-	ret = vdprintf_l(fd, loc, fmt, ap);
+	ret = vdprintf_l(fd, locale, fmt, ap);
 	va_end(ap);
 	return ret;
 }

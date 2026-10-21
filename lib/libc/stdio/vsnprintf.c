@@ -45,21 +45,27 @@ static char sccsid[] = "@(#)vsnprintf.c	8.1 (Berkeley) 6/4/93";
 
 #include <assert.h>
 #include <errno.h>
+#include <locale.h>
 #include <stdio.h>
 
 #include "reentrant.h"
+#include "setlocale.h"
 #include "local.h"
 
+#if __SSP_FORTIFY_LEVEL != 0
+# undef vsnprintf
+# define vsnprintf _vsnprintf
+int      vsnprintf(char * __restrict, size_t, const char * __restrict,
+    __va_list) __printflike(3, 0);
+#endif
+
 #ifdef __weak_alias
+__weak_alias(vsnprintf_l,_vsnprintf_l)
 __weak_alias(vsnprintf,_vsnprintf)
 #endif
 
 int
-vsnprintf(str, n, fmt, ap)
-	char *str;
-	size_t n;
-	const char *fmt;
-	va_list ap;
+vsnprintf_l(char *str, locale_t locale, size_t n, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE f;
@@ -68,13 +74,21 @@ vsnprintf(str, n, fmt, ap)
 	_DIAGASSERT(n == 0 || str != NULL);
 	_DIAGASSERT(fmt != NULL);
 
-	if ((int)n < 1)
+	if ((int)n < 1) {
 		return (EOF);
+	}
+
     _FILEEXT_SETUP(&f, &fext);
 	f._flags = __SWR | __SSTR;
 	f._bf._base = f._p = (unsigned char *)str;
 	f._bf._size = f._w = n - 1;
-	ret = doprnt(&f, fmt, ap);
+	ret = doprnt_l(&f, locale, fmt, ap);
 	*f._p = 0;
 	return (ret);
+}
+
+int
+vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
+{
+	return (vsnprintf_l(str, __get_locale(), n, fmt, ap));
 }

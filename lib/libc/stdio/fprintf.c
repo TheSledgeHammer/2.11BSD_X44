@@ -46,12 +46,28 @@ static char sccsid[] = "@(#)fprintf.c	8.1 (Berkeley) 6/4/93";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+
+__weak_alias(fprintf_l, _fprintf_l)
+
+int
+fprintf_l(FILE *iop, locale_t locale, const char *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = doprnt_l(iop, locale, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
 
 int
 fprintf(FILE *iop, const char *fmt, ...)

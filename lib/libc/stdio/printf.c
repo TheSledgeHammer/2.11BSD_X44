@@ -44,6 +44,18 @@ static char sccsid[] = "@(#)printf.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 
 int
+printf_l(locale_t locale, const char *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = doprnt_l(stdout, locale, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+int
 printf(const char *fmt, ...)
 {
 	int ret;

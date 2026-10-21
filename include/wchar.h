@@ -168,11 +168,24 @@ wint_t getwc(FILE *);
 wint_t fputwc(wchar_t, FILE *);
 int fputws(const wchar_t * __restrict, FILE * __restrict);
 int fwide (FILE *, int);
+
+int fwprintf(FILE * __restrict, const wchar_t * __restrict, ...);
+int fwscanf(FILE * __restrict, const wchar_t * __restrict, ...);
+int swprintf(wchar_t * __restrict, size_t n, const wchar_t * __restrict, ...);
+int swscanf(const wchar_t * __restrict, const wchar_t * __restrict, ...);
 int vfwprintf(FILE * __restrict, const wchar_t * __restrict, __va_list);
+int vswprintf(wchar_t * __restrict, size_t, const wchar_t * __restrict, __va_list);
+int vwprintf(const wchar_t * __restrict, __va_list);
+int wprintf(const wchar_t * __restrict, ...);
+int wscanf(const wchar_t * __restrict, ...);
+
 #if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) > 199901L || \
     (__cplusplus - 0) >= 201103L || defined(__BSD_VISIBLE) || \
     (_POSIX_C_SOURCE - 0) >= 200112L || (_XOPEN_SOURCE - 0) >= 600
 int vfwscanf(FILE * __restrict, const wchar_t * __restrict, __va_list);
+int vswscanf(const wchar_t * __restrict, const wchar_t * __restrict,
+    __va_list);
+int vwscanf(const wchar_t * __restrict, __va_list);
 #endif
 wchar_t *wcsdup(const wchar_t *);
 
@@ -207,8 +220,19 @@ size_t wcrtomb_l(char * __restrict, wchar_t, mbstate_t * __restrict, locale_t);
 size_t wcsrtombs_l(char * __restrict, const wchar_t ** __restrict, size_t, mbstate_t * __restrict, locale_t);
 int wctob_l(wint_t, locale_t);
 
-int vfwscanf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, __va_list);
+int fwprintf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, ...);
+int swprintf_l(wchar_t * __restrict, size_t n, locale_t, const wchar_t * __restrict, ...);
 int vfwprintf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, __va_list);
+int vswprintf_l(wchar_t * __restrict, size_t, locale_t, const wchar_t * __restrict, __va_list);
+int vwprintf_l(locale_t, const wchar_t * __restrict, __va_list);
+int wprintf_l(locale_t, const wchar_t * __restrict, ...);
+
+int fwscanf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, ...);
+int swscanf_l(const wchar_t * __restrict, locale_t, const wchar_t * __restrict, ...);
+int wscanf_l(locale_t, const wchar_t * __restrict, ...);
+int vfwscanf_l(FILE * __restrict, locale_t, const wchar_t * __restrict, __va_list);
+int vswscanf_l(const wchar_t * __restrict, locale_t, const wchar_t * __restrict, __va_list);
+int vwscanf_l(locale_t, const wchar_t * __restrict, __va_list);
 #endif /* __BSD_VISIBLE */
 __END_DECLS
 

@@ -248,12 +248,12 @@ int	 	fgetc(FILE *);
 int	    fgetpos(FILE * __restrict, fpos_t * __restrict);
 char	*fgets(char * __restrict, int, FILE * __restrict);
 FILE	*fopen(const char * __restrict , const char * __restrict);
-int	    fprintf(FILE * __restrict, const char * __restrict, ...);
+int	    fprintf(FILE * __restrict, const char * __restrict, ...) __printflike(2, 3);
 int	 	fputc(int, FILE *);
 int	    fputs(const char * __restrict, FILE * __restrict);
 size_t	fread(void * __restrict, size_t, size_t, FILE * __restrict);
 FILE	*freopen(const char * __restrict, const char * __restrict, FILE * __restrict);
-int	    fscanf(FILE * __restrict, const char * __restrict, ...);
+int	    fscanf(FILE * __restrict, const char * __restrict, ...) __scanflike(2, 3);
 int	 	fseek(FILE *, long, int);
 int	 	fsetpos(FILE *, const fpos_t *);
 long 	ftell(FILE *);
@@ -349,12 +349,12 @@ void	setbuffer(FILE *, char *, int);
 int	 	setlinebuf(FILE *);
 char	*tempnam(const char *, const char *);
 int	    snprintf(char * __restrict, size_t, const char * __restrict, ...) __printflike(3, 4);
-int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list);// __printflike(3, 0);
-int	    vasprintf(char ** __restrict, const char * __restrict, __va_list); //__printflike(2, 0);
+int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list) __printflike(3, 0);
+int	    vasprintf(char ** __restrict, const char * __restrict, __va_list) __printflike(2, 0);
 int		vfscanf(FILE * __restrict, const char * __restrict, __va_list) __scanflike(2, 0);
 int	    vscanf(const char * __restrict, __va_list) __scanflike(1, 0);
 int	    vsscanf(const char * __restrict, const char * __restrict, __va_list) __scanflike(2, 0);
-const char  *fmtcheck(const char *, const char *);
+const char *fmtcheck(const char *, const char *);
 __END_DECLS
 
 /*
@@ -377,8 +377,8 @@ __END_DECLS
  * Stdio function-access interface.
  */
 __BEGIN_DECLS
-FILE		*funopen(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *));
-FILE		*funopen2(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *), int (*)(void*));
+FILE *funopen(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *));
+FILE *funopen2(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *), int (*)(void *));
 __END_DECLS
 /* funopen: read */
 #define		fropen(cookie, fn) funopen2(cookie, fn, 0, 0, 0, 0)
@@ -475,8 +475,8 @@ __sfileno(FILE *_p)
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE)
 __BEGIN_DECLS
-int	 vdprintf(int, const char * __restrict, __va_list);
-int	 dprintf(int, const char * __restrict, ...);
+int	 vdprintf(int, const char * __restrict, __va_list) __printflike(2, 0);
+int	 dprintf(int, const char * __restrict, ...) __printflike(2, 3);
 __END_DECLS
 #endif /* (_POSIX_C_SOURCE - 0) >= 200809L || defined(__BSD_VISIBLE) */
 
@@ -508,11 +508,24 @@ typedef struct _locale		*locale_t;
 #  endif
 __BEGIN_DECLS
 int doprnt_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
-int doscan_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
-int vfscanf_l(FILE * __restrict, locale_t, const char * __restrict, __va_list) __scanflike(3, 0);
+int fprintf_l(FILE * __restrict, locale_t, const char * __restrict, ...) __printflike(3, 4);
 int	vfprintf_l(FILE * __restrict, locale_t, const char * __restrict, __va_list) __printflike(3, 0);
-int vdprintf_l(int, locale_t, const char * __restrict, __va_list);
-int	dprintf_l(int, locale_t, const char * __restrict, ...);
+int	printf_l(locale_t, const char * __restrict, ...) __printflike(2, 3);
+int	vprintf_l(locale_t, const char * __restrict, __va_list) __printflike(2, 0);
+int	asprintf_l(char ** __restrict, locale_t, const char * __restrict, ...) __printflike(3, 4);
+int	vasprintf_l(char ** __restrict, locale_t, const char * __restrict, __va_list) __printflike(3, 0);
+int	vdprintf_l(int, locale_t, const char * __restrict, __va_list) __printflike(3, 0);
+int	dprintf_l(int, locale_t, const char * __restrict, ...) __printflike(3, 4);
+int	snprintf_l(char * __restrict, size_t, locale_t, const char * __restrict, ...) __printflike(4, 5);
+int vsnprintf_l(char * __restrict, size_t, locale_t, const char * __restrict, __va_list) __printflike(4, 0);
+
+int doscan_l(FILE * __restrict, locale_t, const char * __restrict, __va_list);
+int	fscanf_l(FILE * __restrict, locale_t, const char * __restrict, ...) __scanflike(3, 4);
+int	scanf_l(locale_t, const char * __restrict, ...) __scanflike(2, 3);
+int	sscanf_l(const char * __restrict, locale_t, const char * __restrict, ...) __scanflike(3, 4);
+int	vscanf_l(locale_t, const char * __restrict, __va_list) __scanflike(2, 0);
+int	vfscanf_l(FILE * __restrict, locale_t, const char * __restrict, __va_list) __scanflike(3, 0);
+int vsscanf_l(const char * __restrict, locale_t, const char * __restrict, __va_list) __scanflike(3, 0);
 __END_DECLS
 #endif
 #endif /* _STDIO_H_ */

@@ -30,10 +30,17 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #include <stdio.h>
 
 #include "reentrant.h"
+#include "setlocale.h"
 #include "local.h"
 
+#ifdef _FORTIFY_SOURCE
+#undef vsprintf
+#endif
+
+__weak_alias(vsprintf_l, _vsprintf_l)
+
 int
-vsprintf(char *str, const char *fmt, va_list ap)
+vsprintf(char *str, locale_t locale, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE f;
@@ -44,7 +51,13 @@ vsprintf(char *str, const char *fmt, va_list ap)
 	f._flags = __SWR | __SSTR;
 	f._bf._base = f._p = (unsigned char *)str;
 	f._bf._size = f._w = INT_MAX;
-	ret = doprnt(&f, fmt, ap);
+	ret = doprnt_l(&f, locale, fmt, ap);
 	*f._p = 0;
 	return (ret);
+}
+
+int
+vsprintf(char *str, const char *fmt, va_list ap)
+{
+	return (vsprintf_l(str, __get_locale(), fmt, ap));
 }

@@ -39,25 +39,44 @@ static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+
 #include <assert.h>
 #include <errno.h>
+#include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
 
 #include "reentrant.h"
+#include "setlocale.h"
 #include "local.h"
+
+__weak_alias(scanf_l, _scanf_l)
+__weak_alias(fscanf_l, _fscanf_l)
+__weak_alias(vscanf_l, _vscanf_l)
+__weak_alias(sscanf_l, _sscanf_l)
+__weak_alias(vsscanf_l, _vsscanf_l)
 
 static int eofread(void *, char *, int);
 
 static int
-eofread(cookie, buf, len)
-	void *cookie;
-	char *buf;
-	int len;
+eofread(void *cookie, char *buf, int len)
 {
 	return (0);
+}
+
+int
+scanf_l(locale_t locale, char const *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = doscan_l(stdin, locale, fmt, ap);
+	va_end(ap);
+	return(ret);
 }
 
 int
@@ -73,6 +92,18 @@ scanf(char const *fmt, ...)
 }
 
 int
+fscanf_l(FILE *fp, locale_t locale, char const *fmt, ...)
+{
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = doscan_l(stdin, locale, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+int
 fscanf(FILE *fp, char const *fmt, ...)
 {
 	int ret;
@@ -85,13 +116,19 @@ fscanf(FILE *fp, char const *fmt, ...)
 }
 
 int
+vscanf_l(locale_t locale, const char *fmt, va_list ap)
+{
+	return (doscan_l(stdin, locale, fmt, ap));
+}
+
+int
 vscanf(const char *fmt, va_list ap)
 {
 	return (doscan(stdin, fmt, ap));
 }
 
 int
-sscanf(const char *str, char const *fmt, ...)
+sscanf_l(const char *str, locale_t locale, char const *fmt, ...)
 {
 	int ret;
 	va_list ap;
@@ -100,6 +137,7 @@ sscanf(const char *str, char const *fmt, ...)
 
 	_DIAGASSERT(str != NULL);
 
+	va_start(ap, fmt);
 	_FILEEXT_SETUP(&_strbuf, &fext);
 	_strbuf._flags = __SRD|_IOREAD|_IOSTRG;
 	_strbuf._bf._base = _strbuf._p = __UNCONST(str);
@@ -107,14 +145,19 @@ sscanf(const char *str, char const *fmt, ...)
 	_strbuf._read = eofread;
 	_strbuf._ub._base = NULL;
 	_strbuf._lb._base = NULL;
-	va_start(ap, fmt);
-	ret = doscan(&_strbuf, fmt, ap);
+	ret = doscan_l(&_strbuf, locale, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
 
 int
-vsscanf(const char *str, const char *fmt, va_list ap)
+sscanf(const char *str, char const *fmt, ...)
+{
+	return (sscanf_l(str, __get_locale(), fmt));
+}
+
+int
+vsscanf_l(const char *str, locale_t locale, const char *fmt, va_list ap)
 {
 	int ret;
 	FILE _strbuf;
@@ -129,6 +172,12 @@ vsscanf(const char *str, const char *fmt, va_list ap)
 	_strbuf._read = eofread;
 	_strbuf._ub._base = NULL;
 	_strbuf._lb._base = NULL;
-    ret = doscan(&_strbuf, fmt, ap);
+    ret = doscan_l(&_strbuf, locale, fmt, ap);
 	return (ret);
+}
+
+int
+vsscanf(const char *str, const char *fmt, va_list ap)
+{
+	return (vsscanf_l(str, __get_locale(), fmt, ap));
 }
