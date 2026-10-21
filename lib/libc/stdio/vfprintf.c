@@ -108,6 +108,8 @@ __RCSID("$NetBSD: vfwprintf.c,v 1.42 2026/09/21 19:12:51 kre Exp $");
 #define NARROW
 #include "xprint.h"
 
+__weak_alias(vfprintf_l, _vfprintf_l)
+
 static int __sprint(FILE *, locale_t, struct __suio *);
 static int __sbprintf(FILE *, locale_t, const char *, va_list);
 static char *__wcsconv(wchar_t *, int, locale_t);

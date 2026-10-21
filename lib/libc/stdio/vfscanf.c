@@ -69,6 +69,16 @@ __RCSID("$NetBSD: vfscanf.c,v 1.47 2022/05/24 06:27:59 andvar Exp $");
 #include "floatio.h"
 #endif
 
+/*
+ * Provide an external name for vfscanf.  Note, we don't use the normal
+ * namespace.h method; stdio routines explicitly use the internal name
+ * __svfscanf.
+ */
+#ifdef __weak_alias
+__weak_alias(vfscanf,_vfscanf)
+__weak_alias(vfscanf_l,_vfscanf_l)
+#endif
+
 int __scanfdebug = 0;
 
 #ifdef FLOATING_POINT
