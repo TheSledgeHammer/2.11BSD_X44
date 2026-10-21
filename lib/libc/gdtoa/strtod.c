@@ -100,6 +100,11 @@
 #include "setlocale.h"
 #endif
 
+#ifdef __weak_alias
+__weak_alias(strtod, _strtod)
+__weak_alias(strtod_l, _strtod_l)
+#endif
+
 double
 strtod_l
 #ifdef KR_headers
