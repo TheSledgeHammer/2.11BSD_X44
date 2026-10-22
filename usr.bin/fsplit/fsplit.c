@@ -85,17 +85,17 @@ char 	x[]="zzz000.f",
 	mainp[]="main000.f",
 	blkp[]="blkdta000.f";
 
-void	badparms(void);
-char   *functs(char *);
+void badparms(void);
+char *functs(char *);
 int	getline(void);
-void	get_name(char *, int);
+void get_name(char *, int);
 int	main(int, char **);
 int	lend(void);
 int	lname(char *, size_t);
-char   *look(char *, char *);
+char *look(char *, char *);
 int	saveit(char *);
 int	scan_name(char *, char *);
-char   *skiplab(char *);
+char *skiplab(char *);
 
 #define TRUE 1
 #define FALSE 0
@@ -109,9 +109,7 @@ struct stat sbuf;
 #define trim(p)	while (*p == ' ' || *p == '\t') p++
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	FILE *ofp;	/* output file */
 	int rv;		/* 1 if got card in output file, 0 otherwise */
@@ -200,19 +198,18 @@ main(argc, argv)
 }
 
 void
-badparms()
+badparms(void)
 {
 	fprintf(stderr, "fsplit: usage:  fsplit [-e efile] ... [file] \n");
 	exit(1);
 }
 
 int
-saveit(name)
-	char *name;
+saveit(char *name)
 {
 	int i;
-	char	fname[50],
-		*fptr = fname;
+	char fname[50],
+	*fptr = fname;
 
 	if(!extr) return(1);
 	while(*name) *fptr++ = *name++;
@@ -227,9 +224,7 @@ saveit(name)
 }
 
 void
-get_name(name, letters)
-	char *name;
-	int letters;
+get_name(char *name, int letters)
 {
 	char *ptr;
 
@@ -248,7 +243,7 @@ get_name(name, letters)
 }
 
 int
-getline()
+getline(void)
 {
 	char *ptr;
 
@@ -268,7 +263,7 @@ getline()
 
 /* return 1 for 'end' alone on card (up to col. 72),  0 otherwise */
 int
-lend()
+lend(void)
 {
 	char *p;
 
@@ -295,9 +290,7 @@ lend()
 		block datas and main programs.		*/
 
 int
-lname(s, l)
-	char *s;
-	size_t l;
+lname(char *s, size_t l)
 {
 #	define LINESIZE 80 
 	char *ptr, *p;
@@ -348,8 +341,7 @@ lname(s, l)
 }
 
 int
-scan_name(s, ptr)
-	char *s, *ptr;
+scan_name(char *s, char *ptr)
 {
 	char *sptr;
 
@@ -371,8 +363,7 @@ scan_name(s, ptr)
 }
 
 char *
-functs(p)
-	char *p;
+functs(char *p)
 {
         char *ptr;
 
@@ -401,8 +392,7 @@ functs(p)
 	else return 0 (labelled statement, comment or continuation */
 
 char *
-skiplab(p)
-	char *p;
+skiplab(char *p)
 {
 	char *ptr;
 
@@ -422,10 +412,10 @@ skiplab(p)
 	otherwise return ptr to next char after m in s */
 
 char *
-look(s, m)
-	char *s, *m;
+look(char *s, const char *m)
 {
-	char *sp, *mp;
+	char *sp;
+    const char *mp;
 
 	sp = s; mp = m;
 	while (*mp) {
