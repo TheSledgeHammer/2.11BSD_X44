@@ -82,7 +82,7 @@ static __inline u_int16_t
 _citrus_region_peek16(const struct _citrus_region *r, size_t pos)
 {
 	u_int16_t val;
-	memcpy(&val, _citrus_region_offset(r, pos), 2);
+	memcpy(&val, _citrus_region_offset(r, pos), (size_t)2);
 	return val;
 }
 
@@ -90,8 +90,19 @@ static __inline u_int32_t
 _citrus_region_peek32(const struct _citrus_region *r, size_t pos)
 {
 	u_int32_t val;
-	memcpy(&val, _citrus_region_offset(r, pos), 4);
+	memcpy(&val, _citrus_region_offset(r, pos), (size_t)4);
 	return val;
+}
+
+static __inline int
+_citrus_region_get_subregion(struct _citrus_region *subr,
+			     const struct _citrus_region *r,
+			     size_t ofs, size_t sz)
+{
+	if (_citrus_region_check(r, ofs, sz))
+		return -1;
+	_citrus_region_init(subr, _citrus_region_offset(r, ofs), sz);
+	return 0;
 }
 
 #endif

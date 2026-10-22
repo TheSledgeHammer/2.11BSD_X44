@@ -170,4 +170,18 @@ _citrus_memory_stream_get32(struct _citrus_memory_stream *ms, uint32_t *rval)
 	return 0;
 }
 
+static __inline int
+_citrus_memory_stream_getln_region(struct _citrus_memory_stream *ms,
+				   struct _citrus_region *r)
+{
+	const char *ptr;
+	size_t sz;
+
+	ptr = _citrus_memory_stream_getln(ms, &sz);
+	if (ptr)
+		_citrus_region_init(r, __UNCONST(ptr), sz);
+
+	return ptr == NULL;
+}
+
 #endif

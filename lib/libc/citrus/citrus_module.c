@@ -107,7 +107,10 @@ __RCSID("$NetBSD: citrus_module.c,v 1.14 2024/06/09 18:55:00 mrg Exp $");
 #include "citrus_hash.h"
 #include "citrus_iconv.h"
 #include "citrus_mapper.h"
+#include "citrus_mapper_646.h"
+#include "citrus_mapper_none.h"
 #include "citrus_mapper_serial.h"
+#include "citrus_mapper_zone.h"
 #include "citrus_module.h"
 
 extern struct _citrus_iconv_ops _citrus_iconv_none_iconv_ops;

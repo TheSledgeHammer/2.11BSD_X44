@@ -330,7 +330,7 @@ _citrus_mapper_zone_mapper_init(struct _citrus_mapper_area *__restrict ma,
 	mz->mz_col_offset = 0;
 
 	_citrus_region_init(&r, __UNCONST(var), lenvar);
-	_citrus_memstream_bind(&ms, &r);
+	_citrus_memory_stream_bind(&ms, &r);
 	if (parse_var(mz, &ms)) {
 		free(mz);
 		return EINVAL;

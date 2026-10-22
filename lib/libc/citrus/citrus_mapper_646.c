@@ -102,7 +102,7 @@ parse_file(struct _citrus_mapper_646 *m6, const char *path)
 	size_t len;
 	char buf[PATH_MAX];
 
-	ret = _map_file(&r, path);
+	ret = _citrus_map_file(&r, path);
 	if (ret)
 		return ret;
 	_citrus_memory_stream_bind(&ms, &r);
@@ -121,7 +121,7 @@ retry:
 			break;
 		}
 		snprintf(buf, sizeof(buf), "%.*s", (int)len, p);
-		m6->m6_map[i] = strtoul(buf, (char **)&p, 0);
+		m6->m6_map[i] = strtoul(buf, __UNCONST(&p), 0);
 		p = _bcs_skip_ws(buf);
 		if (*p != T_COMM && !*p) {
 			ret = EINVAL;
@@ -139,6 +139,8 @@ parse_var(struct _citrus_mapper_646 *m6, struct _citrus_memory_stream *ms, const
 	struct _citrus_region r;
 	char path[PATH_MAX];
 
+    r.r_head = NULL; /* stops gcc complaining about a maybe uninitialized warning */
+    r.r_size = 0;
 	m6->m6_forward = 1;
 	_citrus_memory_stream_skip_ws(ms);
 	/* whether backward */
