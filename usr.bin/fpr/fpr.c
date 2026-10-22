@@ -70,8 +70,7 @@ struct column {
 	int     count;
 	int     width;
 	char   *str;
-}
-        COLUMN;
+} COLUMN;
 
 char    cc;
 char    saved;
@@ -82,17 +81,15 @@ COLUMN *line;
 int     maxpos;
 int     maxcol;
 
-void	flush(void);
-void	get_text(void);
-void	init(void);
+void flush(void);
+void get_text(void);
+void init(void);
 int	main(int, char **);
-void	nospace(void);
-void	savech(int);
+void nospace(void);
+void savech(int);
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	int ch;
 	char ateof;
@@ -174,7 +171,7 @@ main(argc, argv)
 }
 
 void
-init()
+init(void)
 {
 	COLUMN *cp;
 	COLUMN *cend;
@@ -206,7 +203,7 @@ init()
 }
 
 void
-get_text()
+get_text(void)
 {
 	int i;
 	char ateol;
@@ -268,8 +265,7 @@ get_text()
 }
 
 void
-savech(col)
-	int     col;
+savech(int col)
 {
 	char ch;
 	int oldmax;
@@ -322,7 +318,7 @@ savech(col)
 }
 
 void
-flush()
+flush(void)
 {
 	int i;
 	int anchor;
@@ -375,7 +371,7 @@ flush()
 }
 
 void
-nospace()
+nospace(void)
 {
 	errx(1, "Storage limit exceeded.");
 }
