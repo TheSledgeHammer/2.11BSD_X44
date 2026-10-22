@@ -139,7 +139,7 @@ const struct _citrus_table _citrus_mappertab[] = {
 
 		{		/* mapper_646 */
 				.ct_name = "_citrus_mapper_646_mapper_ops",
-				.ct_ops = NULL,
+				.ct_ops = &_citrus_mapper_646_mapper_ops,
 		},
 		{		/* mapper_none */
 				.ct_name = "_citrus_mapper_none_mapper_ops",
@@ -159,7 +159,7 @@ const struct _citrus_table _citrus_mappertab[] = {
 		},
 		{		/* mapper_zone */
 				.ct_name = "_citrus_mapper_zone_mapper_ops",
-				.ct_ops = NULL,
+				.ct_ops = &_citrus_mapper_zone_mapper_ops,
 		},
 };
 

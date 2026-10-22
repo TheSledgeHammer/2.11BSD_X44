@@ -62,6 +62,9 @@ __RCSID("$NetBSD: main.c,v 1.23 2003/08/07 10:04:37 agc Exp $");
 #include "restore.h"
 #include "extern.h"
 
+struct context curfile;
+union u_spcl u_spcl;
+int	uflag;
 int	bflag = 0, cvtflag = 0, dflag = 0, vflag = 0, yflag = 0;
 int	hflag = 1, mflag = 1, Nflag = 0;
 char	command = '\0';

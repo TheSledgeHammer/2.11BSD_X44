@@ -40,7 +40,7 @@
 __UINT
 _FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 {
-	const char *s = nptr;
+	const char *s;
 	__UINT acc, cutoff;
 	int c;
 	int neg = 0, any, cutlim;
@@ -48,9 +48,19 @@ _FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 	_DIAGASSERT(nptr != NULL);
 	/* endptr may be NULL */
 
+	/* check base value */
+	if (base && (base < 2 || base > 36)) {
+		errno = EINVAL;
+		if (endptr != NULL)
+			/* LINTED interface specification */
+			*endptr = __UNCONST(nptr);
+		return 0;
+	}
+
 	/*
 	 * See strtol for comments as to the logic used.
 	 */
+	s = nptr;
 	do {
 		c = *s++;
 	} while (isspace_l(c, locale));
@@ -78,18 +88,19 @@ _FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 			break;
 		if (c >= base)
 			break;
-		if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+		if (any < 0)
+			continue;
+		if (acc > cutoff || (acc == cutoff && c > cutlim)) {
+			acc = __UINT_MAX;
 			any = -1;
-		else {
+			errno = ERANGE;
+		} else {
 			any = 1;
-			acc *= base;
+			acc *= (__UINT)base;
 			acc += c;
 		}
 	}
-	if (any < 0) {
-		acc = __UINT_MAX;
-		errno = ERANGE;
-	} else if (neg)
+	if (neg && any > 0)
 		acc = -acc;
 	if (endptr != 0)
 		*endptr = __UNCONST(any ? s - 1 : nptr);

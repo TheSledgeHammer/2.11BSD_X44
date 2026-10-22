@@ -72,19 +72,19 @@ static int blkcnt;
 static int numtrec;
 static char *tapebuf;
 static union u_spcl endoftapemark;
-static int	blksread;		/* blocks read since last header */
-static int	tpblksread = 0;		/* TP_BSIZE blocks read */
-static int	tapesread;
-static jmp_buf	restart;
-static int	gettingfile = 0;	/* restart has a valid frame */
+static int blksread; /* blocks read since last header */
+static int tpblksread = 0; /* TP_BSIZE blocks read */
+static int tapesread;
+static jmp_buf restart;
+static int gettingfile = 0; /* restart has a valid frame */
 #ifdef RRESTORE
 static const char	*host = NULL;
 #endif
 
-static int	ofile;
-static char	*map;
-static char	lnkbuf[MAXPATHLEN + 1];
-static int	pathlen;
+static int ofile;
+static char *map;
+static char lnkbuf[MAXPATHLEN + 1];
+static int pathlen;
 
 int		oldinofmt;	/* old inode format conversion required */
 int		Bcvt;		/* Swap Bytes (for CCI or sun) */

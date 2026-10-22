@@ -40,7 +40,7 @@ __RCSID("$NetBSD: aliasname.c,v 1.1 2002/02/13 07:45:52 yamt Exp $");
 #ifdef CITRUS_UNALIASNAME
 #include "citrus/citrus_lookup.h"
 #else
-static const char *__unaliasname_orig(const char *, const char *, void *, size_t);
+static const char *_lookup_simple(const char *, const char *, void *, size_t);
 #endif
 
 static const char *__unaliasname_common(const char *, const char *, void *, size_t);
@@ -206,7 +206,7 @@ __isforcemapping(const char *name)
 #ifndef CITRUS_UNALIASNAME
 
 static const char *
-__unaliasname_orig(const char *dbname, const char *alias, void *buf, size_t bufsize)
+_lookup_simple(const char *dbname, const char *alias, void *buf, size_t bufsize)
 {
 	FILE *fp = NULL;
 	const char *result = alias;
@@ -308,7 +308,7 @@ __unaliasname_common(const char *dbname, const char *alias, void *buf, size_t bu
 	const char *csalias = strdup(alias);
 
 	_bcs_convert_to_lower(csalias);
-	result = __unaliasname_orig(dbname, csalias, buf, bufsize);
+	result = _lookup_simple(dbname, csalias, buf, bufsize);
 #else
 	result = _citrus_lookup_simple(dbname, alias, buf, bufsize, _CITRUS_LOOKUP_CASE_SENSITIVE);
 #endif

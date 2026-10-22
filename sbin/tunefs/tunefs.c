@@ -32,13 +32,17 @@
  */
 
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1983, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)tunefs.c	8.3 (Berkeley) 5/3/95";
+#endif
 #endif /* not lint */
 
 /*
@@ -285,9 +289,7 @@ usage(void)
 }
 
 int
-isactive(fd, rsfs)
-	int fd;
-	struct statfs *rsfs;
+isactive(int fd, struct statfs *rsfs)
 {
 	struct stat st0, st;
 	struct statfs *sfs;
@@ -314,9 +316,7 @@ isactive(fd, rsfs)
 }
 
 void
-getsb(fs, file)
-	register struct fs *fs;
-	char *file;
+getsb(struct fs *fs, char *file)
 {
 	int i;
 
@@ -346,10 +346,7 @@ getsb(fs, file)
 }
 
 void
-bwrite(blk, buf, size)
-	daddr_t blk;
-	char *buf;
-	int size;
+bwrite(daddr_t blk, char *buf, int size)
 {
 
 	if (lseek(fi, (off_t)blk * dev_bsize, SEEK_SET) < 0) {
@@ -361,10 +358,7 @@ bwrite(blk, buf, size)
 }
 
 void
-bread(bno, buf, cnt)
-	daddr_t bno;
-	char *buf;
-	int cnt;
+bread(daddr_t bno, char *buf, int cnt)
 {
 	int i;
 
@@ -377,11 +371,7 @@ bread(bno, buf, cnt)
 }
 
 int
-openpartition(name, flags, device, devicelen)
-	char *name;
-	int flags;
-	char *device;
-	size_t devicelen;
+openpartition(char *name, int flags, char *device, size_t devicelen)
 {
 	struct fstab *fs;
 	struct stat st;

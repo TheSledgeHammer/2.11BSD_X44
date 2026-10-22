@@ -40,16 +40,29 @@
 __INT
 _FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 {
-	const char *s = nptr;
+	const char *s;
 	__INT acc, cutoff;
 	int c;
 	int neg = 0, any, cutlim;
+
+	_DIAGASSERT(nptr != NULL);
+	/* endptr may be NULL */
+
+	/* check base value */
+	if (base && (base < 2 || base > 36)) {
+		errno = EINVAL;
+		if (endptr != NULL)
+			/* LINTED interface specification */
+			*endptr = __UNCONST(nptr);
+		return 0;
+	}
 
 	/*
 	 * Skip white space and pick up leading +/- sign if any.
 	 * If base is 0, allow 0x for hex and 0 for octal, else
 	 * assume decimal; if base is already 16, allow 0x.
 	 */
+	s = nptr;
 	do {
 		c = *s++;
 	} while (isspace_l(c, locale));
@@ -87,6 +100,13 @@ _FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 	cutoff = (__INT)(neg ? __INT_MIN : __INT_MAX);
 	cutlim = cutoff % (__INT)base;
 	cutoff /= (__INT)base;
+	if (neg) {
+		if (cutlim > 0) {
+			cutlim -= (__INT)base;
+			cutoff += 1;
+		}
+		cutlim = -cutlim;
+	}
 	for (acc = 0, any = 0;; c = *s++) {
 		if (isdigit(c))
 			c -= '0';
@@ -96,19 +116,30 @@ _FUNCNAME_L(const char *nptr, char **endptr, int base, locale_t locale)
 			break;
 		if (c >= base)
 			break;
-		if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
-			any = -1;
-		else {
-			any = 1;
-			acc *= base;
-			acc += c;
+		if (any < 0)
+			continue;
+		if (neg) {
+			if (acc < cutoff || (acc == cutoff && c > cutlim)) {
+				acc = __INT_MIN;
+				any = -1;
+				errno = ERANGE;
+			} else {
+				any = 1;
+				acc *= base;
+				acc += c;
+			}
+		} else {
+			if (acc > cutoff || (acc == cutoff && c > cutlim)) {
+				acc = __INT_MAX;
+				any = -1;
+				errno = ERANGE;
+			} else {
+				any = 1;
+				acc *= base;
+				acc += c;
+			}
 		}
 	}
-	if (any < 0) {
-		acc = neg ? __INT_MIN : __INT_MAX;
-		errno = ERANGE;
-	} else if (neg)
-		acc = -acc;
 	if (endptr != 0)
 		*endptr = __UNCONST(any ? s - 1 : nptr);
 	return (acc);

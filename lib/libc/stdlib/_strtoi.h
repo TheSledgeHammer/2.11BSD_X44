@@ -66,6 +66,14 @@ _FUNCNAME_L(const char *nptr, char **endptr, int base, __INT lo, __INT hi, int *
 	serrno = errno;
 	errno = 0;
 
+	if (base != 0 && (base < 2 || base > 36)) {
+		*rstatus = EINVAL;
+		if (endptr != NULL)
+			/* LINTED interface specification */
+			*endptr = __UNCONST(nptr);
+		return 0;
+	}
+
 #if HAVE_NBTOOL_CONFIG_H
 	im = __WRAPPED(nptr, endptr, base);
 #else
