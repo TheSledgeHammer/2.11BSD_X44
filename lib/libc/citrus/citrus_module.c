@@ -112,10 +112,12 @@ __RCSID("$NetBSD: citrus_module.c,v 1.14 2024/06/09 18:55:00 mrg Exp $");
 
 extern struct _citrus_iconv_ops _citrus_iconv_none_iconv_ops;
 extern struct _citrus_iconv_ops _citrus_iconv_std_iconv_ops;
+extern struct _citrus_mapper_ops _citrus_mapper_646_mapper_ops;
 extern struct _citrus_mapper_ops _citrus_mapper_none_mapper_ops;
 extern struct _citrus_mapper_ops _citrus_mapper_parallel_mapper_ops;
 extern struct _citrus_mapper_ops _citrus_mapper_serial_mapper_ops;
 extern struct _citrus_mapper_ops _citrus_mapper_std_mapper_ops;
+extern struct _citrus_mapper_ops _citrus_mapper_zone_mapper_ops;
 
 struct _citrus_table {
 	const char 	*ct_name;
