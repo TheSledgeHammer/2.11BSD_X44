@@ -155,16 +155,16 @@ cron_pclose(FILE *iop)
 	 */
 	if (pids == 0 || pids[fdes = fileno(iop)] == 0)
 		return (-1);
-	(void) fclose(iop);
+	(void)fclose(iop);
 	sigemptyset(&nmask);
 	sigaddset(&nmask, SIGINT);
 	sigaddset(&nmask, SIGQUIT);
 	sigaddset(&nmask, SIGHUP);
 	sigprocmask(SIG_BLOCK, &nmask, &omask);
 	do {
-		pid = waitpid(pids[fdes], &stat_loc, NULL);
+		pid = waitpid(pids[fdes], &stat_loc, 0);
 	} while (pid == -1 && errno == EINTR);
-	(void) sigprocmask(SIG_SETMASK, &omask, NULL);
+	(void)sigprocmask(SIG_SETMASK, &omask, NULL);
 	pids[fdes] = 0;
 	return (pid == -1 ? -1 : WEXITSTATUS(stat_loc));
 }
