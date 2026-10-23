@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
 #if 0
 static char copyright[] =
@@ -84,7 +85,7 @@ off_t sblock_try[] = SBLOCKSEARCH;
 
 void bwrite(daddr_t, char *, int);
 void bread(daddr_t, char *, int);
-int	 openpartition(char *, int, char *, size_t);
+int	 openpartition(const char *, int, const char *, size_t);
 int  isactive(int, struct statfs *);
 void getsb(struct fs *, const char *);
 void usage(void);
@@ -254,10 +255,10 @@ main(int argc, char *argv[])
 		struct ufs_args args;
 		args.fspec = sfs.f_mntfromname;
         if (mount(MOUNT_FFS, sfs.f_mntonname,
-				sfs.f_flags | MNT_UPDATE, &args, sizeof args) == -1) {
+				sfs.f_flags | MNT_UPDATE, &args) == -1) {
 			warn("mount: ffs");
 		} else if (mount(MOUNT_UFS, sfs.f_mntonname,
-				sfs.f_flags | MNT_UPDATE, &args, sizeof args) == -1) {
+				sfs.f_flags | MNT_UPDATE, &args) == -1) {
 			warn("mount: ufs");
 		} else {
 			printf("%s: mount of %s on %s updated\n", getprogname(),
@@ -376,11 +377,11 @@ bread(daddr_t bno, char *buf, int cnt)
 }
 
 int
-openpartition(char *name, int flags, char *device, size_t devicelen)
+openpartition(const char *name, int flags, const char *device, size_t devicelen)
 {
 	struct fstab *fs;
 	struct stat st;
-	char *special;
+	const char *special;
 	int fd, oerrno;
 
 	fs = getfsfile(name);
@@ -391,10 +392,10 @@ openpartition(char *name, int flags, char *device, size_t devicelen)
 	if ((st.st_mode & S_IFMT) != S_IFBLK && (st.st_mode & S_IFMT) != S_IFCHR) {
 		errx(10, "%s: not a block or character device", special);
 	}
-	fd = opendisk(special, flags, device, devicelen, 0);
+	fd = opendisk(special, flags, __UNCONST(device), devicelen, 0);
 	if (fd == -1 && errno == ENOENT) {
 		oerrno = errno;
-		strlcpy(device, special, devicelen);
+		strlcpy(__UNCONST(device), special, devicelen);
 		errno = oerrno;
 	}
 	return (fd);
