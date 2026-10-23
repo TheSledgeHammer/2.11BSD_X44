@@ -517,7 +517,7 @@ log_close(void) {
  *	(2) it returns a pointer to static storage
  */
 char *
-first_word(char *s/* string we want the first word of */, char *t /* terminators, implicitly including \0 */)
+first_word(char *s/* string we want the first word of */, const char *t /* terminators, implicitly including \0 */)
 {
 	static char retbuf[2][MAX_TEMPSTR + 1];	/* sure wish C had GC */
 	static int retsel = 0;

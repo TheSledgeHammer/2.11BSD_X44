@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && defined(DOSCCS)
+#if 0
 static char sccsid[] = "@(#)entry.c 2.12.2 (2.11BSD) 1999/08/05";
+#endif
 #endif
 
 /* vix 26jan87 [RCS'd; rest of log is in RCS file]

@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && !defined(LINT)
+#if 0
 static char rcsid[] = "$Id: job.c,v 1.6 1994/01/15 20:43:43 vixie Exp $";
+#endif
 #endif
 
 

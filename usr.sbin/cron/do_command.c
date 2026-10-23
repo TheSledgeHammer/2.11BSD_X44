@@ -16,7 +16,9 @@
  */
 
 #if !defined(lint) && !defined(LINT)
+#if 0
 static char rcsid[] = "$Id: do_command.c,v 2.12 1994/01/15 20:43:43 vixie Exp $";
+#endif
 #endif
 
 #include "cron.h"
@@ -62,11 +64,11 @@ do_command(entry *e, user *u)
 static void
 child_process(entry *e, user *u)
 {
-	int		stdin_pipe[2], stdout_pipe[2];
-	register char	*input_data;
-	char		*usernm, *mailto;
-	register int ch;
-	int		children = 0, escaped;
+	int	stdin_pipe[2], stdout_pipe[2];
+	char *input_data;
+	char *usernm, *mailto;
+	int ch;
+	int	children = 0, escaped;
 
 	Debug(DPROC, ("[%d] child_process('%s')\n", getpid(), e->cmd))
 
@@ -86,7 +88,7 @@ child_process(entry *e, user *u)
 	 * use wait() explictly.  so we have to disable the signal (which
 	 * was inherited from the parent).
 	 */
-	(void) signal(SIGCHLD, SIG_IGN);
+	(void)signal(SIGCHLD, SIG_IGN);
 
 	/* create some pipes to talk to our future child
 	 */
@@ -148,7 +150,7 @@ child_process(entry *e, user *u)
 
 		/* get new pgrp, void tty, etc.
 		 */
-		(void) setsid();
+		(void)setsid();
 
 		/* close the pipe ends that we won't use.  this doesn't affect
 		 * the parent, who has to read and write them; it keeps the
@@ -182,7 +184,7 @@ child_process(entry *e, user *u)
 		/* exec the command.
 		 */
 		{
-			char	*shell = env_get("SHELL", e->envp);
+			char *shell = env_get("SHELL", e->envp);
 
 # if DEBUGGING
 			if (DebugFlags & DTEST) {
@@ -230,10 +232,9 @@ child_process(entry *e, user *u)
 	 */
 
 	if (*input_data && fork() == 0) {
-		register FILE	*out = fdopen(stdin_pipe[WRITE_PIPE], "w");
-		register int	need_newline = FALSE;
-		register int	escaped = FALSE;
-		register int	ch;
+		FILE *out = fdopen(stdin_pipe[WRITE_PIPE], "w");
+		int	need_newline = FALSE;
+		escaped = FALSE;
 
 		Debug(DPROC, ("[%d] child2 sending data to grandchild\n", getpid()))
 
@@ -247,7 +248,7 @@ child_process(entry *e, user *u)
 		 *	%  -> \n
 		 *	\x -> \x	for all x != %
 		 */
-		while (ch = *input_data++) {
+		while ((ch = *input_data++)) {
 			if (escaped) {
 				if (ch != '%')
 					putc('\\', out);
@@ -292,13 +293,13 @@ child_process(entry *e, user *u)
 	Debug(DPROC, ("[%d] child reading output from grandchild\n", getpid()))
 
 	/*local*/{
-		register FILE	*in = fdopen(stdout_pipe[READ_PIPE], "r");
-		register int	ch = getc(in);
+		FILE *in = fdopen(stdout_pipe[READ_PIPE], "r");
+		ch = getc(in);
 
 		if (ch != EOF) {
-			register FILE	*mail;
-			register int	bytes = 1;
-			int		status = 0;
+			FILE *mail;
+			int	bytes = 1;
+			int	status = 0;
 
 			Debug(DPROC|DEXT,
 				("[%d] got data (%x:%c) from grandchild\n",
@@ -327,16 +328,16 @@ child_process(entry *e, user *u)
 			 */
 
 			if (mailto) {
-				register char	**env;
+				char **env;
 				auto char	mailcmd[MAX_COMMAND];
 				auto char	hostname[MAXHOSTNAMELEN];
 
-				(void) gethostname(hostname, MAXHOSTNAMELEN);
-				(void) sprintf(mailcmd, MAILARGS,
+				(void)gethostname(hostname, MAXHOSTNAMELEN);
+				(void)sprintf(mailcmd, MAILARGS,
 					       MAILCMD, mailto);
 				if (!(mail = cron_popen(mailcmd, "w"))) {
 					perror(MAILCMD);
-					(void) _exit(ERROR_EXIT);
+					(void)_exit(ERROR_EXIT);
 				}
 				fprintf(mail, "From: root (Cron Daemon)\n");
 				fprintf(mail, "To: %s\n", mailto);

@@ -216,7 +216,7 @@ int		job_runqueue(void),
 char	*env_get(const char *, char **),
 		*arpadate(time_t *),
 		*mkprints(unsigned char *, unsigned int),
-		*first_word(char *, char *),
+		*first_word(char *, const char *),
 		**env_init(void),
 		**env_copy(char **),
  		**env_set(char **, char *);
@@ -226,7 +226,7 @@ user	*load_user(int, struct passwd *, const char *),
 
 entry	*load_entry(FILE *, void (*)(const char *), struct passwd *, char **);
 
-FILE	*cron_popen(char *, char *);
+FILE	*cron_popen(char *, const char *);
 
 
 				/* in the C tradition, we only create

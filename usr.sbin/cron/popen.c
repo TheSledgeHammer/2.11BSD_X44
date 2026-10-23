@@ -24,7 +24,9 @@
  */
 
 #if	!defined(lint) && defined(DOSCCS)
+#if 0
 static char sccsid[] = "@(#)popen.c	5.7.2 (2.11BSD) 1999/08/05";
+#endif
 #endif
 
 #include "cron.h"
@@ -42,7 +44,7 @@ static PID_T *pids;
 static int fds;
 
 FILE *
-cron_popen(char *program, char *type)
+cron_popen(char *program, const char *type)
 {
 	register char *cp;
 	FILE *iop;
