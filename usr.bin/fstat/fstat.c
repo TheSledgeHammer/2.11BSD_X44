@@ -33,13 +33,17 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -72,14 +76,14 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <nfs/nfsnode.h>
 #undef NFS
 
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_extern.h>
-#include <isofs/cd9660/cd9660_node.h>
+#include <fs/isofs/cd9660/iso.h>
+#include <fs/isofs/cd9660/cd9660_extern.h>
+#include <fs/isofs/cd9660/cd9660_node.h>
 
-#include <msdosfs/denode.h>
-#include <msdosfs/bpb.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/bpb.h>
 #define	_KERNEL
-#include <msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/msdosfsmount.h>
 #include <miscfs/lofs/lofs.h>
 #include <ufs/ufml/ufml.h>
 #undef _KERNEL
@@ -188,9 +192,7 @@ mode_t 	getftype(enum vtype);
 void 	usage(void);
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
@@ -330,8 +332,7 @@ int	Pid;
  * print open files attributed to this process
  */
 void
-dofiles(kp)
-	struct kinfo_proc *kp;
+dofiles(struct kinfo_proc *kp)
 {
 	int i, last;
 	struct file file;
@@ -409,10 +410,7 @@ dofiles(kp)
 }
 
 void
-vtrans(vp, i, flag)
-	struct vnode *vp;
-	int i;
-	int flag;
+vtrans(struct vnode *vp, int i, int flag)
 {
 	struct vnode vn;
 	struct filestat fst;
@@ -533,9 +531,7 @@ vtrans(vp, i, flag)
 }
 
 int
-ufs_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+ufs_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct inode inode;
 	struct ufsmount ufsmount;
@@ -585,9 +581,7 @@ ufs_filestat(vp, fsp)
 }
 
 int
-ufs211_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+ufs211_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct ufs211_inode inode;
 	struct ufs211_mount ufsmount;
@@ -611,9 +605,7 @@ ufs211_filestat(vp, fsp)
 }
 
 int
-nfs_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+nfs_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct nfsnode nfsnode;
 
@@ -633,9 +625,7 @@ nfs_filestat(vp, fsp)
 }
 
 int
-isofs_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+isofs_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct iso_node inode;
 
@@ -654,9 +644,7 @@ isofs_filestat(vp, fsp)
 }
 
 int
-msdosfs_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+msdosfs_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct denode de;
 	struct msdosfsmount mp;
@@ -682,9 +670,7 @@ msdosfs_filestat(vp, fsp)
 }
 
 int
-lofs_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+lofs_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct lofsnode lofsnode;
 	struct mount mount;
@@ -712,9 +698,7 @@ lofs_filestat(vp, fsp)
 }
 
 int
-ufml_filestat(vp, fsp)
-	struct vnode *vp;
-	struct filestat *fsp;
+ufml_filestat(struct vnode *vp, struct filestat *fsp)
 {
 	struct ufml_node ufml_node;
 	struct mount mount;
@@ -742,8 +726,7 @@ ufml_filestat(vp, fsp)
 }
 
 char *
-getmnton(m)
-	struct mount *m;
+getmnton(struct mount *m)
 {
 	static struct mount mount;
 	static struct mtab {
@@ -772,11 +755,7 @@ getmnton(m)
 }
 
 static const char *
-inet_addrstr(buf, len, a, p)
-	char *buf;
-	size_t len;
-	const struct in_addr *a;
-	uint16_t p;
+inet_addrstr(char *buf, size_t len, const struct in_addr *a, uint16_t p)
 {
 	char addr[256];
 
@@ -808,11 +787,7 @@ inet_addrstr(buf, len, a, p)
 
 #ifdef INET6
 static const char *
-inet6_addrstr(buf, len, a, p)
-	char *buf;
-	size_t len;
-	const struct in6_addr *a;
-	uint16_t p;
+inet6_addrstr(char *buf, size_t len, const struct in6_addr *a, uint16_t p)
 {
 	char addr[256];
 
@@ -853,9 +828,7 @@ inet6_addrstr(buf, len, a, p)
 #endif
 
 void
-socktrans(sock, i)
-	struct socket *sock;
-	int i;
+socktrans(struct socket *sock, int i)
 {
 	static char *stypename[] = {
 		"unused",	/* 0 */
@@ -1021,10 +994,9 @@ bad:
  *	print name of protocol number
  */
 void
-getinetproto(number)
-	int number;
+getinetproto(int number)
 {
-	char *cp;
+	const char *cp;
 
 	switch(number) {
 	case IPPROTO_IP:
@@ -1055,8 +1027,7 @@ getinetproto(number)
 }
 
 int
-getfname(filename)
-	const char *filename;
+getfname(const char *filename)
 {
 	struct stat statbuf;
 	DEVS *cur;
@@ -1079,8 +1050,7 @@ getfname(filename)
 }
 
 mode_t
-getftype(v_type)
-	enum vtype v_type;
+getftype(enum vtype v_type)
 {
 	mode_t ftype;
 
