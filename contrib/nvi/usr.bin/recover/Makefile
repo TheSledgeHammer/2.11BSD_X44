@@ -4,6 +4,4 @@ SCRIPTS =	virecover
 SCRIPTSDIR =	/usr/libexec
 MAN=		virecover.8
 
-COPTS.recover.c+= --wno-format
-
 .include <bsd.prog.mk>
