@@ -53,16 +53,17 @@ static char sccsid[] = "@(#)tunefs.c	8.3 (Berkeley) 5/3/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-#include <ufs/ffs/ffs_extern.h>
 #include <ufs/ufs/ufsmount.h>
 
 #include <errno.h>
 #include <err.h>
 #include <fcntl.h>
 #include <fstab.h>
-#include <stdio.h>
 #include <paths.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <util.h>
 
@@ -78,24 +79,24 @@ union {
 int fi;
 long dev_bsize = 512;
 int	is_ufs2 = 0;
-off_t	sblockloc;
+off_t sblockloc;
 off_t sblock_try[] = SBLOCKSEARCH;
 
 void bwrite(daddr_t, char *, int);
 void bread(daddr_t, char *, int);
 int	 openpartition(char *, int, char *, size_t);
 int  isactive(int, struct statfs *);
-void getsb(struct fs *, char *);
+void getsb(struct fs *, const char *);
 void usage(void);
 
 int
 main(int argc, char *argv[])
 {
 	int	ch, Aflag, Fflag, Nflag, openflags;
-	char *special, *name;
+	const char *special, *name;
 	int i;
 	bool active;
-	char *chg[2], device[MAXPATHLEN];
+	const char *chg[2], device[MAXPATHLEN];
 	struct statfs	sfs;
 
 	Aflag = Fflag = Nflag = 0;
@@ -252,9 +253,12 @@ main(int argc, char *argv[])
 	if (active) {
 		struct ufs_args args;
 		args.fspec = sfs.f_mntfromname;
-		if (mount(MOUNT_FFS | MOUNT_UFS, sfs.f_mntonname,
+        if (mount(MOUNT_FFS, sfs.f_mntonname,
 				sfs.f_flags | MNT_UPDATE, &args, sizeof args) == -1) {
-			warn("mount");
+			warn("mount: ffs");
+		} else if (mount(MOUNT_UFS, sfs.f_mntonname,
+				sfs.f_flags | MNT_UPDATE, &args, sizeof args) == -1) {
+			warn("mount: ufs");
 		} else {
 			printf("%s: mount of %s on %s updated\n", getprogname(),
 					sfs.f_mntfromname, sfs.f_mntonname);
@@ -293,6 +297,7 @@ isactive(int fd, struct statfs *rsfs)
 {
 	struct stat st0, st;
 	struct statfs *sfs;
+    int n;
 
 	if (fstat(fd, &st0) == -1) {
 		warn("stat");
@@ -316,7 +321,7 @@ isactive(int fd, struct statfs *rsfs)
 }
 
 void
-getsb(struct fs *fs, char *file)
+getsb(struct fs *fs, const char *file)
 {
 	int i;
 
@@ -324,7 +329,7 @@ getsb(struct fs *fs, char *file)
 		if (sblock_try[i] == -1) {
 			errx(5, "cannot find filesystem superblock");
 		}
-		bread(sblock_try[i] / dev_bsize, (char*) fs, SBLOCKSIZE);
+		bread(sblock_try[i] / dev_bsize, (char *)fs, SBLOCKSIZE);
 		switch (fs->fs_magic) {
 		case FS_UFS2_MAGIC:
 			is_ufs2 = 1;
