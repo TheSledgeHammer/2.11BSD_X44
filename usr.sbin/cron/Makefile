@@ -7,4 +7,6 @@ CPPFLAGS+=-I${.CURDIR} -DLOGIN_CAP -DPOSIX
 LDADD+=-lutil
 MAN=	bitstring.3 cron.8
 
+COPTS.misc.c+= ${GCC_NO_FORMAT_OVERFLOW}
+
 .include <bsd.prog.mk>
