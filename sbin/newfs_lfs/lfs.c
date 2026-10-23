@@ -32,7 +32,9 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)lfs.c	8.5 (Berkeley) 5/24/95";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -162,7 +164,7 @@ static struct lfs lfs1_default = {
 		.lfs_fsmnt = 		{ 0 },
 		.lfs_pad = 			{ 0 },
 		.lfs_cksum = 		0,
-		.lfs_maxsymlinklen =  MAXSYMLINKLEN
+		.lfs_maxsymlinklen =  UFS1_MAXSYMLINKLEN
 };
 
 static struct lfs lfs2_default = {
@@ -225,7 +227,7 @@ static struct lfs lfs2_default = {
 		.lfs_fsmnt = 		{ 0 },
 		.lfs_pad = 			{ 0 },
 		.lfs_cksum = 		0,
-		.lfs_maxsymlinklen =  MAXSYMLINKLEN
+		.lfs_maxsymlinklen =  UFS2_MAXSYMLINKLEN
 };
 
 struct direct lfs_root_dir[] = {
@@ -252,7 +254,6 @@ int
 make_lfs(int fd, struct disklabel *lp, struct partition *partp, int minfree, int block_size, int frag_size, int seg_size, int version)
 {
 	struct lfs *lfsp;
-	int ret;
 
 	lfsp = get_lfs_by_version(version);
 	if (lfsp == NULL) {
@@ -282,12 +283,6 @@ put(int fd, off_t off, void *p, size_t len)
  * Create the root directory for this file system and the lost+found
  * directory.
  */
-
-void
-lfsinit(void)
-{
-
-}
 
 static void
 segerror(int nblocks)
@@ -342,7 +337,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	SEGUSE *segtable;			/* Segment usage table */
 	SEGSUM summary;				/* Segment summary structure */
 	SEGSUM *sp;					/* Segment summary pointer */
-	daddr_t	last_sb_addr;		/* Address of superblocks */
+//	daddr_t	last_sb_addr;		/* Address of superblocks */
 	daddr_t last_addr;			/* Previous segment address */
 	ufs2_daddr_t sb_addr;		/* Address of superblocks */
 	daddr_t	seg_addr;			/* Address of current segment */
@@ -372,7 +367,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 
 	/* Modify parts of superblock overridden by command line arguments */
 	if (bsize != DFL_LFSBLOCK || fsize != DFL_LFSFRAG) {
-		lfsp->lfs_bshift = log2(bsize);
+		lfsp->lfs_bshift = lfs_log2(bsize);
 		if (1 << lfsp->lfs_bshift != bsize)
 			fatal("%d: block size not a power of 2", bsize);
 		lfsp->lfs_bsize = bsize;
@@ -384,12 +379,12 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 			lfsp->lfs_inopb = bsize / sizeof(struct ufs1_dinode);
 		}
 		lfsp->lfs_ffmask = fsize - 1;
-		lfsp->lfs_ffshift = log2(fsize);
+		lfsp->lfs_ffshift = lfs_log2(fsize);
 		if (1 << lfsp->lfs_ffshift != fsize)
 			fatal("%d: frag size not a power of 2", fsize);
 		lfsp->lfs_frag = numfrags(lfsp, bsize);
 		lfsp->lfs_fbmask = lfsp->lfs_frag - 1;
-		lfsp->lfs_fbshift = log2(lfsp->lfs_frag);
+		lfsp->lfs_fbshift = lfs_log2(lfsp->lfs_frag);
 /* MIS -- should I round to power of 2 */
 		lfsp->lfs_ifpb = bsize / sizeof(IFILE);
 		lfsp->lfs_sepb = bsize / sizeof(SEGUSE);
@@ -401,7 +396,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	}
 
 	if (ssize != DFL_LFSSEG) {
-		lfsp->lfs_segshift = log2(ssize);
+		lfsp->lfs_segshift = lfs_log2(ssize);
 		if (1 << lfsp->lfs_segshift != ssize)
 			fatal("%d: segment size not power of 2", ssize);
 		lfsp->lfs_ssize = ssize;
@@ -418,8 +413,8 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	 * size, disk geometry and current time.
 	 */
 	db_per_fb = bsize/lp->d_secsize;
-	lfsp->lfs_fsbtodb = log2(db_per_fb);
-	lfsp->lfs_sushift = log2(lfsp->lfs_sepb);
+	lfsp->lfs_fsbtodb = lfs_log2(db_per_fb);
+	lfsp->lfs_sushift = lfs_log2(lfsp->lfs_sepb);
 	lfsp->lfs_size = partp->p_size >> lfsp->lfs_fsbtodb;
 	lfsp->lfs_dsize = lfsp->lfs_size - (LFS_LABELPAD >> lfsp->lfs_bshift);
 	lfsp->lfs_nseg = lfsp->lfs_dsize / lfsp->lfs_ssize;
@@ -459,7 +454,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 			break;
 		lfsp->lfs_sboffs[i] = (ufs1_daddr_t)sb_addr;
 	}
-	last_sb_addr = lfsp->lfs_sboffs[i - 1];
+	//last_sb_addr = lfsp->lfs_sboffs[i - 1];
 	lfsp->lfs_lastseg = lfsp->lfs_sboffs[0];
 	lfsp->lfs_nextseg =
 	    lfsp->lfs_sboffs[1] ? lfsp->lfs_sboffs[1] : lfsp->lfs_sboffs[0];
@@ -543,11 +538,11 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 		fatal("%s", strerror(errno));
 	}
 	if (is_ufs2) {
-		dip->dp2 = (struct ufs2_dinode *)dpagep;
-		memset(dip->dp2, 0, lfsp->lfs_bsize);
+		dip->dp2 = (struct ufs2_dinode *)*dpagep;
+		memset(&dip->dp2, 0, lfsp->lfs_bsize);
 	} else {
-		dip->dp1 = (struct ufs1_dinode *)dpagep;
-		memset(dip->dp1, 0, lfsp->lfs_bsize);
+		dip->dp1 = (struct ufs1_dinode *)*dpagep;
+		memset(&dip->dp1, 0, lfsp->lfs_bsize);
 	}
 
 	/* Create a block of IFILE structures. */
@@ -622,11 +617,11 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 
 	put(fd, off, cleaninfo, lfsp->lfs_cleansz << lfsp->lfs_bshift);
 	off += (lfsp->lfs_cleansz << lfsp->lfs_bshift);
-	(void) free(cleaninfo);
+	(void)free(cleaninfo);
 
 	put(fd, off, segtable, lfsp->lfs_segtabsz << lfsp->lfs_bshift);
 	off += (lfsp->lfs_segtabsz << lfsp->lfs_bshift);
-	(void) free(segtable);
+	(void)free(segtable);
 
 	put(fd, off, ifile, lfsp->lfs_bsize);
 	off += lfsp->lfs_bsize;
@@ -693,7 +688,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	/* copy into segment */
 	sump = ipagep;
 	memmove(sump, &summary, sizeof(SEGSUM));
-	sump += sizeof(SEGSUM);
+	(size_t)sump += sizeof(SEGSUM);
 
 	/* Now, add the ifile */
 	file_info.fi_nblocks = block_array_size;
@@ -702,9 +697,9 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	file_info.fi_ino = LFS_IFILE_INUM;
 
 	memmove(sump, &file_info, sizeof(FINFO) - sizeof(u_long));
-	sump += sizeof(FINFO) - sizeof(u_long);
+	(size_t)sump += sizeof(FINFO) - sizeof(u_long);
 	memmove(sump, block_array, sizeof(u_long) * file_info.fi_nblocks);
-	sump += sizeof(u_long) * file_info.fi_nblocks;
+	(size_t)sump += sizeof(u_long) * file_info.fi_nblocks;
 
 	/* Now, add the root directory */
 	file_info.fi_nblocks = 1;
@@ -713,7 +708,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	file_info.fi_ino = ROOTINO;
 	file_info.fi_blocks[0] = 0;
 	memmove(sump, &file_info, sizeof(FINFO));
-	sump += sizeof(FINFO);
+	(size_t)sump += sizeof(FINFO);
 
 	/* Now, add the lost and found */
 	file_info.fi_ino = LOSTFOUNDINO;
@@ -721,11 +716,11 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 
 	((ufs1_daddr_t*) ipagep)[LFS_SUMMARY_SIZE / sizeof(ufs1_daddr_t) - 1] =
 			lfsp->lfs_idaddr;
-	((SEGSUM*) ipagep)->ss_sumsum = cksum(ipagep + sizeof(summary.ss_sumsum),
+	((SEGSUM *)ipagep)->ss_sumsum = cksum((void *)(ipagep + sizeof(summary.ss_sumsum)),
 	LFS_SUMMARY_SIZE - sizeof(summary.ss_sumsum));
 	put(fd, LFS_LABELPAD + LFS_SBPAD, ipagep, LFS_SUMMARY_SIZE);
 
-	sp = (SEGSUM*) ipagep;
+	sp = (SEGSUM *)ipagep;
 	sp->ss_create = 0;
 	sp->ss_nfinfo = 0;
 	sp->ss_ninos = 0;

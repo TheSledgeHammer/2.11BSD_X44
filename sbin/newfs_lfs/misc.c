@@ -32,7 +32,9 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) 6/5/93";
+#endif
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,7 +45,7 @@ static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) 6/5/93";
 #include "extern.h"
 
 u_int
-log2(u_int num)
+lfs_log2(u_int num)
 {
 	register u_int i, limit;
 
