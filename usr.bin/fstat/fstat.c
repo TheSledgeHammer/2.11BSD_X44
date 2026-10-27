@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
-#include <sys/socketvar.h>
+//#include <sys/socketvar.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
@@ -152,7 +152,7 @@ int 	checkfile; /* true if restricting to particular files or filesystems */
 int		nflg;	/* (numerical) display f.s. and rdev as dev_t */
 int		vflg;	/* display errors in locating kernel data objects etc... */
 
-#define dprintf	if (vflg) fprintf
+#define dprintf	if (vflg) warnx
 
 struct file **ofiles;	/* buffer of pointers to file structures */
 int maxfiles;
