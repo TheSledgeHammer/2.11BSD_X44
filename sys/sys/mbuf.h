@@ -160,7 +160,7 @@ struct	pkthdr {
 /* description of external storage mapped into mbuf, valid if M_EXT set */
 struct m_ext {
 	caddr_t				ext_buf;		/* start of buffer */
-	void				(*ext_free)();	/* free routine if not the usual */
+	void				(*ext_free)(caddr_t, u_int); /* free routine if not the usual */
 	void				*ext_arg;		/* argument for ext_free */
 	u_int				ext_size;		/* size of buffer, for ext_free */
 	int					ext_type;		/* malloc type */
