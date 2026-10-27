@@ -243,7 +243,9 @@ struct direct lfs_lf_dir[] = {
 };
 
 static struct lfs *get_lfs_by_version(int);
-static int		build_lfs(struct lfs *, int , struct disklabel *, struct partition *, int, int, int, int);
+static int build_lfs(struct lfs *, int , struct disklabel *, struct partition *, int, int, int, int);
+static void lfsinit(caddr_t, union dinode *, struct lfs *, int);
+static void dinode_alloc(caddr_t, union dinode *, struct lfs *, int);
 static ufs2_daddr_t make_dinode(ino_t, union dinode *, int, ufs2_daddr_t, struct lfs *);
 static void make_dir( void *, struct direct *, int);
 static void put(int, off_t, void *, size_t);
@@ -537,13 +539,11 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	if (!(dpagep = malloc(lfsp->lfs_bsize))) {
 		fatal("%s", strerror(errno));
 	}
-	if (is_ufs2) {
-		dip->dp2 = (struct ufs2_dinode *)*dpagep;
-		memset(&dip->dp2, 0, lfsp->lfs_bsize);
-	} else {
-		dip->dp1 = (struct ufs1_dinode *)*dpagep;
-		memset(&dip->dp1, 0, lfsp->lfs_bsize);
-	}
+
+	/*
+	 * initialize the node
+	 */
+	lfsinit(dpagep, dip, lfsp, is_ufs2);
 
 	/* Create a block of IFILE structures. */
 	if (!(ipagep = malloc(lfsp->lfs_bsize)))
@@ -598,12 +598,12 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 
 	/* Compute a checksum across all the data you're writing */
 	dp = datasump = malloc(blocks_used * sizeof(u_long));
-	*dp++ = ((u_long*) dpagep)[0]; /* inode block */
+	*dp++ = ((u_long *)dpagep)[0]; /* inode block */
 	for (i = 0; i < lfsp->lfs_cleansz; i++)
-		*dp++ = ((u_long*) cleaninfo)[(i << lfsp->lfs_bshift) / sizeof(u_long)]; /* Cleaner info */
+		*dp++ = ((u_long *)cleaninfo)[(i << lfsp->lfs_bshift) / sizeof(u_long)]; /* Cleaner info */
 	for (i = 0; i < lfsp->lfs_segtabsz; i++)
-		*dp++ = ((u_long*) segtable)[(i << lfsp->lfs_bshift) / sizeof(u_long)]; /* Segusage table */
-	*dp++ = ((u_long*) ifile)[0]; /* Ifile */
+		*dp++ = ((u_long *)segtable)[(i << lfsp->lfs_bshift) / sizeof(u_long)]; /* Segusage table */
+	*dp++ = ((u_long *)ifile)[0]; /* Ifile */
 
 	/* Still need the root and l+f bytes; get them later */
 
@@ -635,13 +635,13 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	memset(ipagep, 0, lfsp->lfs_bsize);
 	make_dir(ipagep, lfs_root_dir,
 			sizeof(lfs_root_dir) / sizeof(struct direct));
-	*dp++ = ((u_long*) ipagep)[0];
+	*dp++ = ((u_long *)ipagep)[0];
 	put(fd, off, ipagep, lfsp->lfs_bsize);
 	off += lfsp->lfs_bsize;
 
 	memset(ipagep, 0, lfsp->lfs_bsize);
 	make_dir(ipagep, lfs_lf_dir, sizeof(lfs_lf_dir) / sizeof(struct direct));
-	*dp++ = ((u_long*) ipagep)[0];
+	*dp++ = ((u_long *)ipagep)[0];
 	put(fd, off, ipagep, lfsp->lfs_bsize);
 
 	/* Write Supberblock */
@@ -688,7 +688,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	/* copy into segment */
 	sump = ipagep;
 	memmove(sump, &summary, sizeof(SEGSUM));
-	(size_t)sump += sizeof(SEGSUM);
+	sump += sizeof(SEGSUM);
 
 	/* Now, add the ifile */
 	file_info.fi_nblocks = block_array_size;
@@ -697,9 +697,9 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	file_info.fi_ino = LFS_IFILE_INUM;
 
 	memmove(sump, &file_info, sizeof(FINFO) - sizeof(u_long));
-	(size_t)sump += sizeof(FINFO) - sizeof(u_long);
+	sump += sizeof(FINFO) - sizeof(u_long);
 	memmove(sump, block_array, sizeof(u_long) * file_info.fi_nblocks);
-	(size_t)sump += sizeof(u_long) * file_info.fi_nblocks;
+	sump += sizeof(u_long) * file_info.fi_nblocks;
 
 	/* Now, add the root directory */
 	file_info.fi_nblocks = 1;
@@ -708,16 +708,17 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	file_info.fi_ino = ROOTINO;
 	file_info.fi_blocks[0] = 0;
 	memmove(sump, &file_info, sizeof(FINFO));
-	(size_t)sump += sizeof(FINFO);
+	sump += sizeof(FINFO);
 
 	/* Now, add the lost and found */
 	file_info.fi_ino = LOSTFOUNDINO;
 	memmove(sump, &file_info, sizeof(FINFO));
 
-	((ufs1_daddr_t*) ipagep)[LFS_SUMMARY_SIZE / sizeof(ufs1_daddr_t) - 1] =
+	((ufs1_daddr_t *)ipagep)[LFS_SUMMARY_SIZE / sizeof(ufs1_daddr_t) - 1] =
 			lfsp->lfs_idaddr;
-	((SEGSUM *)ipagep)->ss_sumsum = cksum((void *)(ipagep + sizeof(summary.ss_sumsum)),
-	LFS_SUMMARY_SIZE - sizeof(summary.ss_sumsum));
+
+	((SEGSUM *)ipagep)->ss_sumsum = cksum(ipagep + sizeof(summary.ss_sumsum),
+			LFS_SUMMARY_SIZE - sizeof(summary.ss_sumsum));
 	put(fd, LFS_LABELPAD + LFS_SBPAD, ipagep, LFS_SUMMARY_SIZE);
 
 	sp = (SEGSUM *)ipagep;
@@ -759,6 +760,39 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	free(ipagep);
 	close(fd);
 	return (0);
+}
+
+union dinode node;
+
+static void
+lfsinit(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
+{
+	/*
+	 * initialize the node
+	 */
+	memset(&node, 0, sizeof(node));
+	dp = &node;
+	dinode_alloc(dpagep, dp, lfsp, ufs2);
+}
+
+/*
+ * Allocate an inode on the disk
+ */
+static void
+dinode_alloc(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
+{
+    struct ufs1_dinode *dp1;
+    struct ufs2_dinode *dp2;
+
+    if (ufs2) {
+        dp2 = (struct ufs2_dinode *)dpagep;
+        memset(dp2, 0, lfsp->lfs_bsize);
+        *dp2 = dp->dp2;
+    } else {
+        dp1 = (struct ufs1_dinode *)dpagep;
+        memset(dp1, 0, lfsp->lfs_bsize);
+        *dp1 = dp->dp1;
+    }
 }
 
 static ufs2_daddr_t

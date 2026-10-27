@@ -898,7 +898,7 @@ abortit:
 		(void) relookup(fdvp, &fvp, fcnp);
 		return (VOP_REMOVE(fdvp, fvp, fcnp));
 	}
-	if (error = vn_lock(fvp, LK_EXCLUSIVE, p))
+	if ((error = vn_lock(fvp, LK_EXCLUSIVE, p)))
 		goto abortit;
 	dp = UFS211_VTOI(fdvp);
 	ip = UFS211_VTOI(fvp);
@@ -944,7 +944,7 @@ abortit:
 	ip->i_din->di_nlink = ip->i_nlink;
 	ip->i_flag |= UFS211_ICHG;
 	tv = time;
-	if (error = VOP_UPDATE(fvp, &tv, &tv, 1)) {
+	if ((error = VOP_UPDATE(fvp, &tv, &tv, 1))) {
 		VOP_UNLOCK(fvp, 0, p);
 		goto bad;
 	}
@@ -1653,8 +1653,8 @@ ufs211_symlink(ap)
 		ip->i_flag |= UFS211_ICHG | UFS211_IUPD;
 	} else {
 		error = vn_rdwr(UIO_WRITE, vp, ap->a_target, len, (off_t) 0,
-				UIO_SYSSPACE, IO_NODELOCKED, ap->a_cnp->cn_cred, (int*) 0,
-				(struct proc*) 0);
+				UIO_SYSSPACE, IO_NODELOCKED, ap->a_cnp->cn_cred, (int *)0,
+				(struct proc *)0);
 	}
 	vput(vp);
 	return (error);
@@ -1775,7 +1775,7 @@ ufs211_mkdir(ap)
 	}
 
 	/* Directory set up, now install it's entry in the parent directory. */
-	if (error = ufs211_direnter(ip, dvp, cnp)) {
+	if ((error = ufs211_direnter(ip, dvp, cnp))) {
 		dp->i_nlink--;
 		dp->i_flag |= UFS211_ICHG;
 	}
@@ -1920,7 +1920,7 @@ ufs211_blkatoff(ap)
 		ufs211_dirbad(ip, ap->a_offset, "hole in dir");
 	}
 
-	if (error = bread(ap->a_vp, lbn, bn, NOCRED, &bp)) {
+	if ((error = bread(ap->a_vp, lbn, bn, NOCRED, &bp))) {
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return (error);
@@ -2230,9 +2230,9 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	 * Make sure inode goes to disk before directory entry.
 	 */
 	tv = time;
-	if (error = VOP_UPDATE(tvp, &tv, &tv, 1))
+	if ((error = VOP_UPDATE(tvp, &tv, &tv, 1)))
 		goto bad;
-	if (error = ufs211_direnter(ip, dvp, cnp))
+	if ((error = ufs211_direnter(ip, dvp, cnp)))
 		goto bad;
 	if ((cnp->cn_flags & SAVESTART) == 0)
 		FREE(cnp->cn_pnbuf, M_NAMEI);

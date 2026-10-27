@@ -55,7 +55,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	/*
 	 * blocks 0..NADDR-4 are direct blocks
 	 */
-	if (bn < NADDR - 3) {
+	if (bn < UFS211_NADDR - 3) {
 		i = bn;
 		nb = ip->i_addr[i];
 		if (nb == 0) {
@@ -74,7 +74,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			ip->i_addr[i] = nb;
 			ip->i_flag |= UFS211_IUPD | UFS211_ICHG;
 		}
-		if (i < NADDR - 4)
+		if (i < UFS211_NADDR - 4)
 			ufs211_rablock = ip->i_addr[i + 1];
 		return (nb);
 	}
@@ -87,10 +87,10 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	 */
 	sh = 0;
 	nb = 1;
-	bn -= NADDR - 3;
+	bn -= UFS211_NADDR - 3;
 	for (j = 3; j > 0; j--) {
-		sh += NSHIFT;
-		nb <<= NSHIFT;
+		sh += UFS211_NSHIFT;
+		nb <<= UFS211_NSHIFT;
 		if (bn < nb)
 			break;
 		bn -= nb;
@@ -103,7 +103,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	/*
 	 * fetch the first indirect block
 	 */
-	nb = ip->i_addr[NADDR - j];
+	nb = ip->i_addr[UFS211_NADDR - j];
 	if (nb == 0) {
 		if (rwflg == B_READ || (bp = ufs211_balloc(ip, flags | B_CLRBUF)) == NULL)
 			return ((daddr_t) - 1);
@@ -116,7 +116,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			bdwrite(bp);
 		else
 			bwrite(bp);
-		ip->i_addr[NADDR - j] = nb;
+		ip->i_addr[UFS211_NADDR - j] = nb;
 		ip->i_flag |= UFS211_IUPD | UFS211_ICHG;
 	}
 
@@ -131,13 +131,13 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		}
 		ufs211_mapin(bp);
 		bap = (daddr_t*) bp;
-		sh -= NSHIFT;
+		sh -= UFS211_NSHIFT;
 		i = (bn >> sh) & NMASK;
 		nb = bap[i];
 		/*
 		 * calculate read-ahead
 		 */
-		if (i < NINDIR - 1)
+		if (i < UFS211_NINDIR - 1)
 			ra = bap[i + 1];
 		ufs211_mapout(bp);
 		if (nb == 0) {

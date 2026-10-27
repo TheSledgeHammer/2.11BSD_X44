@@ -120,9 +120,9 @@ struct ufs211_fblk {
 /*
  * NINDIR is the number of indirects in a file system block.
  */
-#define	NINDIR		(DEV_BSIZE / sizeof(daddr_t))
-#define	NSHIFT		8		    /* log2(NINDIR) */
-#define	NMASK		0377L		/* NINDIR - 1 */
+#define	UFS211_NINDIR		(DEV_BSIZE / sizeof(daddr_t))
+#define	UFS211_NSHIFT		8		    /* log2(NINDIR) */
+#define	UFS211_NMASK		0377L		/* NINDIR - 1 */
 
 /*
  * We continue to implement pipes within the file system because it would
@@ -133,6 +133,6 @@ struct ufs211_fblk {
  * bigger than 4096, pipes will be implemented with large files, which is
  * probably not good.
  */
-#define	MAXPIPSIZ	(NDADDR * MAXBSIZE)
+#define	MAXPIPSIZ	(UFS211_NDADDR * MAXBSIZE)
 
 #endif /* _UFS_UFS211_FS_H_ */

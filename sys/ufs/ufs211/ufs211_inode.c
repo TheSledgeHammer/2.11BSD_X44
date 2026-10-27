@@ -90,7 +90,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 #else
 	dp->di_icom2 = tip->i_ic2;
 #endif
-	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof(daddr_t));
+	bcopy(ip->i_addr, dp->di_addr, UFS211_NADDR * sizeof(daddr_t));
 	ufs211_mapout(bp);
 	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0)) {
 		bwrite(bp);
@@ -116,7 +116,7 @@ ufs211_trunc(oip, length, ioflags)
 	daddr_t lastblock;
 	register int i;
 	register struct ufs211_inode *ip;
-	daddr_t bn, lastiblock[NIADDR];
+	daddr_t bn, lastiblock[UFS211_NIADDR];
 	struct buf *bp;
 	int offset, level;
 	struct ufs211_inode tip;
@@ -164,9 +164,9 @@ ufs211_trunc(oip, length, ioflags)
 	 * the file is truncated to 0.
 	 */
 	lastblock = lblkno(length + DEV_BSIZE - 1) - 1;
-	lastiblock[SINGLE] = lastblock - NDADDR;
-	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR;
-	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR * NINDIR;
+	lastiblock[SINGLE] = lastblock - UFS211_NDADDR;
+	lastiblock[DOUBLE] = lastiblock[SINGLE] - UFS211_NINDIR;
+	lastiblock[TRIPLE] = lastiblock[DOUBLE] - UFS211_NINDIR * UFS211_NINDIR;
 	/*
 	 * Update the size of the file. If the file is not being
 	 * truncated to a block boundry, the contents of the
@@ -209,7 +209,7 @@ ufs211_trunc(oip, length, ioflags)
 			oip->i_ib[level] = 0;
 			lastiblock[level] = -1;
 		}
-	for (i = NDADDR - 1; i > lastblock; i--)
+	for (i = UFS211_NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 
 	/*
@@ -232,7 +232,7 @@ ufs211_trunc(oip, length, ioflags)
 	/*
 	 * All whole direct blocks.
 	 */
-	for (i = NDADDR - 1; i > lastblock; i--) {
+	for (i = UFS211_NDADDR - 1; i > lastblock; i--) {
 		bn = ip->i_db[i];
 		if (bn == 0)
 			continue;
@@ -294,10 +294,10 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 			factor = 1;
 			break;
 		case DOUBLE:
-			factor = NINDIR;
+			factor = UFS211_NINDIR;
 			break;
 		case TRIPLE:
-			factor = NINDIR * NINDIR;
+			factor = UFS211_NINDIR * UFS211_NINDIR;
 			break;
 	}
 	last = lastbn;
@@ -322,7 +322,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		bcopy(bp, cpy, btoc(DEV_BSIZE));
 		ufs211_mapin(bp);
 		bap = (daddr_t *) bp;
-		bzero((caddr_t)&bap[last + 1], (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
+		bzero((caddr_t)&bap[last + 1], (u_int)(UFS211_NINDIR - (last + 1)) * sizeof(daddr_t));
 		ufs211_mapout(bp);
 		if (aflags & B_SYNC) {
 			bwrite(bp);
@@ -348,7 +348,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		ufs211_mapin(bp);
 		bstart = (daddr_t *) bp;
 		bstop = &bstart[last];
-		bstart += NINDIR - 1;
+		bstart += UFS211_NINDIR - 1;
 		/*
 		 * Recursively free totally unused blocks.
 		 */
@@ -387,12 +387,12 @@ ufs211_trsingle(ip, bp, last, aflags)
 	int aflags;
 {
 	register daddr_t *bstart, *bstop;
-	daddr_t blarray[NINDIR];
+	daddr_t blarray[UFS211_NINDIR];
 
 	ufs211_mapin(bp);
-	bcopy(bp, blarray, NINDIR * sizeof(daddr_t));
+	bcopy(bp, blarray, UFS211_NINDIR * sizeof(daddr_t));
 	ufs211_mapout(bp);
-	bstart = &blarray[NINDIR - 1];
+	bstart = &blarray[UFS211_NINDIR - 1];
 	bstop = &blarray[last];
 	for (; bstart > bstop; --bstart) {
 		if (*bstart) {

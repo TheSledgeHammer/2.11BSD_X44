@@ -940,7 +940,7 @@ ufs211_checkpath(source, target)
 		if (dirbuf.dotdot_ino == rootino)
 			break;
 		vput(vp);
-		if (error = VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp)) {
+		if ((error = VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp))) {
 			error = u.u_error;
 			vp = NULL;
 			break;

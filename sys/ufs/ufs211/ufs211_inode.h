@@ -25,15 +25,13 @@
 typedef	u_int	 		ufs211_size_t;
 typedef	u_int	 		ufs211_doff_t;
 
-
-
 /*
  * 28 of the di_addr address bytes are used; 7 addresses of 4
  * bytes each: 4 direct (4Kb directly accessible) and 3 indirect.
  */
-#define	NDADDR	4			        /* direct addresses in inode */
-#define	NIADDR	3			        /* indirect addresses in inode */
-#define	NADDR	(NDADDR + NIADDR)	/* total addresses in inode */
+#define	UFS211_NDADDR	4			        /* direct addresses in inode */
+#define	UFS211_NIADDR	3			        /* indirect addresses in inode */
+#define	UFS211_NADDR	(UFS211_NDADDR + UFS211_NIADDR)	/* total addresses in inode */
 
 struct ufs211_icommon2 {
 	time_t					ic_atime;		/* time last accessed */
@@ -50,18 +48,18 @@ struct ufs211_icommon2 {
  */
 struct ufs211_inode {
 	LIST_ENTRY(ufs211_inode) i_chain;				/* Hash chain. must be first  */
-	struct	vnode 			*i_vnode;				/* Vnode associated with this inode. */
-	struct	vnode  			*i_devvp;				/* Vnode for block I/O. */
+	struct vnode 			*i_vnode;				/* Vnode associated with this inode. */
+	struct vnode  			*i_devvp;				/* Vnode for block I/O. */
 	struct ufs211_mount 	*i_ump;					/* Mount point associated with this inode. */
 	u_short					i_flag;
 	u_short					i_count;				/* reference count */
 	dev_t					i_dev;					/* device where inode resides */
 	ino_t					i_number;				/* i number, 1-to-1 with device address */
 	u_short					i_id;					/* unique identifier */
-	struct	 ufs211_fs 		*i_fs;					/* file sys associated with this inode */
-	struct	 lockf 			*i_lockf;				/* Head of byte-level lock list. */
-	struct	 lock 			i_lock;					/* Inode lock. */
-	struct 	 ufs211_dquot	*i_dquot[MAXQUOTAS];				/* dquotas */
+	struct ufs211_fs 		*i_fs;					/* file sys associated with this inode */
+	struct lockf 			*i_lockf;				/* Head of byte-level lock list. */
+	struct lock 			i_lock;					/* Inode lock. */
+	struct ufs211_dquot		*i_dquot[MAXQUOTAS];				/* dquotas */
 	u_quad_t 				i_modrev;				/* Revision level for NFS lease. */
 
 	ufs211_doff_t	  		i_endoff;				/* End of useful stuff in directory. */
@@ -80,10 +78,10 @@ struct ufs211_inode {
 		//struct	proc 		*I_wsel;				/* pipe write select */
 	} i_un1;
 	union {
-		daddr_t				I_addr[NADDR];			/* normal file/directory */
+		daddr_t				I_addr[UFS211_NADDR];			/* normal file/directory */
 		struct {
-			daddr_t			I_db[NDADDR];			/* normal file/directory */
-			daddr_t			I_ib[NIADDR];
+			daddr_t			I_db[UFS211_NDADDR];			/* normal file/directory */
+			daddr_t			I_ib[UFS211_NIADDR];
 		} i_f;
 		struct {
 			/*
@@ -214,7 +212,7 @@ struct ufs211_dinode {
 #define UFS211_ITOV(ip)	((ip)->i_vnode)
 
 /* This overlays the fid structure (see fstypes.h). */
-struct ufid {
+struct ufs211_ufid {
 	u_int16_t 		ufid_len;	/* Length of structure. */
 	u_int16_t 		ufid_pad;	/* Force 32-bit alignment. */
 	int32_t	  		ufid_gen;	/* Generation number. */

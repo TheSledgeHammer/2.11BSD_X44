@@ -173,10 +173,10 @@ extern int 				nfiles;		/* actual number of open files */
 #define DTYPE_CRYPTO 	5	/* crypto */
 #define	DTYPE_MISC		6	/* misc file descriptor type */
 
-int                 fset(struct file *, int, int);
-int                 fgetown(struct file *, int *);
-int                 fsetown(struct file *, int);
-int                 fgetlk(struct file *, int);
-int                 fsetlk(struct file *, int, int);
+int fset(struct file *, int, int);
+int fgetown(struct file *, int *);
+int fsetown(struct file *, int);
+int fgetlk(struct file *, int);
+int fsetlk(struct file *, int, int);
 #endif /* _KERNEL */
 #endif	/* _SYS_FILE_H_ */

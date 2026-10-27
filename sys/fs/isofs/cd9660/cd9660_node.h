@@ -104,7 +104,7 @@ struct iso_node {
 
 #define VTOI(vp) ((struct iso_node *)(vp)->v_data)
 #define ITOV(ip) ((ip)->i_vnode)
-
+#ifdef _KERNEL
 /*
  * Prototypes for ISOFS vnode operations
  */
@@ -146,4 +146,5 @@ int cd9660_tstamp_conv17(u_char *, struct timespec *);
 struct iso_dnode *iso_dmap(dev_t, ino_t, int);
 void  iso_dunmap(dev_t);
 #endif
+#endif /* _KERNEL */
 #endif /* !_ISOFS_CD9660_CD9660_NODE_H_ */

@@ -26,6 +26,24 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Sigtramp:
+ * - Most modern c compilers should take care of this.
+ * - Hence it should only return 0. Unless under special situations/conditions.
+ * Example Situations:
+ * 1) You know what you are doing!
+ * 2) The c compiler doesn't support it. 2.11BSD's PCC is such a case.
+ * 3) Any others not mentioned above.
+ */
+
+/*
+ * Sigaction: (kernel syscall)
+ * NOTES: On implementing sigtramp, please follow below.
+ * 1) Sigaction only acknowledges the sigtramp argument when the return value is not
+ * equal to 0, else will be ignored.
+ * 2) Place in the 'libc/arch/machine/sys' folder.
+ * 3) Add 'CPPFLAGS+= -DUSE_SIGTRAMP' to the Makefile.
+ */
 #include <sys/cdefs.h>
 
 #include <sys/types.h>
@@ -34,17 +52,30 @@
 #include <signal.h>
 #include <unistd.h>
 
-static int sigtramp(void);
+/* This should really be implemented in 'libc/arch/machine/sys/' in assembly. */
+#if defined(USE_SIGTRAMP)
+/* could also be header */
+extern int sigtramp(void);
+#endif
+
+static int __sigtramp(void);
 
 static int
-sigtramp(void)
+__sigtramp(void)
 {
-	return (0);
+	int ret;
+
+#if !defined(USE_SIGTRAMP)
+	ret = 0;
+#else
+	ret = sigtramp();
+#endif
+	return (ret);
 }
 
 /* ingores 1st argument; int sigtramp(void) (this is a temporary solution) */
 int
 sigaction(int signum, const struct sigaction *nsa, struct sigaction *osa)
 {
-	return (__syscall((quad_t)SYS_sigaction, sigtramp, signum, nsa, osa));
+	return (__syscall((quad_t)SYS_sigaction, __sigtramp(), signum, nsa, osa));
 }

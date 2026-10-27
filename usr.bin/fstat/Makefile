@@ -4,7 +4,8 @@
 
 USE_FORT?= yes	# setuid
 PROG=	fstat
-SRCS=	fstat.c 
+SRCS=	fstat.c isofs.c lofs.c msdosfs.c \
+		nfs.c ufml.c ufs.c ufs211.c
 DPADD=	${LIBKVM}
 LDADD=	-lkvm
 BINGRP=	kmem

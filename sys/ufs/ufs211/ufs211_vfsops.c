@@ -201,7 +201,7 @@ ufs211_unmount(mp, mntflags, p)
 	flags = 0;
 	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	if (error = ufs211_flushfiles(mp, flags, p))
+	if ((error = ufs211_flushfiles(mp, flags, p)))
 		return (error);
 	ump = VFSTOUFS211(mp);
 	fs = ump->m_filsys;
@@ -282,7 +282,7 @@ ufs211_mountfs(devvp, mp, p)
 
 	bp = NULL;
 	ump = NULL;
-	if ((error = bread(devvp, (daddr_t) (UFS211_SBLOCK / size), UFS211_SBSIZE, cred, &bp))) {
+	if ((error = bread(devvp, (daddr_t)(UFS211_SBLOCK / size), UFS211_SBSIZE, cred, &bp))) {
 		goto out;
 	}
 	fs = (struct ufs211_fs *) bp->b_data;
@@ -322,7 +322,7 @@ ufs211_mountfs(devvp, mp, p)
 out:
 	if (bp)
 		brelse(bp);
-	(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD | FWRITE, cred, p);
+	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD | FWRITE, cred, p);
 	if (ump) {
 		free(ump->m_filsys, M_UFS211);
 		free(ump, M_UFS211);
@@ -713,12 +713,12 @@ ufs211_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	struct ucred **credanonp;
 {
 	struct ufs211_inode *ip;
-    register struct ufid *ufhp;
+    register struct ufs211_ufid *ufhp;
     struct ufs211_fs *fs;
 	struct vnode *nvp;
 	int error;
 
-    ufhp = (struct ufid *)fhp;
+    ufhp = (struct ufs211_ufid *)fhp;
 
 	error = VFS_VGET(mp, ufhp->ufid_ino, &nvp);
 	if (error) {
@@ -741,11 +741,11 @@ ufs211_vptofh(vp, fhp)
 	struct fid *fhp;
 {
 	register struct ufs211_inode *ip;
-	register struct ufid *ufhp;
+	register struct ufs211_ufid *ufhp;
 
 	ip = UFS211_VTOI(vp);
-	ufhp = (struct ufid *)fhp;
-	ufhp->ufid_len = sizeof(struct ufid);
+	ufhp = (struct ufs211_ufid *)fhp;
+	ufhp->ufid_len = sizeof(struct ufs211_ufid);
 	ufhp->ufid_ino = ip->i_number;
 	ufhp->ufid_gen = ip->i_din->di_gen;
 	return (0);
