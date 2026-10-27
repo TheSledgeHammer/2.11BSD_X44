@@ -42,17 +42,17 @@ struct  filestat {
 	dev_t	rdev;
 };
 
+/*
+ * a kvm_read that returns true if everything is read
+ */
+#define KVM_READ(kaddr, paddr, len) \
+	((size_t)kvm_read(kd, (u_long)(kaddr), (void *)(paddr), (len)) == (size_t)(len))
+
 extern kvm_t *kd;
 extern int vflg;
 extern int	Pid;
 
 #define dprintf	if (vflg) warnx
-
-/*
- * a kvm_read that returns true if everything is read
- */
-#define KVM_READ(kaddr, paddr, len) \
-	(kvm_read(kd, (u_long)(kaddr), (char *)(paddr), (len)) == (len))
 
 mode_t getftype(enum vtype);
 int isofs_filestat(struct vnode *, struct filestat *);
