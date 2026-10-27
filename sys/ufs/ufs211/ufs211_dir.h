@@ -45,7 +45,7 @@
  * like a good idea to change the "real direct structure".  SMS
 */
 
-struct direct {
+struct ufs211_direct {
 	ino_t					d_ino;						/* inode number of entry */
 	u_short					d_reclen;					/* length of this record */
 	u_int8_t  				d_type; 					/* file type, see below */
@@ -75,11 +75,11 @@ struct direct {
 #if (BYTE_ORDER == LITTLE_ENDIAN)
 #define DIRSIZ(oldfmt, dp) 														\
     ((oldfmt) ? 																\
-    ((sizeof(struct direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_type+1 + 3) &~ 3)) : 	\
-    ((sizeof(struct direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3)))
+    ((sizeof(struct ufs211_direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_type+1 + 3) &~ 3)) : 	\
+    ((sizeof(struct ufs211_direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3)))
 #else
 #define DIRSIZ(oldfmt, dp) 														\
-    ((sizeof(struct direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3));
+    ((sizeof(struct ufs211_direct) - (UFS211_MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3));
 #endif
 #define OLDDIRFMT	1
 #define NEWDIRFMT	0
@@ -92,7 +92,7 @@ struct ufs211_dirdesc {
 	long					dd_loc;
 	long					dd_size;
 	char					dd_buf[UFS211_DIRBLKSIZ];
-	struct direct			dd_cur;
+	struct ufs211_direct	dd_cur;
 };
 
 /*

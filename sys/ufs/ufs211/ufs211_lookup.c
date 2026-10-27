@@ -32,7 +32,7 @@ ufs211_lookup(ap)
 	register struct vnode *vdp; 		/* vnode for directory being searched */
 	register struct ufs211_inode *dp; 	/* inode for directory being searched */
 	struct buf *bp; 					/* a buffer of directory entries */
-	register struct direct *ep; 		/* the current directory entry */
+	register struct ufs211_direct *ep; 		/* the current directory entry */
 	int entryoffsetinblock; 			/* offset of ep in bp's buffer */
 	enum {NONE, COMPACT, FOUND} slotstatus;
 	off_t slotoffset = -1;				/* offset of area with free space */
@@ -144,7 +144,7 @@ ufs211_lookup(ap)
 	if ((nameiop == CREATE || nameiop == RENAME) && (flags & ISLASTCN)) {
 		slotstatus = NONE;
 		slotfreespace = 0;
-		slotneeded = (sizeof(struct direct) - UFS211_MAXNAMLEN + cnp->cn_namelen + 3) & ~3;
+		slotneeded = (sizeof(struct ufs211_direct) - UFS211_MAXNAMLEN + cnp->cn_namelen + 3) & ~3;
 	}
 
 	/*
@@ -201,7 +201,7 @@ searchloop:
 		 * directory. Complete checks can be run by patching
 		 * "dirchk" to be true.
 		 */
-		ep = (struct direct*) ((char*) bp->b_data + entryoffsetinblock);
+		ep = (struct ufs211_direct*) ((char*) bp->b_data + entryoffsetinblock);
 		if (ep->d_reclen == 0 || (ufs211_dirchk && ufs211_dirbadentry(vdp, ep, entryoffsetinblock))) {
 			int i;
 
@@ -524,7 +524,7 @@ ufs211_dirbad(ip, offset, how)
 int
 ufs211_dirbadentry(dp, ep, entryoffsetinblock)
 	struct vnode *dp;
-	register struct direct *ep;
+	register struct ufs211_direct *ep;
 	int entryoffsetinblock;
 {
 	register int i;
@@ -571,7 +571,7 @@ ufs211_direnter(ip, dvp, cnp)
 	register struct componentname *cnp;
 {
 	register struct ufs211_inode *dp;
-	struct direct newdir;
+	struct ufs211_direct newdir;
 
 #ifdef DIAGNOSTIC
 	if ((cnp->cn_flags & SAVENAME) == 0)
@@ -600,11 +600,11 @@ ufs211_direnter(ip, dvp, cnp)
 int
 ufs211_direnter2(ip, dirp, dvp, cnp)
 	struct ufs211_inode *ip;
-	struct direct *dirp;
+	struct ufs211_direct *dirp;
 	struct vnode *dvp;
 	register struct componentname *cnp;
 {
-	register struct direct *ep, *nep;
+	register struct ufs211_direct *ep, *nep;
 	register struct ufs211_inode *dp;
 	struct buf *bp;
 	struct ucred *cr;
@@ -699,15 +699,15 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	 * ndp->ni_offset to ndp->ni_offset+ndp->ni_count would yield the space.
 	 */
 
-	ep = (struct direct *)dirbuf;
+	ep = (struct ufs211_direct *)dirbuf;
 	dsize = DIRSIZ(FSFMT(dvp), ep);
 	spacefree = ep->d_reclen - dsize;
 	for (loc = ep->d_reclen; loc < dp->i_count;) {
-		nep = (struct direct*) (dirbuf + loc);
+		nep = (struct ufs211_direct*) (dirbuf + loc);
 		if (ep->d_ino) {
 			/* trim the existing slot */
 			ep->d_reclen = dsize;
-			ep = (struct direct*) ((char*) ep + dsize);
+			ep = (struct ufs211_direct*) ((char*) ep + dsize);
 		} else {
 			/* overwrite; nothing there; header is ours */
 			spacefree += dsize;
@@ -730,7 +730,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 			panic("wdir: compact2");
 		dirp->d_reclen = spacefree;
 		ep->d_reclen = dsize;
-		ep = (struct direct *)((char *)ep + dsize);
+		ep = (struct ufs211_direct *)((char *)ep + dsize);
 	}
 	bcopy((caddr_t)&dirp, (caddr_t)ep, (u_int)newentrysize);
 	error = VOP_BWRITE(bp);
@@ -759,7 +759,7 @@ ufs211_dirremove(dvp, cnp)
 {
 	register struct ufs211_inode *dp;
 	struct buf *bp;
-	struct direct *ep;
+	struct ufs211_direct *ep;
 
 	dp = UFS211_VTOI(dvp);
 
@@ -809,7 +809,7 @@ ufs211_dirrewrite(dp, ip, cnp)
 	struct componentname *cnp;
 {
 	struct buf *bp;
-	struct direct *ep;
+	struct ufs211_direct *ep;
 	struct vnode *vdp = UFS211_ITOV(dp);
 
 	if (u.u_error == VOP_BLKATOFF(vdp, (off_t)dp->i_offset, (char **)&ep, &bp)) {
@@ -829,7 +829,7 @@ ufs211_dirrewrite(dp, ip, cnp)
  * Inode supplied must be locked.
  *
  * Using a struct dirtemplate here is not precisely
- * what we want, but better than using a struct direct.
+ * what we want, but better than using a struct ufs211_direct.
  *
  * NB: does not handle corrupted directories.
  */
@@ -840,7 +840,7 @@ ufs211_dirempty(ip, parentino)
 {
 	register off_t off;
 	struct ufs211_dirtemplate dbuf;
-	register struct direct *dp = (struct direct *)&dbuf;
+	register struct ufs211_direct *dp = (struct ufs211_direct *)&dbuf;
 	int error, count, namlen;
 #define	MINDIRSIZ (sizeof (struct ufs211_dirtemplate) / 2)
 

@@ -44,7 +44,8 @@ struct ufs211_bufmap {
 
 struct buf;
 struct componentname;
-struct direct;
+//struct direct;
+struct ufs211_direct;
 struct disklabel;
 struct ufid;
 struct fid;
@@ -79,9 +80,9 @@ void		ufs211_trunc(struct ufs211_inode *, u_long, int);
 void 		ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void		ufs211_updat(struct ufs211_inode *, volatile struct timeval *, volatile struct timeval *, int);
 void 		ufs211_dirbad(struct ufs211_inode *, off_t, char *);
-int 		ufs211_dirbadentry(struct vnode *, struct direct *, int);
+int 		ufs211_dirbadentry(struct vnode *, struct ufs211_direct *, int);
 int 		ufs211_direnter(struct ufs211_inode *, struct vnode *, struct componentname *);
-int			ufs211_direnter2(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
+int			ufs211_direnter2(struct ufs211_inode *, struct ufs211_direct *, struct vnode *, struct componentname *);
 int 		ufs211_dirremove(struct vnode *, struct componentname *);
 int 		ufs211_dirrewrite(struct ufs211_inode *, struct ufs211_inode *, struct componentname *);
 int 		ufs211_dirempty(struct ufs211_inode *, ino_t);

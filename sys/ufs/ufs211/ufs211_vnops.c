@@ -1589,7 +1589,7 @@ ufs211_whiteout(ap)
 	struct ufs211_inode *ip;
 	struct vnode *dvp = ap->a_dvp;
 	struct componentname *cnp = ap->a_cnp;
-	struct direct newdir;
+	struct ufs211_direct newdir;
 	int error;
 
 	ip = UFS211_VTOI(dvp);
