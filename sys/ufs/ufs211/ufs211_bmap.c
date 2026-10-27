@@ -132,7 +132,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		ufs211_mapin(bp);
 		bap = (daddr_t*) bp;
 		sh -= UFS211_NSHIFT;
-		i = (bn >> sh) & NMASK;
+		i = (bn >> sh) & UFS211_NMASK;
 		nb = bap[i];
 		/*
 		 * calculate read-ahead

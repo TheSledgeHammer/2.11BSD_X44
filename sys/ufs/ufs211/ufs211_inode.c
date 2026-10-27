@@ -248,7 +248,7 @@ done:
 	for (level = SINGLE; level <= TRIPLE; level++)
 		if (ip->i_ib[level] != oip->i_ib[level])
 			panic("itrunc1");
-	for (i = 0; i < NDADDR; i++)
+	for (i = 0; i < UFS211_NDADDR; i++)
 		if (ip->i_db[i] != oip->i_db[i])
 			panic("itrunc2");
 /* END PARANOIA */
