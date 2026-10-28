@@ -411,10 +411,18 @@ create_pagetables(firstaddr)
 	KPML4phys[PDIR_SLOT_DIRECT] = DMPDPTphys;
 	KPML4phys[PDIR_SLOT_DIRECT] |= PG_RW | PG_V | PG_U;
 
-    /* Connect the KVA slots up to the PML4 */
-	for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
-		IdlePML4[PDIR_SLOT_KERNBASE + i] = (IdlePDPT + ptoa(i));
-		IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+	if (pmap_check_la57()) {
+	    /* Connect the KVA slots up to the PML4 */
+		for (i = 0; i < NKL4EXT_MAX_ENTRIES; i++) {
+			IdlePML4[PDIR_SLOT_KERNBASE + i] = (IdlePDPT + ptoa(i));
+			IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+		}
+	} else {
+	    /* Connect the KVA slots up to the PML4 */
+		for (i = 0; i < NKL4_MAX_ENTRIES; i++) {
+			IdlePML4[PDIR_SLOT_KERNBASE + i] = (IdlePDPT + ptoa(i));
+			IdlePML4[PDIR_SLOT_KERNBASE + i] |= PG_RW | PG_V;
+		}
 	}
 }
 

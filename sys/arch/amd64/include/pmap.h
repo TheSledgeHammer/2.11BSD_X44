@@ -234,6 +234,7 @@ typedef uint64_t 		pml5_entry_t;			/* PML5 (L5) */
 
 #define NKL5_MAX_ENTRIES	(unsigned long)1
 #define NKL4_MAX_ENTRIES	(unsigned long)(NKL5_MAX_ENTRIES * 1)
+#define NKL4EXT_MAX_ENTRIES (unsigned long)(NKL5_MAX_ENTRIES * 512) /* LA57 Only */
 #define NKL3_MAX_ENTRIES	(unsigned long)(NKL4_MAX_ENTRIES * 512)
 #define NKL2_MAX_ENTRIES	(unsigned long)(NKL3_MAX_ENTRIES * 512)
 #define NKL1_MAX_ENTRIES	(unsigned long)(NKL2_MAX_ENTRIES * 512)

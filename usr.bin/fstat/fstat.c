@@ -64,14 +64,6 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/file.h>
 #undef _KERNEL
 
-/*
-#define NFS
-#include <nfs/nfsproto.h>
-#include <nfs/rpcv2.h>
-#include <nfs/nfs.h>
-#include <nfs/nfsnode.h>
-#undef NFS
-*/
 #include <net/route.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -110,10 +102,10 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #define	TRACE	-4
 
 typedef struct devs {
-	struct	devs *next;
-	long	fsid;
-	ino_t	ino;
-	const char	*name;
+	struct devs *next;
+	long fsid;
+	ino_t ino;
+	const char *name;
 } DEVS;
 
 DEVS *devs;
@@ -349,7 +341,7 @@ dofiles(struct kinfo_proc *kp)
 	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
-        ftrans(ofiles[i], i);
+		ftrans(ofiles[i], i);
 	}
 }
 
@@ -358,11 +350,10 @@ ftrans(struct file *fp, int i)
 {
     struct file file;
 
-    if (!KVM_READ(fp, &file, sizeof (struct file))) {
-		dprintf("can't read file %d at %p for pid %d\n", i,
-					fp, Pid);
-        return;
-    }
+	if (!KVM_READ(fp, &file, sizeof(struct file))) {
+		dprintf("can't read file %d at %p for pid %d\n", i, fp, Pid);
+		return;
+	}
 	switch (file.f_type) {
 	case DTYPE_VNODE:
 		vtrans((struct vnode *)file.f_data, i, file.f_flag);
@@ -376,8 +367,8 @@ ftrans(struct file *fp, int i)
 	case DTYPE_KQUEUE:
 	case DTYPE_CRYPTO:
 	default:
-		dprintf("unknown file type %d for file %d of pid %d\n",
-					file.f_type, i, Pid);
+		dprintf("unknown file type %d for file %d of pid %d\n", file.f_type, i,
+				Pid);
 		break;
 	}
 }

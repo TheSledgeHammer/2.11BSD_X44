@@ -31,14 +31,19 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #ifndef lint
+#if 0
 static char copyright[] =
 "@(#) Copyright (c) 1983, 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
+#endif
 #endif /* not lint */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)diskpart.c	8.3 (Berkeley) 11/30/94";
+#endif
 #endif /* not lint */
 
 /*
@@ -48,8 +53,12 @@ static char sccsid[] = "@(#)diskpart.c	8.3 (Berkeley) 11/30/94";
 #define DKTYPENAMES
 #include <sys/disklabel.h>
 
-#include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #define	for_now			/* show all of `c' partition for disklabel */
 #define	NPARTITIONS	8
@@ -85,14 +94,14 @@ char layouts[NLAYOUTS][NPARTITIONS] = {
  * (e.g. swap areas or for access to the entire device).
  */
 struct partition defparam[NPARTITIONS] = {
-		{ 0, 0, 1024, FS_UNUSED, 8, 0 },		/* a */
-		{ 0, 0, 1024, FS_SWAP,   8, 0 },		/* b */
-		{ 0, 0, 1024, FS_UNUSED, 8, 0 },		/* c */
-		{ 0, 0,  512, FS_UNUSED, 8, 0 },		/* d */
-		{ 0, 0, 1024, FS_UNUSED, 8, 0 },		/* e */
-		{ 0, 0, 1024, FS_UNUSED, 8, 0 },		/* f */
-		{ 0, 0, 1024, FS_UNUSED, 8, 0 },		/* g */
-		{ 0, 0, 1024, FS_UNUSED, 8, 0 }			/* h */
+		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* a */
+		{ 0, 0, { 1024 }, FS_SWAP,   8, { 0 }, },		/* b */
+		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* c */
+		{ 0, 0, { 512 }, FS_UNUSED, 8, { 0 }, },		/* d */
+		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* e */
+		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* f */
+		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* g */
+		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, }		/* h */
 };
 
 /*
@@ -108,9 +117,8 @@ int	badsecttable = 126;	/* # sectors */
 int	pflag;			/* print device driver partition tables */
 int	dflag;			/* print disktab entry */
 
-static struct disklabel *promptfordisk(char *);
-static int	gettype(char *, char **);
-static int ustrcmp(char *, char *);
+static struct disklabel *promptfordisk(const char *);
+static int	gettype(const char *, const char *const *);
 
 void
 usage(void)
@@ -120,15 +128,14 @@ usage(void)
 }
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	struct disklabel *dp;
-	register int curcyl, spc, def, part, layout, j;
+	int ch, curcyl, spc, def, part, layout, j;
 	int threshhold, numcyls[NPARTITIONS], startcyl[NPARTITIONS];
 	int totsize = 0;
-	char *lp, *tyname;
+	const char *tyname;
+	char *lp;
 
 	while ((ch = getopt(argc, argv, "pds:")) != -1) {
 		switch (ch) {
@@ -363,26 +370,46 @@ main(argc, argv)
 
 struct disklabel disk;
 
-struct	field {
-	char		*f_name;
-	char		*f_defaults;
+struct field {
+	const char	*f_name;
+	const char	*f_defaults;
 	u_int32_t	*f_location;
 } fields[] = {
-		{ "sector size",		"512",	&disk.d_secsize },
-		{ "#sectors/track",		0,	&disk.d_nsectors },
-		{ "#tracks/cylinder",	0,	&disk.d_ntracks },
-		{ "#cylinders",			0,	&disk.d_ncylinders },
-		{ 0, 0, 0 },
+		{
+				.f_name = "sector size",
+				.f_defaults = "512",
+				.f_location = &disk.d_secsize,
+		},
+		{
+				.f_name = "#sectors/track",
+				.f_defaults = NULL,
+				.f_location = &disk.d_nsectors,
+		},
+		{
+				.f_name = "#tracks/cylinder",
+				.f_defaults = NULL,
+				.f_location = &disk.d_ntracks,
+		},
+		{
+				.f_name = "#cylinders",
+				.f_defaults = NULL,
+				.f_location = &disk.d_ncylinders,
+		},
+		{
+				.f_name = NULL,
+				.f_defaults = NULL,
+				.f_location = NULL,
+		},
 };
 
 static struct disklabel *
-promptfordisk(name)
-	char *name;
+promptfordisk(const char *name)
 {
-	register struct disklabel *dp = &disk;
-	register struct field *fp;
+	struct disklabel *dp = &disk;
+	struct field *fp;
 	register i;
-	char buf[BUFSIZ], **tp, *cp;
+	const char * const *tp;
+	char buf[BUFSIZ], *cp;
 
 	strncpy(dp->d_typename, name, sizeof(dp->d_typename));
 	fprintf(stderr,
@@ -393,7 +420,7 @@ promptfordisk(name)
 		return ((struct disklabel *)0);
 	for (;;) {
 		fprintf(stderr, "Disk/controller type (%s)? ", dktypenames[1]);
-		(void) gets(buf);
+		(void)gets(buf);
 		if (buf[0] == 0) {
 			dp->d_type = 1;
 			break;
@@ -440,7 +467,7 @@ again:
 				fprintf(stderr, "no default value\n");
 				goto again;
 			}
-			cp = fp->f_defaults;
+			cp = __UNCONST(fp->f_defaults);
 		}
 		*fp->f_location = atol(cp);
 		if (*fp->f_location == 0) {
@@ -467,33 +494,14 @@ again:
 }
 
 static int
-gettype(t, names)
-	char *t;
-	char **names;
+gettype(const char *t, const char * const *names)
 {
-	register char **nm;
+	const char * const *nm;
 
 	for (nm = names; *nm; nm++)
-		if (ustrcmp(t, *nm) == 0)
+		if (strcasecmp(t, *nm) == 0)
 			return (nm - names);
-	if (isdigit(*t))
+	if (isdigit((unsigned char)*t))
 		return (atoi(t));
 	return (-1);
-}
-
-static int
-ustrcmp(s1, s2)
-	register char *s1, *s2;
-{
-#define	lower(c)	(islower(c) ? (c) : tolower(c))
-
-	for (; *s1; s1++, s2++) {
-		if (*s1 == *s2)
-			continue;
-		if (isalpha(*s1) && isalpha(*s2) &&
-		lower(*s1) == lower(*s2))
-			continue;
-		return (*s2 - *s1);
-	}
-	return (0);
 }
