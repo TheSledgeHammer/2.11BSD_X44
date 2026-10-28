@@ -121,7 +121,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- init_main.c: plimit pointer to rlimit and user pointer to rlimit
 	
 ## arch:
-- create seperate options file for each arch
+- create separate options file for each arch
 - i386/x86: (Merged under i386)
 	- pnpbios: add devices
 	- softintr: add feature to smart select soft-interrupts over hardware based interrupts instead of using "__HAVE_GENERIC_SOFT_INTERRUPTS"
