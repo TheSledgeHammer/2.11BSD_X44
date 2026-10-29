@@ -132,7 +132,7 @@ nbpf_nc_alloc(size)
 {
 	struct nbpf_insn *ncode;
 
-	ncode = (struct nbpf_insn*) malloc(size, M_DEVBUF, M_WAITOK);
+	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
 	return (ncode);
 }
 

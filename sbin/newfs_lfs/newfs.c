@@ -111,8 +111,8 @@ int version = 0; 		/* lfs version */
 char	*disktype;
 int	unlabeled;
 #endif
-char	device[MAXPATHLEN];
-char	*progname, *special;
+char device[MAXPATHLEN];
+char *progname, *special;
 
 static struct disklabel *getdisklabel(char *, int);
 static struct disklabel *debug_readlabel(int);

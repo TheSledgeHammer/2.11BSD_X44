@@ -142,21 +142,19 @@ int maxfiles;
 		maxfiles = (d); \
 	}
 
-void 	dofiles(struct kinfo_proc *);
-void 	vtrans(struct vnode *, int, int);
-void    ftrans(struct file *, int);
-char 	*getmnton(struct mount *);
-void 	socktrans(struct socket *, int);
-void 	getinetproto(int);
-int		getfname(const char *);
-void 	usage(void);
+void dofiles(struct kinfo_proc *);
+void vtrans(struct vnode *, int, int);
+void ftrans(struct file *, int);
+char *getmnton(struct mount *);
+void socktrans(struct socket *, int);
+void getinetproto(int);
+int	getfname(const char *);
+void usage(void);
 
 int
 main(int argc, char **argv)
 {
-	extern char *optarg;
-	extern int optind;
-	register struct passwd *passwd;
+	struct passwd *passwd;
 	struct kinfo_proc *p, *plast;
 	int arg, ch, what;
 	char *memf, *nlistf;
@@ -348,7 +346,7 @@ dofiles(struct kinfo_proc *kp)
 void
 ftrans(struct file *fp, int i)
 {
-    struct file file;
+	struct file file;
 
 	if (!KVM_READ(fp, &file, sizeof(struct file))) {
 		dprintf("can't read file %d at %p for pid %d\n", i, fp, Pid);

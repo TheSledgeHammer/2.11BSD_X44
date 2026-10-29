@@ -256,7 +256,7 @@ int		nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
 void	nbpf_tableset_reload(nbpf_tableset_t *, nbpf_tableset_t *);
 
 /* Table interface. */
-nbpf_table_t 	*nbpf_table_create(u_int, int, size_t);
+nbpf_table_t *nbpf_table_create(u_int, int);
 void	nbpf_table_destroy(nbpf_table_t *);
 
 int		nbpf_table_check(const nbpf_tableset_t *, u_int, int);
@@ -264,7 +264,7 @@ int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *,
 int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
 
-int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **, u_int, int, size_t);
+int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
 int     nbpf_table_ioctl(struct nbpf_ioctl_table *, nbpf_tableset_t *);
 
 #endif /* _NET_NBPF_H_ */

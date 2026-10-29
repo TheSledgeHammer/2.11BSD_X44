@@ -103,27 +103,14 @@ struct nbpf_table {
 
 #define	NBPF_ADDRLEN2TREE(alen)	((alen) >> 4)
 
-static size_t hashsize;
 static nbpf_tblent_t tblent_cache;
 extern const pt_tree_ops_t nbpf_table_ptree_ops;
 
 #define M_NBPF 	M_DEVBUF
 
-static void *
-nbpf_tableset_malloc(size_t size)
-{
-	void *arg;
-
-	arg = malloc(size, M_NBPF, M_NOWAIT);
-	return (arg);
-}
-
-static void
-nbpf_tableset_free(nbpf_tblent_t *ent)
-{
-	free(ent, M_NBPF);
-}
-
+/*
+ * TODO FIX ME
+ */
 void
 nbpf_tableset_init(void)
 {
@@ -131,7 +118,7 @@ nbpf_tableset_init(void)
 
 	cache = &tblent_cache;
 	if (cache == NULL) {
-		cache = nbpf_tableset_malloc(sizeof(nbpf_tblent_t));
+		cache = malloc(sizeof(nbpf_tblent_t), M_NBPF, M_NOWAIT);
 		tblent_cache = *cache;
 	}
 }
@@ -139,20 +126,20 @@ nbpf_tableset_init(void)
 void
 nbpf_tableset_fini(void)
 {
-	nbpf_tableset_free(&tblent_cache);
+	free(&tblent_cache, M_NBPF);
 }
 
 nbpf_tableset_t *
 nbpf_tableset_create(void)
 {
 	const size_t sz = NBPF_TABLE_SLOTS * sizeof(nbpf_table_t *);
-	return (nbpf_tableset_malloc(sz));
+	nbpf_tableset_t ts = (nbpf_tableset_t)malloc(sz, M_NBPF, M_NOWAIT);
+	return (ts);
 }
 
 void
 nbpf_tableset_destroy(nbpf_tableset_t *tblset)
 {
-	const size_t sz = NBPF_TABLE_SLOTS * sizeof(nbpf_table_t*);
 	nbpf_table_t *t;
 	u_int tid;
 
@@ -166,7 +153,7 @@ nbpf_tableset_destroy(nbpf_tableset_t *tblset)
 			nbpf_table_destroy(t);
 		}
 	}
-	nbpf_tableset_free(tblset);
+	free(tblset, M_NBPF);
 }
 
 /*
@@ -180,7 +167,7 @@ nbpf_tableset_insert(nbpf_tableset_t *tblset, nbpf_table_t *t)
 	const u_int tid = t->t_id;
 	int error;
 
-	KASSERT((u_int) tid < NBPF_TABLE_SLOTS);
+	KASSERT((u_int)tid < NBPF_TABLE_SLOTS);
 
 	if (tblset[tid] == NULL) {
 		atomic_inc_int(&t->t_refcnt);
@@ -283,7 +270,7 @@ table_tree_destroy(pt_tree_t *tree)
 
 	while ((ent = ptree_iterate(tree, NULL, PT_ASCENDING)) != NULL) {
 		ptree_remove_node(tree, ent);
-		nbpf_tableset_free(ent);
+		free(ent, M_NBPF);
 	}
 }
 
@@ -294,7 +281,7 @@ table_lpm_destroy(nbpf_table_t *t)
 
 	while ((ent = LIST_FIRST(t->t_list)) != NULL) {
 		LIST_REMOVE(ent, te_entry.listent);
-		nbpf_tableset_free(ent);
+		free(ent, M_NBPF);
 	}
 	lpm_clear(t->t_lpm, NULL, NULL);
 	t->t_nitems = 0;
@@ -304,7 +291,7 @@ table_lpm_destroy(nbpf_table_t *t)
  * npf_table_create: create table with a specified ID.
  */
 nbpf_table_t *
-nbpf_table_create(u_int tid, int type, size_t hsize)
+nbpf_table_create(u_int tid, int type)
 {
 	nbpf_table_t *t;
 
@@ -315,11 +302,10 @@ nbpf_table_create(u_int tid, int type, size_t hsize)
 	case NBPF_TABLE_LPM:
 		t->t_lpm = lpm_create(M_NOWAIT);
 		if (t->t_lpm == NULL) {
-			nbpf_tableset_free(t);
+			free(t, M_NBPF);
 			return (NULL);
 		}
-		LIST_INIT(t->t_list)
-		;
+		LIST_INIT(t->t_list);
 		break;
 	case NBPF_TABLE_TREE:
 		ptree_init(&t->t_tree[0], &nbpf_table_ptree_ops,
@@ -332,10 +318,9 @@ nbpf_table_create(u_int tid, int type, size_t hsize)
 				offsetof(nbpf_tblent_t, te_addr));
 		break;
 	case NBPF_TABLE_HASH:
-		t->t_hashl = hashinit(hsize, M_NBPF, &t->t_hashmask);
-		hashsize = hsize;
+		t->t_hashl = hashinit(NBPF_TABLE_HSIZE, M_NBPF, &t->t_hashmask);
 		if (t->t_hashl == NULL) {
-			nbpf_tableset_free(t);
+			free(t, M_NBPF);
 			return NULL;
 		}
 		break;
@@ -367,10 +352,10 @@ nbpf_table_destroy(nbpf_table_t *t)
 			nbpf_tblent_t *ent;
 			while ((ent = LIST_FIRST(&t->t_hashl[n])) != NULL) {
 				LIST_REMOVE(ent, te_entry.hashq);
-				nbpf_tableset_free(ent);
+				free(ent, M_NBPF);
 			}
 		}
-		hashfree(t->t_hashl, hashsize, M_NBPF, &t->t_hashmask);
+		hashfree(t->t_hashl, NBPF_TABLE_HSIZE, M_NBPF, &t->t_hashmask);
 		break;
 	case NBPF_TABLE_TREE:
 		table_tree_destroy(&t->t_tree[0]);
@@ -389,7 +374,7 @@ nbpf_table_destroy(nbpf_table_t *t)
 int
 nbpf_table_check(const nbpf_tableset_t *tset, u_int tid, int type)
 {
-	if ((u_int) tid >= NBPF_TABLE_SLOTS) {
+	if ((u_int)tid >= NBPF_TABLE_SLOTS) {
 		return EINVAL;
 	}
 	if (tset[tid] != NULL) {
@@ -436,7 +421,8 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	nbpf_table_t *t;
 	int error;
 
-	if ((u_int) tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
+	t = tset[tid];
+	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
 		return EINVAL;
 	}
 
@@ -444,7 +430,7 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	if (error) {
 		return error;
 	}
-	ent = nbpf_tableset_malloc(sizeof(&tblent_cache));
+	ent = malloc(sizeof(*ent), M_NBPF, M_NOWAIT);
 	memcpy(&ent->te_addr, addr, alen);
 	ent->te_alen = alen;
 
@@ -509,7 +495,7 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	simple_rwlock_unlock(&t->t_lock);
 
 	if (error) {
-		nbpf_tableset_free(ent);
+		free(ent, M_NBPF);
 	}
 	return error;
 }
@@ -530,7 +516,8 @@ nbpf_table_remove(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 		return error;
 	}
 
-	if ((u_int) tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
+	t = tset[tid];
+	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
 		return EINVAL;
 	}
 
@@ -575,7 +562,7 @@ nbpf_table_remove(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	if (ent == NULL) {
 		return ENOENT;
 	}
-	nbpf_tableset_free(ent);
+	free(ent, M_NBPF);
 	return 0;
 }
 
@@ -594,7 +581,8 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 		return EINVAL;
 	}
 
-	if ((u_int) tid >= NBPF_TABLE_SLOTS || (t = tset[tid]) == NULL) {
+	t = tset[tid];
+	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
 		return EINVAL;
 	}
 
@@ -624,7 +612,7 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 }
 
 int
-nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl, u_int tid, int type, size_t hsize)
+nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl)
 {
 	nbpf_tableset_t *ts;
 	nbpf_table_t *tb;
@@ -634,11 +622,11 @@ nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl, u_int tid, int type, si
 	if (ts == NULL) {
 		return (ENOMEM);
 	}
-	error = nbpf_table_check(ts, tid, type);
+	error = nbpf_table_check(ts, NBPF_TABLE_TID, NBPF_TABLE_TYPE);
 	if (error != 0) {
 		return (error);
 	}
-	tb = nbpf_table_create(tid, type, hsize);
+	tb = nbpf_table_create(NBPF_TABLE_TID, NBPF_TABLE_TYPE);
 	if (tb == NULL) {
 		return (ENOMEM);
 	}

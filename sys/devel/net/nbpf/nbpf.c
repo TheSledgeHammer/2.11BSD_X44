@@ -73,7 +73,7 @@ nbpf_state_init(nd, layer, tag)
 {
 	nbpf_state_t *state;
 
-	state = (nbpf_state_t*) malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
+	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
 	nbpf_set_tag(state, tag);
 	nd->nbd_state = state;
 	nd->nbd_layer = layer;
@@ -87,8 +87,7 @@ nbpf_table_init(nd)
 	nbpf_table_t *t;
 	int error;
 
-	error = nbpf_mktable(&tset, &t, NBPF_TABLE_TID, NBPF_TABLE_TYPE,
-	NBPF_TABLE_HSIZE);
+	error = nbpf_mktable(&tset, &t);
 	if (error != 0) {
 		return;
 	}
@@ -229,7 +228,7 @@ nbpf_setf(nd, fp, error)
 	nlen = fp->nbf_len;
 	size = nlen * sizeof(*fp->nbf_insns);
 	ncode = nbpf_nc_alloc(size);
-	if (copyin((caddr_t) fp->nbf_insns, (caddr_t) ncode, size) == 0
+	if (copyin((caddr_t) fp->nbf_insns, (caddr_t)ncode, size) == 0
 			&& nbpf_validate(ncode, (int) nlen, error)) {
 		s = splnet();
 		nd->nbd_filter = ncode;

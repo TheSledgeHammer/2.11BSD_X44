@@ -56,6 +56,7 @@ static char sccsid[] = "@(#)lfs.c	8.5 (Berkeley) 5/24/95";
 #include "extern.h"
 
 int is_ufs2;
+int is_lfs2;
 
 union dinode {
 	struct ufs1_dinode dp1;
@@ -65,11 +66,12 @@ union dinode {
 #define DIP(dp, field) \
 	(is_ufs2 ? (dp)->dp2.di_##field : (dp)->dp1.di_##field)
 
-#define DIP_SET(dp, field, val)	\
+#define DIP_SET(dp, field, val)	do { 	\
 	if (is_ufs2)						\
 		(dp)->dp2.di_##field = (val);	\
 	else								\
 		(dp)->dp1.di_##field = (val);	\
+} while (0);
 
 /*
  * This table is indexed by the log base 2 of the block size.
@@ -241,7 +243,9 @@ struct direct lfs_lf_dir[] = {
         { ROOTINO, sizeof(struct direct), DT_DIR, 2, ".." },
 };
 
-static struct lfs *get_lfs_by_version(int);
+static void check_lfs_version(uint32_t);
+static void check_lfs_magic(uint32_t);
+static struct lfs *lfsinit(int);
 static int build_lfs(struct lfs *, int , struct disklabel *, struct partition *, int, int, int, int);
 static void dinode_alloc(caddr_t, union dinode *, struct lfs *, int);
 static ufs2_daddr_t make_dinode(ino_t, union dinode *, int, ufs2_daddr_t, struct lfs *);
@@ -257,7 +261,7 @@ make_lfs(int fd, struct disklabel *lp, struct partition *partp, int minfree, int
 {
 	struct lfs *lfsp;
 
-	lfsp = get_lfs_by_version(version);
+	lfsp = lfsinit(version);
 	if (lfsp == NULL) {
 		fatal("lfs version and magic number did not match! %d", version);
 	}
@@ -296,38 +300,68 @@ segerror(int nblocks)
 	}
 }
 
-static struct lfs *
-get_lfs_by_version(int version)
+static void
+check_lfs_version(uint32_t version)
 {
-	struct lfs *lfsp = NULL;
-	int ret = -1;
-
 	switch (version) {
 	case LFS2_VERSION:
-		lfsp = &lfs2_default;
-		ret = 1;
+		is_lfs2 = 1;
 		break;
 	case LFS1_VERSION:
-		lfsp = &lfs1_default;
-		ret = 0;
+		is_lfs2 = 0;
+		break;
+	default:
+		is_lfs2 = -1;
 		break;
 	}
-	switch (lfsp->lfs_magic) {
+}
+
+static void
+check_lfs_magic(uint32_t magic)
+{
+	switch (magic) {
 	case LFS2_MAGIC:
 		is_ufs2 = 1;
 		break;
 	case LFS1_MAGIC:
 		is_ufs2 = 0;
 		break;
+	default:
+		is_ufs2 = -1;
+		break;
 	}
-	if (ret == is_ufs2) {
-		return (lfsp);
+}
+
+static struct lfs *
+lfsinit(uint32_t version)
+{
+	struct lfs *lfsp = NULL;
+
+	check_lfs_version(version);
+	switch (is_lfs2) {
+	case 0:
+		lfsp = &lfs1_default;
+		break;
+	case 1:
+		lfsp = &lfs2_default;
+		break;
+	case -1:
+		/* FALLTHROUGH */
+	default:
+		lfsp = NULL;
+		break;
+	}
+
+	if (lfsp != NULL) {
+		check_lfs_magic(lfsp->lfs_magic);
+		if (is_lfs2 == is_ufs2) {
+			return (lfsp);
+		}
 	}
 	return (NULL);
 }
 
-
-//static union dinode node;
+static union dinode *node;
 
 static int
 build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *partp, int minfree, int block_size, int frag_size, int seg_size)
@@ -363,7 +397,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	int ssize;					/* Segment size */
 	int sum_size;				/* Size of the summary block */
 
-    dip = 0;//&node;
+    dip = node;
     memset(dip, 0, sizeof(*dip));
 	if (!(bsize = block_size))
 		bsize = DFL_LFSBLOCK;
@@ -654,7 +688,6 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	 * Finally, calculate all the fields for the summary structure
 	 * and write it.
 	 */
-
 	summary.ss_next = lfsp->lfs_nextseg;
 	summary.ss_create = lfsp->lfs_tstamp;
 	summary.ss_nfinfo = 3;
@@ -771,18 +804,18 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 static void
 dinode_alloc(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
 {
-    struct ufs1_dinode *dp1;
-    struct ufs2_dinode *dp2;
+	struct ufs1_dinode *dp1;
+	struct ufs2_dinode *dp2;
 
-    if (ufs2) {
-        dp2 = (struct ufs2_dinode *)dpagep;
-        memset(dp2, 0, lfsp->lfs_bsize);
-        *dp2 = dp->dp2;
-    } else {
-        dp1 = (struct ufs1_dinode *)dpagep;
-        memset(dp1, 0, lfsp->lfs_bsize);
-        *dp1 = dp->dp1;
-    }
+	if (ufs2) {
+		dp2 = (struct ufs2_dinode *)dpagep;
+		memset(dp2, 0, lfsp->lfs_bsize);
+		*dp2 = dp->dp2;
+	} else {
+		dp1 = (struct ufs1_dinode *)dpagep;
+		memset(dp1, 0, lfsp->lfs_bsize);
+		*dp1 = dp->dp1;
+	}
 }
 
 static ufs2_daddr_t
@@ -837,19 +870,19 @@ make_dir(void *bufp, struct direct *protodir, int entries)
 static void
 lfs_segcopy(void *sump, size_t size)
 {
-    size_t sumpsize;
+	size_t sumpsize;
 
-    //sumpsize = (size_t)sump;
-    sumpsize += size;
-    memmove(sump, &sumpsize, sizeof(sumpsize));   
+	//sumpsize = (size_t)sump;
+	sumpsize += size;
+	memmove(sump, &sumpsize, sizeof(sumpsize));
 }
 
 static void
 lfs_pagecopy(void *ipagep, size_t size)
 {
-    size_t ipagepsize;
-    
-    //ipagepsize = (size_t)ipagep;
-    ipagepsize += size;
-    memmove(ipagep, &ipagepsize, sizeof(ipagepsize)); 
+	size_t ipagepsize;
+
+	//ipagepsize = (size_t)ipagep;
+	ipagepsize += size;
+	memmove(ipagep, &ipagepsize, sizeof(ipagepsize));
 }
