@@ -147,6 +147,8 @@ struct socket {
 #define	SS_ASYNC			0x0800	/* async i/o notify */
 #define	SS_ISCONFIRMING		0x1000	/* deciding to accept connection req */
 
+#ifdef _KERNEL
+
 /*
  * Macros for sockets and socket buffering.
  */
@@ -259,6 +261,7 @@ void	sbcheck(struct sockbuf *);
 #define	SBLASTMBUFCHK(sb, where)	/* nothing */
 #define	SBCHECK(sb)					/* nothing */
 #endif /* SOCKBUF_DEBUG */
+#endif
 
 #ifdef _KERNEL
 struct msghdr;
