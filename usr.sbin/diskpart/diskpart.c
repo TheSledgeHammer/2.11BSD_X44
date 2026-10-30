@@ -94,14 +94,14 @@ char layouts[NLAYOUTS][NPARTITIONS] = {
  * (e.g. swap areas or for access to the entire device).
  */
 struct partition defparam[NPARTITIONS] = {
-		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* a */
-		{ 0, 0, { 1024 }, FS_SWAP,   8, { 0 }, },		/* b */
-		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* c */
-		{ 0, 0, { 512 }, FS_UNUSED, 8, { 0 }, },		/* d */
-		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* e */
-		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* f */
-		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, },		/* g */
-		{ 0, 0, { 1024 }, FS_UNUSED, 8, { 0 }, }		/* h */
+		{ 0, 0, 1024, { 0 }, FS_UNUSED, 8, { 0 }, },		/* a */
+		{ 0, 0, 1024, { 0 }, FS_SWAP,   8, { 0 }, },		/* b */
+		{ 0, 0, 1024, { 0 }, FS_UNUSED, 8, { 0 }, },		/* c */
+		{ 0, 0,  512, { 0 }, FS_UNUSED, 8, { 0 }, },		/* d */
+		{ 0, 0, 1024, { 0 }, FS_UNUSED, 8, { 0 }, },		/* e */
+		{ 0, 0, 1024, { 0 }, FS_UNUSED, 8, { 0 }, },		/* f */
+		{ 0, 0, 1024, { 0 }, FS_UNUSED, 8, { 0 }, },		/* g */
+		{ 0, 0, 1024, { 0 }, FS_UNUSED, 8, { 0 }, }		    /* h */
 };
 
 /*
@@ -119,6 +119,7 @@ int	dflag;			/* print disktab entry */
 
 static struct disklabel *promptfordisk(const char *);
 static int	gettype(const char *, const char *const *);
+void usage(void);
 
 void
 usage(void)
@@ -134,7 +135,7 @@ main(int argc, char *argv[])
 	int ch, curcyl, spc, def, part, layout, j;
 	int threshhold, numcyls[NPARTITIONS], startcyl[NPARTITIONS];
 	int totsize = 0;
-	const char *tyname;
+	const char *tyname = NULL;
 	char *lp;
 
 	while ((ch = getopt(argc, argv, "pds:")) != -1) {
@@ -219,7 +220,7 @@ main(int argc, char *argv[])
 		curcyl = 0;
 		for (part = PART('a'); part < NPARTITIONS; part++)
 			curcyl += howmany(defpart[def][part], spc);
-		if (curcyl < dp->d_ncylinders - threshhold)
+		if ((u_int32_t)curcyl < dp->d_ncylinders - threshhold)
 			break;
 	}
 	if (def >= NDEFAULTS) {
@@ -407,7 +408,7 @@ promptfordisk(const char *name)
 {
 	struct disklabel *dp = &disk;
 	struct field *fp;
-	register i;
+	int i;
 	const char * const *tp;
 	char buf[BUFSIZ], *cp;
 
@@ -430,7 +431,7 @@ promptfordisk(const char *name)
 			break;
 		}
 		fprintf(stderr, "%s: unrecognized controller type\n", buf);
-		fprintf(stderr, "use one of:\n", buf);
+		fprintf(stderr, "%s use one of:\n", buf);
 		for (tp = dktypenames; *tp; tp++)
 			if (index(*tp, ' ') == 0)
 				fprintf(stderr, "\t%s\n", *tp);

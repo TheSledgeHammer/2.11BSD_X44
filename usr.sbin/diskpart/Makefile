@@ -3,4 +3,6 @@
 PROG=	diskpart
 MAN=	diskpart.8
 
+COPTS.diskpart.c+= ${GCC_NO_STRINGOP_TRUNCATION}
+
 .include <bsd.prog.mk>
