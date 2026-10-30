@@ -46,7 +46,7 @@ struct  filestat {
  * a kvm_read that returns true if everything is read
  */
 #define KVM_READ(kaddr, paddr, len) \
-	((size_t)kvm_read(kd, (u_long)(kaddr), (void *)(paddr), (len)) == (size_t)(len))
+	((size_t)kvm_read(kd, (u_long)(kaddr), (void *)(paddr), (size_t)(len)) == (size_t)(len))
 
 extern kvm_t *kd;
 extern int vflg;

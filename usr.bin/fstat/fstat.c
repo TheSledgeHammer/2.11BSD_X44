@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
-//#include <sys/socketvar.h>
+#include <sys/socketvar.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
@@ -290,7 +290,7 @@ main(int argc, char **argv)
 void
 dofiles(struct kinfo_proc *kp)
 {
-	int i, last;
+	int i;
 	struct filedesc0 filed0;
 #define	filed	filed0.fd_fd
 	struct proc *p = &kp->kp_proc;
@@ -348,7 +348,7 @@ ftrans(struct file *fp, int i)
 {
 	struct file file;
 
-	if (!KVM_READ(fp, &file, sizeof(struct file))) {
+	if (!KVM_READ(fp, &file, sizeof(file))) {
 		dprintf("can't read file %d at %p for pid %d\n", i, fp, Pid);
 		return;
 	}
@@ -622,25 +622,25 @@ socktrans(struct socket *sock, int i)
 
 	/* fill in socket */
 	if (!KVM_READ(sock, &so, sizeof(struct socket))) {
-		dprintf("can't read sock at %x\n", sock);
+		dprintf("can't read sock at %p\n", sock);
 		goto bad;
 	}
 
 	/* fill in protosw entry */
 	if (!KVM_READ(so.so_proto, &proto, sizeof(struct protosw))) {
-		dprintf("can't read protosw at %x", so.so_proto);
+		dprintf("can't read protosw at %p", so.so_proto);
 		goto bad;
 	}
 
 	/* fill in domain */
 	if (!KVM_READ(proto.pr_domain, &dom, sizeof(struct domain))) {
-		dprintf("can't read domain at %x\n", proto.pr_domain);
+		dprintf("can't read domain at %p\n", proto.pr_domain);
 		goto bad;
 	}
 
 	if ((len = kvm_read(kd, (u_long)dom.dom_name, dname,
 	    sizeof(dname) - 1)) < 0) {
-		dprintf("can't read domain name at %x\n",
+		dprintf("can't read domain name at %p\n",
 			dom.dom_name);
 		dname[0] = '\0';
 	}
@@ -670,7 +670,7 @@ socktrans(struct socket *sock, int i)
 		getinetproto(proto.pr_protocol);
 		if (proto.pr_protocol == IPPROTO_TCP) {
 			if (so.so_pcb) {
-				if (kvm_read(kd, (u_long) so.so_pcb, (char*) &inpcb,
+				if (kvm_read(kd, (u_long) so.so_pcb, (char *)&inpcb,
 						sizeof(struct inpcb)) != sizeof(struct inpcb)) {
 					dprintf("can't read inpcb at %x\n", so.so_pcb);
 					goto bad;
@@ -681,7 +681,7 @@ socktrans(struct socket *sock, int i)
 			break;
 		} else if (proto.pr_protocol == IPPROTO_UDP) {
 			if (so.so_pcb) {
-				if (kvm_read(kd, (u_long) so.so_pcb, (char*) &inpcb,
+				if (kvm_read(kd, (u_long) so.so_pcb, (char *)&inpcb,
 						sizeof(struct inpcb)) != sizeof(struct inpcb)) {
 					dprintf("can't read inpcb at %x\n", so.so_pcb);
 					goto bad;
@@ -699,7 +699,7 @@ socktrans(struct socket *sock, int i)
 		getinetproto(proto.pr_protocol);
 		if (proto.pr_protocol == IPPROTO_TCP) {
 			if (so.so_pcb) {
-				if (kvm_read(kd, (u_long) so.so_pcb, (char*) &in6pcb,
+				if (kvm_read(kd, (u_long) so.so_pcb, (char *)&in6pcb,
 						sizeof(struct in6pcb)) != sizeof(struct in6pcb)) {
 					dprintf("can't read in6pcb at %p", so.so_pcb);
 					goto bad;
@@ -710,7 +710,7 @@ socktrans(struct socket *sock, int i)
 			break;
 		} else if (proto.pr_protocol == IPPROTO_UDP) {
 			if (so.so_pcb) {
-				if (kvm_read(kd, (u_long) so.so_pcb, (char*) &in6pcb,
+				if (kvm_read(kd, (u_long) so.so_pcb, (char *)&in6pcb,
 						sizeof(struct in6pcb)) != sizeof(struct in6pcb)) {
 					dprintf("can't read inpcb at %p", so.so_pcb);
 					goto bad;
@@ -720,15 +720,15 @@ socktrans(struct socket *sock, int i)
 			}
 			break;
 		} else if (so.so_pcb) {
-			printf(" %lx", (long) so.so_pcb);
+			printf(" %lx", (long)so.so_pcb);
 		}
 		break;
 #endif
 	case AF_UNIX:
 		/* print address of pcb and connected pcb */
 		if (so.so_pcb) {
-			printf(" %x", (int) so.so_pcb);
-			if (kvm_read(kd, (u_long) so.so_pcb, (char*) &unpcb,
+			printf(" %x", (int)so.so_pcb);
+			if (kvm_read(kd, (u_long) so.so_pcb, (char *)&unpcb,
 					sizeof(struct unpcb)) != sizeof(struct unpcb)) {
 				dprintf("can't read unpcb at %x\n", so.so_pcb);
 				goto bad;
@@ -743,7 +743,7 @@ socktrans(struct socket *sock, int i)
 				if (!(so.so_state & SS_CANTSENDMORE))
 					*cp++ = '>';
 				*cp = '\0';
-				printf(" %s %x", shoconn, (int) unpcb.unp_conn);
+				printf(" %s %x", shoconn, (int)unpcb.unp_conn);
 			}
 		}
 		break;
