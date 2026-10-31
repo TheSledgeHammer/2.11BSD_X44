@@ -45,13 +45,13 @@ struct nbpf_d {
 	/* nbpf ncode */
 	nbpf_state_t		*nbd_state;
 	struct nbpf_insn 	*nbd_filter;
-	int 			nbd_layer;
+	int 				nbd_layer;
 
 	/* nbpf buffer */
-	void 			*nbd_nptr;			/* nbuf pointer to object */
-	nbpf_buf_t 		*nbd_nbuf;			/* nbuf store */
-	size_t			nbd_nlen;			/* nbuf length */
-	size_t			nbd_nsize; 			/* nbuf size */
+	void 				*nbd_nptr;			/* nbuf pointer to object */
+	nbpf_buf_t 			*nbd_nbuf;			/* nbuf store */
+	size_t				nbd_nlen;			/* nbuf length */
+	size_t				nbd_nsize; 			/* nbuf size */
 
 	/* bpf information: needed by the nbpf */
 	struct bpf_d		*nbd_bpf; 			/* bpf back-pointer */

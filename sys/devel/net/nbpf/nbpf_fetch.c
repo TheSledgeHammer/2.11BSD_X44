@@ -72,8 +72,8 @@ nbpf_fetch_ipv4(nbpf_state_t *state, nbpf_ipv4_t *nb4, nbpf_buf_t *nbuf, void *n
 		state->nbs_info |= NBPC_IPFRAG;
 	}
 	state->nbs_alen = sizeof(struct in_addr);
-	nb4->nb4_srcip = (nbpf_addr_t*) &ip->ip_src;
-	nb4->nb4_dstip = (nbpf_addr_t*) &ip->ip_dst;
+	nb4->nb4_srcip = (nbpf_addr_t *)&ip->ip_src;
+	nb4->nb4_dstip = (nbpf_addr_t *)&ip->ip_dst;
 	state->nbs_info |= NBPC_IP4;
 	state->nbs_hlen = ip->ip_hl << 2;
 	state->nbs_proto = nb4->nb4_v4.ip_p;
@@ -127,8 +127,8 @@ nbpf_fetch_ipv6(nbpf_state_t *state, nbpf_ipv6_t *nb6, nbpf_buf_t *nbuf, void *n
 		state->nbs_hlen += hlen;
 	}
 	state->nbs_alen = sizeof(struct in6_addr);
-	nb6->nb6_srcip = (nbpf_addr_t*) &ip6->ip6_src;
-	nb6->nb6_dstip = (nbpf_addr_t*) &ip6->ip6_dst;
+	nb6->nb6_srcip = (nbpf_addr_t *)&ip6->ip6_src;
+	nb6->nb6_dstip = (nbpf_addr_t *)&ip6->ip6_dst;
 	state->nbs_info |= NBPC_IP6;
 	return (true);
 }

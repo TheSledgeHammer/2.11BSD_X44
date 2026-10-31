@@ -48,18 +48,16 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 int nbpf_setf(struct nbpf_d *, struct nbpf_program *, int *);
 
 struct nbpf_d *
-nbpf_d_alloc(size)
-	size_t size;
+nbpf_d_alloc(size_t size)
 {
 	struct nbpf_d *nd;
 
-	nd = (struct nbpf_d*) malloc(size, M_DEVBUF, M_DONTWAIT);
+	nd = (struct nbpf_d *)malloc(size, M_DEVBUF, M_DONTWAIT);
 	return (nd);
 }
 
 void
-nbpf_d_free(nd)
-	struct nbpf_d *nd;
+nbpf_d_free(struct nbpf_d *nd)
 {
 	if (nd != NULL) {
 		free(nd, M_DEVBUF);
@@ -67,9 +65,7 @@ nbpf_d_free(nd)
 }
 
 static void
-nbpf_state_init(nd, layer, tag)
-	struct nbpf_d *nd;
-	int layer, tag;
+nbpf_state_init(struct nbpf_d *nd, int layer, int tag)
 {
 	nbpf_state_t *state;
 
@@ -80,8 +76,7 @@ nbpf_state_init(nd, layer, tag)
 }
 
 static void
-nbpf_table_init(nd)
-	struct nbpf_d *nd;
+nbpf_table_init(struct nbpf_d *nd)
 {
 	nbpf_tableset_t *tset;
 	nbpf_table_t *t;
@@ -96,22 +91,18 @@ nbpf_table_init(nd)
 }
 
 void
-nbpf_attachd(nd)
-	struct nbpf_d *nd;
+nbpf_attachd(struct nbpf_d *nd)
 {
 	if (nd == NULL) {
 		nd = nbpf_d_alloc(sizeof(*nd));
 	}
 	nbpf_state_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
-	nbpf_tableset_init();
 	nbpf_table_init(nd);
 }
 
 void
-nbpf_detachd(nd)
-	struct nbpf_d *nd;
+nbpf_detachd(struct nbpf_d *nd)
 {
-	nbpf_tableset_fini();
 	if (nd->nbd_state != NULL) {
 		free(nd->nbd_state, M_DEVBUF);
 	}
@@ -121,44 +112,27 @@ nbpf_detachd(nd)
 }
 
 int
-nbpfioctl(nd, dev, cmd, addr, flag, p)
-	struct nbpf_d *nd;
-	dev_t dev;
-	u_long cmd;
-	caddr_t addr;
-	int flag;
-	struct proc *p;
+nbpfioctl(struct nbpf_d *nd, dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 {
-	struct nbpf_ioctl_table *nbiot;
-	nbpf_tableset_t *tset;
 	int error, ret;
 
 	switch (cmd) {
 	case BIOCSETF:
-		error = nbpf_setf(nd, (struct nbpf_program*) addr, &ret);
+		error = nbpf_setf(nd, (struct nbpf_program *)addr, &ret);
 		if (ret != 0) {
 			error = ret;
 		}
 		break;
 
 	case BIOCSTBLF:
-		nbiot = (struct nbpf_ioctl_table*) addr;
-		tset = nd->nbd_tableset;
-		if (tset == NULL) {
-			nbpf_table_init(nd);
-		}
-		error = nbpf_table_ioctl(nbiot, tset);
+		error = nbpf_table_ioctl((struct nbpf_ioctl_table *)addr, nd->nbd_tableset);
 		break;
 	}
 	return (error);
 }
 
 static void
-nbpf_set_d(nd, nbuf, nptr, size, len)
-	struct nbpf_d *nd;
-	nbpf_buf_t *nbuf;
-	void *nptr;
-	size_t size, len;
+nbpf_set_d(struct nbpf_d *nd, nbpf_buf_t *nbuf, void *nptr, size_t size, size_t len)
 {
 	nd->nbd_nbuf = nbuf;
 	nd->nbd_nptr = nptr;
@@ -167,8 +141,7 @@ nbpf_set_d(nd, nbuf, nptr, size, len)
 }
 
 static void
-nbpf_reset_d(nd)
-	struct nbpf_d *nd;
+nbpf_reset_d(struct nbpf_d *nd)
 {
 	nd->nbd_nbuf = NULL;
 	nd->nbd_nptr = NULL;
@@ -177,8 +150,7 @@ nbpf_reset_d(nd)
 }
 
 int
-nbpf_allocbufs(nd)
-	struct nbpf_d *nd;
+nbpf_allocbufs(struct nbpf_d *nd)
 {
 	nd->nbd_nbuf = malloc(nd->nbd_bufsize, M_DEVBUF, M_NOWAIT);
 	if (!nd->nbd_nbuf) {
@@ -190,8 +162,7 @@ nbpf_allocbufs(nd)
 }
 
 void
-nbpf_freed(nd)
-	struct nbpf_d *nd;
+nbpf_freed(struct nbpf_d *nd)
 {
 	if (nd->nbd_nbuf != NULL) {
 		free(nd->nbd_nbuf, M_DEVBUF);
@@ -202,10 +173,7 @@ nbpf_freed(nd)
 }
 
 int
-nbpf_setf(nd, fp, error)
-	struct nbpf_d *nd;
-	struct nbpf_program *fp;
-	int *error;
+nbpf_setf(struct nbpf_d *nd, struct nbpf_program *fp, int *error)
 {
 	struct nbpf_insn *ncode, *old;
 	u_int nlen, size;
@@ -228,8 +196,8 @@ nbpf_setf(nd, fp, error)
 	nlen = fp->nbf_len;
 	size = nlen * sizeof(*fp->nbf_insns);
 	ncode = nbpf_nc_alloc(size);
-	if (copyin((caddr_t) fp->nbf_insns, (caddr_t)ncode, size) == 0
-			&& nbpf_validate(ncode, (int) nlen, error)) {
+	if (copyin((caddr_t)fp->nbf_insns, (caddr_t)ncode, size) == 0
+			&& nbpf_validate(ncode, (int)nlen, error)) {
 		s = splnet();
 		nd->nbd_filter = ncode;
 		nbpf_reset_d(nd);
@@ -244,12 +212,7 @@ nbpf_setf(nd, fp, error)
 }
 
 void
-nbpf_filtncatch(nd, nd, pkt, pktlen, slen, cpfn)
-	struct nbpf_d *nd;
-	u_char *pkt;
-	u_int pktlen;
-	u_int slen;
-	void *(*cpfn)(void *, const void *, size_t);
+nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int slen, void *(*cpfn)(void *, const void *, size_t))
 {
 	slen = nbpf_filter(nd->nbd_state, nd->nbd_filter, nd->nbd_nbuf, nd->nbd_layer);
 	if (slen != 0) {
@@ -269,12 +232,7 @@ nbpf_filtncatch(nd, nd, pkt, pktlen, slen, cpfn)
  * - updating the bpf
  */
 static void
-nbpf_catchpacket(nd, pkt, pktlen, snaplen, flags, cpfn)
-	struct nbpf_d *nd;
-	u_char *pkt;
-	u_int pktlen, snaplen;
-	int flags;
-	void *(*cpfn)(void *, const void *, size_t);
+nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, int flags, void *(*cpfn)(void *, const void *, size_t))
 {
 	void *nptr;
 	int totlen, hdrlen, curlen;

@@ -70,7 +70,7 @@ nbpf_advance(nbpf_buf_t **nbuf, void *nptr, size_t len)
 
 	m = *nbuf;
 	/* Offset with amount to advance. */
-	off = (uintptr_t) nptr - mtod(m, uintptr_t) + len;
+	off = (uintptr_t)nptr - mtod(m, uintptr_t) + len;
 	wmark = m->m_len;
 
 	/* Find the mbuf according to offset. */
@@ -302,8 +302,8 @@ nbpf_find_tag(nbpf_state_t *state, nbpf_buf_t *nbuf, uint32_t key, void **data)
 	m = nbuf;
 	mt = m_tag_find(m, state->nbs_tag, NULL);
 	if (__predict_false(mt == NULL)) {
-		return EINVAL;
+		return (EINVAL);
 	}
 	*data = (void*) (mt + 1);
-	return 0;
+	return (0);
 }

@@ -354,9 +354,17 @@ lfsinit(uint32_t version)
 
 	if (lfsp != NULL) {
 		check_lfs_magic(lfsp->lfs_magic);
-		if (is_lfs2 == is_ufs2) {
-			return (lfsp);
+		if ((is_lfs2 >= 0) && (is_ufs2 >= 0)) {
+			if ((is_lfs2 > is_ufs2) || (is_lfs2 < is_ufs2)) {
+				/*
+				 * Prints the lfs version the magic number is for, not the actual magic number.
+				 * To hopefully make it easier to identify the error.
+				 */
+				warnx("lfs version %d and magic number for version %d do not match!",
+						is_lfs2 + 1, is_ufs2 + 1);
+			}
 		}
+		return (lfsp);
 	}
 	return (NULL);
 }
@@ -378,10 +386,10 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	daddr_t last_addr;			/* Previous segment address */
 	ufs2_daddr_t sb_addr;		/* Address of superblocks */
 	daddr_t	seg_addr;			/* Address of current segment */
-	void *ipagep;				/* Pointer to the page we use to write stuff */
-    size_t ipagepsize;
-	void *sump;					/* Used to copy stuff into segment buffer */
-    size_t sumpsize;
+	void *ipagep; 				/* Pointer to the page we use to write stuff */
+	size_t ipagepsize;			/* size of ipagep */
+	void *sump; 				/* Used to copy stuff into segment buffer */
+	size_t sumpsize;			/* size of sump */
 	u_long *block_array;		/* Array of logical block nos to put in sum */
 	u_long blocks_used;			/* Number of blocks in first segment */
 	u_long *dp;					/* Used to computed checksum on data */
@@ -397,8 +405,8 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	int ssize;					/* Segment size */
 	int sum_size;				/* Size of the summary block */
 
-    ipagepsize = 0;
-    sumpsize = 0;
+	ipagepsize = 0;
+	sumpsize = 0;
 	if (!(bsize = block_size))
 		bsize = DFL_LFSBLOCK;
 	if (!(fsize = frag_size))
@@ -723,7 +731,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	/* copy into segment */
 	sump = ipagep;
 	memmove(sump, &summary, sizeof(SEGSUM));
-    lfs_segcopy(sump, sumpsize, sizeof(SEGSUM));
+	lfs_segcopy(sump, sumpsize, sizeof(SEGSUM));
 
 	/* Now, add the ifile */
 	file_info.fi_nblocks = block_array_size;
@@ -732,7 +740,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	file_info.fi_ino = LFS_IFILE_INUM;
 
 	memmove(sump, &file_info, sizeof(FINFO) - sizeof(u_long));
-    lfs_segcopy(sump, sumpsize, sizeof(FINFO) - sizeof(u_long));
+	lfs_segcopy(sump, sumpsize, sizeof(FINFO) - sizeof(u_long));
 	memmove(sump, block_array, sizeof(u_long) * file_info.fi_nblocks);
 	lfs_segcopy(sump, sumpsize, sizeof(u_long) * file_info.fi_nblocks);
 
@@ -742,17 +750,17 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 	file_info.fi_lastlength = lfsp->lfs_bsize;
 	file_info.fi_ino = ROOTINO;
 	file_info.fi_blocks[0] = 0;
-    memmove(sump, &file_info, sizeof(FINFO));
-    lfs_segcopy(sump, sumpsize, sizeof(FINFO));
+	memmove(sump, &file_info, sizeof(FINFO));
+	lfs_segcopy(sump, sumpsize, sizeof(FINFO));
 
 	/* Now, add the lost and found */
 	file_info.fi_ino = LOSTFOUNDINO;
 	memmove(sump, &file_info, sizeof(FINFO));
-    lfs_segcopy(sump, sumpsize, sizeof(FINFO));
+	lfs_segcopy(sump, sumpsize, sizeof(FINFO));
     
 	((ufs1_daddr_t *)ipagep)[LFS_SUMMARY_SIZE / sizeof(ufs1_daddr_t) - 1] =
 			lfsp->lfs_idaddr;
-    lfs_pagecopy(ipagep, ipagepsize, sizeof(summary.ss_sumsum));
+	lfs_pagecopy(ipagep, ipagepsize, sizeof(summary.ss_sumsum));
 	((SEGSUM *)ipagep)->ss_sumsum = cksum(ipagep,
 			LFS_SUMMARY_SIZE - sizeof(summary.ss_sumsum));
 	put(fd, LFS_LABELPAD + LFS_SBPAD, ipagep, LFS_SUMMARY_SIZE);
@@ -810,11 +818,11 @@ dinode_alloc(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
 	struct ufs1_dinode *dp1;
 	struct ufs2_dinode *dp2;
 
-    node = malloc(sizeof(*node));
-    if (node != NULL) {
-        dp = node;
-        memset(dp, 0, sizeof(*dp));
-    }
+	node = malloc(sizeof(*node));
+	if (node != NULL) {
+		dp = node;
+		memset(dp, 0, sizeof(*dp));
+	}
 	if (ufs2) {
 		dp2 = (struct ufs2_dinode *)dpagep;
 		memset(dp2, 0, lfsp->lfs_bsize);
@@ -824,7 +832,7 @@ dinode_alloc(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
 		memset(dp1, 0, lfsp->lfs_bsize);
 		*dp1 = dp->dp1;
 	}
-    free(node);
+	free(node);
 }
 
 static ufs2_daddr_t

@@ -247,9 +247,6 @@ int		nbpf_match_icmp6(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 int		nbpf_match_tcpfl(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 
 /* Tableset interface. */
-void	nbpf_tableset_init(void);
-void	nbpf_tableset_fini(void);
-
 nbpf_tableset_t *nbpf_tableset_create(void);
 void	nbpf_tableset_destroy(nbpf_tableset_t *);
 int		nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
@@ -264,7 +261,6 @@ int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *,
 int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
 
-int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
 int     nbpf_table_ioctl(struct nbpf_ioctl_table *, nbpf_tableset_t *);
-
+int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
 #endif /* _NET_NBPF_H_ */

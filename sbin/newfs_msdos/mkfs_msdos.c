@@ -25,15 +25,19 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
+#if 0
 static const char rcsid[] =
   "$FreeBSD$";
+#endif
 #endif /* not lint */
 
 #include <sys/param.h>
 #ifdef MAKEFS
 /* In the makefs case we only want struct disklabel */
-#include <sys/disk/bsd.h>
+#include <sys/disklabel.h>
 #else
 #include <sys/fdio.h>
 #include <sys/disk.h>

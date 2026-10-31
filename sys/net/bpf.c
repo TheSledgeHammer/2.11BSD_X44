@@ -585,7 +585,7 @@ bpfwrite(dev, uio, ioflag)
 		return (0);
 
 	error = bpf_movein(uio, (int)d->bd_bif->bif_dlt, ifp->if_mtu, &m,
-		(struct sockaddr *) &dst);
+		(struct sockaddr *)&dst);
 	if (error)
 		return (error);
 
@@ -1408,7 +1408,6 @@ bpfattach(ifp, dlt, hdrlen)
 	struct ifnet *ifp;
 	u_int dlt, hdrlen;
 {
-
 	bpfattach2(ifp, dlt, hdrlen, &ifp->if_bpf);
 }
 

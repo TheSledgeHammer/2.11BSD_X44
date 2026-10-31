@@ -86,7 +86,7 @@ lpm_create(int flags)
 {
 	lpm_t *lpm = malloc(sizeof(*lpm), M_DEVBUF, flags);
 	lpm->flags = flags;
-	return lpm;
+	return (lpm);
 }
 
 void
@@ -155,7 +155,7 @@ hashmap_rehash(lpm_hmap_t *hmap, unsigned size, int flags)
 	}
 	bucket = calloc(hashsize, sizeof(lpm_ent_t *), M_DEVBUF, flags);
 	if (bucket == NULL)
-		return false;
+		return (false);
 	for (unsigned n = 0; n < hmap->hashsize; n++) {
 		lpm_ent_t *list = hmap->bucket[n];
 
@@ -173,7 +173,7 @@ hashmap_rehash(lpm_hmap_t *hmap, unsigned size, int flags)
 		free(hmap->bucket, M_DEVBUF);
 	hmap->bucket = bucket;
 	hmap->hashsize = hashsize;
-	return true;
+	return (true);
 }
 
 static lpm_ent_t *
@@ -185,7 +185,7 @@ hashmap_insert(lpm_hmap_t *hmap, const void *key, size_t len, int flags)
 	lpm_ent_t *entry;
 
 	if (hmap->hashsize < target && !hashmap_rehash(hmap, target, flags)) {
-		return NULL;
+		return (NULL);
 	}
 
 	hash = fnv1a_hash(key, len);
@@ -193,7 +193,7 @@ hashmap_insert(lpm_hmap_t *hmap, const void *key, size_t len, int flags)
 	entry = hmap->bucket[i];
 	while (entry) {
 		if (entry->len == len && memcmp(entry->key, key, len) == 0) {
-			return entry;
+			return (entry);
 		}
 		entry = entry->next;
 	}
@@ -206,7 +206,7 @@ hashmap_insert(lpm_hmap_t *hmap, const void *key, size_t len, int flags)
 		hmap->bucket[i] = entry;
 		hmap->nitems++;
 	}
-	return entry;
+	return (entry);
 }
 
 static lpm_ent_t *
@@ -217,17 +217,17 @@ hashmap_lookup(lpm_hmap_t *hmap, const void *key, size_t len)
 	lpm_ent_t *entry;
 
 	if (hmap->hashsize == 0) {
-		return NULL;
+		return (NULL);
 	}
 	entry = hmap->bucket[i];
 
 	while (entry) {
 		if (entry->len == len && memcmp(entry->key, key, len) == 0) {
-			return entry;
+			return (entry);
 		}
 		entry = entry->next;
 	}
-	return NULL;
+	return (NULL);
 }
 
 static int
@@ -238,7 +238,7 @@ hashmap_remove(lpm_hmap_t *hmap, const void *key, size_t len)
 	lpm_ent_t *prev = NULL, *entry;
 
 	if (hmap->hashsize == 0) {
-		return -1;
+		return (-1);
 	}
 	entry = hmap->bucket[i];
 
@@ -250,12 +250,12 @@ hashmap_remove(lpm_hmap_t *hmap, const void *key, size_t len)
 				hmap->bucket[i] = entry->next;
 			}
 			free(entry, M_DEVBUF);
-			return 0;
+			return (0);
 		}
 		prev = entry;
 		entry = entry->next;
 	}
-	return -1;
+	return (-1);
 }
 
 /*
@@ -301,12 +301,13 @@ lpm_insert(lpm_t *lpm, const void *addr,
 	const unsigned nwords = LPM_TO_WORDS(len);
 	uint32_t prefix[LPM_MAX_WORDS];
 	lpm_ent_t *entry;
+
 	KASSERT(len == 4 || len == 16);
 
 	if (preflen == 0) {
 		/* 0-length prefix is a special case. */
 		lpm->defvals[LPM_LEN_IDX(len)] = val;
-		return 0;
+		return (0);
 	}
 	compute_prefix(nwords, addr, preflen, prefix);
 	entry = hashmap_insert(&lpm->prefix[preflen], prefix, len, lpm->flags);
@@ -314,9 +315,9 @@ lpm_insert(lpm_t *lpm, const void *addr,
 		const unsigned n = --preflen >> 5;
 		lpm->bitmask[n] |= 0x80000000U >> (preflen & 31);
 		entry->val = val;
-		return 0;
+		return (0);
 	}
-	return -1;
+	return (-1);
 }
 
 /*
@@ -331,10 +332,10 @@ lpm_remove(lpm_t *lpm, const void *addr, size_t len, unsigned preflen)
 
 	if (preflen == 0) {
 		lpm->defvals[LPM_LEN_IDX(len)] = NULL;
-		return 0;
+		return (0);
 	}
 	compute_prefix(nwords, addr, preflen, prefix);
-	return hashmap_remove(&lpm->prefix[preflen], prefix, len);
+	return (hashmap_remove(&lpm->prefix[preflen], prefix, len));
 }
 
 /*
@@ -360,12 +361,12 @@ lpm_lookup(lpm_t *lpm, const void *addr, size_t len)
 			compute_prefix(nwords, addr, preflen, prefix);
 			entry = hashmap_lookup(hmap, prefix, len);
 			if (entry) {
-				return entry->val;
+				return (entry->val);
 			}
 			bitmask &= ~(1U << i);
 		}
 	}
-	return lpm->defvals[LPM_LEN_IDX(len)];
+	return (lpm->defvals[LPM_LEN_IDX(len)]);
 }
 
 /*
@@ -382,14 +383,14 @@ lpm_lookup_prefix(lpm_t *lpm, const void *addr, size_t len, unsigned preflen)
 	KASSERT(len == 4 || len == 16);
 
 	if (preflen == 0) {
-		return lpm->defvals[LPM_LEN_IDX(len)];
+		return (lpm->defvals[LPM_LEN_IDX(len)]);
 	}
 	compute_prefix(nwords, addr, preflen, prefix);
 	entry = hashmap_lookup(&lpm->prefix[preflen], prefix, len);
 	if (entry) {
-		return entry->val;
+		return (entry->val);
 	}
-	return NULL;
+	return (NULL);
 }
 
 #if !defined(_KERNEL)
@@ -417,15 +418,15 @@ lpm_strtobin(const char *cidr, void *addr, size_t *len, unsigned *preflen)
 
 	if (inet_pton(AF_INET6, buf, addr) == 1) {
 		*len = 16;
-		return 0;
+		return (0);
 	}
 	if (inet_pton(AF_INET, buf, addr) == 1) {
 		if (*preflen == LPM_MAX_PREFIX) {
 			*preflen = 32;
 		}
 		*len = 4;
-		return 0;
+		return (0);
 	}
-	return -1;
+	return (-1);
 }
 #endif

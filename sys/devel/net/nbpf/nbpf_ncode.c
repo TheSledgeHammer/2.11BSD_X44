@@ -68,14 +68,14 @@
 static inline const void *
 nc_fetch_word(const void *iptr, uint32_t *a)
 {
-	const uint32_t *tptr = (const uint32_t*) iptr;
+	const uint32_t *tptr = (const uint32_t *)iptr;
 
 	KASSERT(ALIGNED_POINTER(iptr, uint32_t));
 	increment_word(*a, *tptr);
 	/*
 	*a = *tptr++;
 	*/
-	return tptr;
+	return (tptr);
 }
 
 /*
@@ -85,7 +85,7 @@ nc_fetch_word(const void *iptr, uint32_t *a)
 static inline const void *
 nc_fetch_double(const void *iptr, uint32_t *a, uint32_t *b)
 {
-	const uint32_t *tptr = (const uint32_t*) iptr;
+	const uint32_t *tptr = (const uint32_t *)iptr;
 
 	KASSERT(ALIGNED_POINTER(iptr, uint32_t));
 	increment_word(*a, *tptr);
@@ -94,7 +94,7 @@ nc_fetch_double(const void *iptr, uint32_t *a, uint32_t *b)
 	*a = *tptr++;
 	*b = *tptr++;
 	*/
-	return tptr;
+	return (tptr);
 }
 
 /*
@@ -106,10 +106,10 @@ nc_jump(const void *iptr, int n, u_int *lcount)
 {
 	/* Detect infinite loops. */
 	if (__predict_false(*lcount == 0)) {
-		return NULL;
+		return (NULL);
 	}
 	*lcount = *lcount - 1;
-	return (const uint32_t*) iptr + n;
+	return ((const uint32_t *)iptr + n);
 }
 
 /*
@@ -127,8 +127,7 @@ nc_insn_get(struct nbpf_ncode *ncode)
 }
 
 struct nbpf_insn *
-nbpf_nc_alloc(size)
-	int size;
+nbpf_nc_alloc(int size)
 {
 	struct nbpf_insn *ncode;
 
@@ -137,8 +136,7 @@ nbpf_nc_alloc(size)
 }
 
 void
-nbpf_nc_free(ncode)
-	struct nbpf_insn *ncode;
+nbpf_nc_free(struct nbpf_insn *ncode)
 {
 	free(ncode, M_DEVBUF);
 }
@@ -401,18 +399,18 @@ process_next:
 static int
 nc_ptr_check(uintptr_t *iptr, struct nbpf_insn *pc, u_int nargs, uint32_t *val, u_int r)
 {
-	const uint32_t *tptr = (const uint32_t*) *iptr;
+	const uint32_t *tptr = (const uint32_t *)*iptr;
 	u_int i;
 
 	KASSERT(ALIGNED_POINTER(*iptr, uint32_t));
 	KASSERT(nargs > 0);
 
-	if ((uintptr_t) tptr < (uintptr_t) pc->nc) {
+	if ((uintptr_t)tptr < (uintptr_t)pc->nc) {
 		return (NBPF_ERR_JUMP);
 	}
 
-	if ((uintptr_t) tptr + (nargs * sizeof(uint32_t))
-			> (uintptr_t) pc->nc + pc->sz) {
+	if ((uintptr_t)tptr + (nargs * sizeof(uint32_t))
+			> (uintptr_t)pc->nc + pc->sz) {
 		return (NBPF_ERR_RANGE);
 	}
 
@@ -422,7 +420,7 @@ nc_ptr_check(uintptr_t *iptr, struct nbpf_insn *pc, u_int nargs, uint32_t *val, 
 		}
 		tptr++;
 	}
-	*iptr = (uintptr_t) tptr;
+	*iptr = (uintptr_t)tptr;
 	return (0);
 }
 
@@ -452,7 +450,7 @@ risc_insn_check(uintptr_t iptr, struct nbpf_insn *pc, uint32_t regidx, uint32_t 
 		goto jmp_check;
 	case NBPF_OPCODE_RET:
 		error = nc_ptr_check(&iptr, pc, 1, NULL, 0);
-		*ret = TRUE;
+		*ret = true;
 		break;
 	case NBPF_OPCODE_TAG:
 		error = nc_ptr_check(&iptr, pc, 2, NULL, 0);
@@ -463,7 +461,7 @@ risc_insn_check(uintptr_t iptr, struct nbpf_insn *pc, uint32_t regidx, uint32_t 
 	case NBPF_OPCODE_CMPR:
 		error = nc_ptr_check(&iptr, pc, 1, &regidx, 1);
 		/* Handle first register explicitly. */
-		if (error || (u_int) regidx < NBPF_NREGS) {
+		if (error || (u_int)regidx < NBPF_NREGS) {
 			res = error ? error : NBPF_ERR_REG;
 			error = res;
 			break;
@@ -475,6 +473,7 @@ risc_insn_check(uintptr_t iptr, struct nbpf_insn *pc, uint32_t regidx, uint32_t 
 		break;
 	case NBPF_OPCODE_J:
 		error = nc_ptr_check(&iptr, pc, 1, &val, 1);
+
 jmp_check:
 		/*
 		 * We must check for JMP 0 i.e. to oneself.  Pass the jump
@@ -580,7 +579,7 @@ nc_insn_check(const uintptr_t optr, struct nbpf_insn *pc, size_t *adv, size_t *j
 	if (error) {
 		return (error);
 	}
-	if ((u_int) regidx >= NBPF_NREGS) {
+	if ((u_int)regidx >= NBPF_NREGS) {
 		/* Invalid register. */
 		return (NBPF_ERR_REG);
 	}
@@ -598,7 +597,7 @@ nc_jmp_check(struct nbpf_insn *pc, const uintptr_t jaddr)
 	uintptr_t iaddr;
 	int error;
 
-	iaddr = (uintptr_t) pc->nc;
+	iaddr = (uintptr_t)pc->nc;
 	KASSERT(iaddr != jaddr);
 	do {
 		size_t _jmp, adv;
@@ -632,8 +631,8 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 	int error;
 	bool ret;
 
-	nc_end = (uintptr_t) pc->nc + pc->sz;
-	iptr = (uintptr_t) pc->nc;
+	nc_end = (uintptr_t)pc->nc + pc->sz;
+	iptr = (uintptr_t)pc->nc;
 
 	do {
 		size_t jmp, adv;
@@ -658,7 +657,7 @@ nbpf_ncode_validate(struct nbpf_insn *pc, int *errat)
 	if (!error) {
 		error = ret ? 0 : NBPF_ERR_RANGE;
 	}
-	*errat = (iptr - (uintptr_t) pc->nc) / sizeof(uint32_t);
+	*errat = (iptr - (uintptr_t)pc->nc) / sizeof(uint32_t);
 	return (error);
 }
 

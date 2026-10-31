@@ -103,38 +103,15 @@ struct nbpf_table {
 
 #define	NBPF_ADDRLEN2TREE(alen)	((alen) >> 4)
 
-static nbpf_tblent_t tblent_cache;
 extern const pt_tree_ops_t nbpf_table_ptree_ops;
 
 #define M_NBPF 	M_DEVBUF
-
-/*
- * TODO FIX ME
- */
-void
-nbpf_tableset_init(void)
-{
-	nbpf_tblent_t *cache;
-
-	cache = &tblent_cache;
-	if (cache == NULL) {
-		cache = malloc(sizeof(nbpf_tblent_t), M_NBPF, M_NOWAIT);
-		tblent_cache = *cache;
-	}
-}
-
-void
-nbpf_tableset_fini(void)
-{
-	free(&tblent_cache, M_NBPF);
-}
 
 nbpf_tableset_t *
 nbpf_tableset_create(void)
 {
 	const size_t sz = NBPF_TABLE_SLOTS * sizeof(nbpf_table_t *);
-	nbpf_tableset_t ts = (nbpf_tableset_t)malloc(sz, M_NBPF, M_NOWAIT);
-	return (ts);
+	return (malloc(sz, M_NBPF, M_NOWAIT));
 }
 
 void
@@ -297,7 +274,7 @@ nbpf_table_create(u_int tid, int type)
 
 	KASSERT((u_int)tid < NBPF_TABLE_SLOTS);
 
-	t = nbpf_tableset_malloc(sizeof(nbpf_table_t));
+	t =  malloc(sizeof(nbpf_table_t), M_NBPF, M_NOWAIT);
 	switch (type) {
 	case NBPF_TABLE_LPM:
 		t->t_lpm = lpm_create(M_NOWAIT);
@@ -309,11 +286,11 @@ nbpf_table_create(u_int tid, int type)
 		break;
 	case NBPF_TABLE_TREE:
 		ptree_init(&t->t_tree[0], &nbpf_table_ptree_ops,
-				(void*) (sizeof(struct in_addr) / sizeof(uint32_t)),
+				(void *)(sizeof(struct in_addr) / sizeof(uint32_t)),
 				offsetof(nbpf_tblent_t, te_entry.node),
 				offsetof(nbpf_tblent_t, te_addr));
 		ptree_init(&t->t_tree[1], &nbpf_table_ptree_ops,
-				(void*) (sizeof(struct in6_addr) / sizeof(uint32_t)),
+				(void *)(sizeof(struct in6_addr) / sizeof(uint32_t)),
 				offsetof(nbpf_tblent_t, te_entry.node),
 				offsetof(nbpf_tblent_t, te_addr));
 		break;
@@ -380,11 +357,8 @@ nbpf_table_check(const nbpf_tableset_t *tset, u_int tid, int type)
 	if (tset[tid] != NULL) {
 		return EEXIST;
 	}
-	switch (type) {
-	case NBPF_TABLE_LPM:
-	case NBPF_TABLE_HASH:
-	case NBPF_TABLE_TREE:
-	default:
+	if (type != NBPF_TABLE_LPM && type != NBPF_TABLE_HASH
+			&& type != NBPF_TABLE_TREE) {
 		return EINVAL;
 	}
 	return 0;
@@ -661,5 +635,117 @@ nbpf_table_ioctl(struct nbpf_ioctl_table *nbiot, nbpf_tableset_t *tblset)
 		error = EINVAL;
 		break;
 	}
+	return (error);
+}
+
+static int
+table_ent_copyout(nbpf_tblent_t *ent, nbpf_netmask_t mask, void *ubuf, size_t len, size_t *off)
+{
+	void *ubufp = (uint8_t *)ubuf + *off;
+	struct nbpf_ioctl_table uent;
+
+	if ((*off += sizeof(struct nbpf_ioctl_table)) > len) {
+		return (ENOMEM);
+	}
+	uent.nct_alen = ent->te_alen;
+	memcpy(&uent.nct_addr, &ent->te_addr, sizeof(nbpf_addr_t));
+	uent.nct_mask = mask;
+	return (copyout(&uent, ubufp, sizeof(struct nbpf_ioctl_table)));
+}
+
+static int
+table_tree_list(pt_tree_t *tree, nbpf_netmask_t maxmask, void *ubuf, size_t len, size_t *off)
+{
+	nbpf_tblent_t *ent = NULL;
+	int error = 0;
+
+	while ((ent = ptree_iterate(tree, ent, PT_ASCENDING)) != NULL) {
+		pt_bitlen_t blen;
+
+		if (!ptree_mask_node_p(tree, ent, &blen)) {
+			blen = maxmask;
+		}
+		error = table_ent_copyout(ent, blen, ubuf, len, off);
+		if (error) {
+			break;
+		}
+	}
+	return (error);
+}
+
+static int
+table_lpm_list(nbpf_table_t *t, nbpf_netmask_t maxmask, void *ubuf, size_t len, size_t *off)
+{
+	nbpf_tblent_t *ent = NULL;
+	int error = 0;
+
+	LIST_FOREACH(ent, t->t_list, te_entry.listent) {
+		simple_rwlock_unlock(&t->t_lock);
+		if (maxmask == 0) {
+			error = table_ent_copyout(ent, ent->te_preflen, ubuf, len, off);
+		} else {
+			error = table_ent_copyout(ent, maxmask, ubuf, len, off);
+		}
+		simple_rwlock_lock(&t->t_lock);
+		if (error) {
+			break;
+		}
+	}
+	return (error);
+}
+
+static int
+table_hash_list(nbpf_table_t *t, nbpf_netmask_t maxmask, void *ubuf, size_t len, size_t *off)
+{
+	int error = 0;
+
+	for (unsigned n = 0; n <= t->t_hashmask; n++) {
+		nbpf_tblent_t *ent;
+
+		LIST_FOREACH(ent, &t->t_hashl[n], te_entry.hashq) {
+			error = table_ent_copyout(ent, maxmask, ubuf, len, off);
+			if (error) {
+				break;
+			}
+		}
+	}
+	return (error);
+}
+
+/*
+ * nbpf_table_list: copy a list of all table entries into a userspace buffer.
+ */
+int
+nbpf_table_list(nbpf_tableset_t *tset, u_int tid, void *ubuf, size_t len)
+{
+	nbpf_table_t *t;
+	size_t off = 0;
+	int error = 0;
+
+	t = tset[tid];
+	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
+		return (EINVAL);
+	}
+
+	simple_rwlock_lock(&t->t_lock);
+	switch (t->t_type) {
+	case NBPF_TABLE_LPM:
+		error = table_lpm_list(t, 0, ubuf, len, &off);
+		break;
+	case NBPF_TABLE_HASH:
+		error = table_hash_list(t, 0, ubuf, len, &off);
+		break;
+	case NBPF_TABLE_TREE:
+		error = table_tree_list(&t->t_tree[0], 32, ubuf, len, &off);
+		if (error) {
+			break;
+		}
+		error = table_tree_list(&t->t_tree[1], 128, ubuf, len, &off);
+		break;
+	default:
+		KASSERT(false);
+	}
+	simple_rwlock_unlock(&t->t_lock);
+
 	return (error);
 }
