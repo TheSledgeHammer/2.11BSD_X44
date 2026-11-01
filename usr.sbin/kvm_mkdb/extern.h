@@ -97,8 +97,8 @@
 /* #define	NLIST_ELF64 */
 #endif
 
-void	create_knlist(const char *, DB *);
-void	punt(void);
+void create_knlist(const char *, DB *);
+void punt(void);
 int	testdb(void);
 
 #ifdef NLIST_AOUT

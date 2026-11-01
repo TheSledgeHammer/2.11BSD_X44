@@ -90,29 +90,27 @@ __RCSID("$NetBSD: kvm_mkdb.c,v 1.19 2003/08/07 11:25:23 agc Exp $");
 
 #include "extern.h"
 
-	int	main(int, char **);
-static	void	usage(void);
+int main(int, char **);
+static void usage(void);
 
 HASHINFO openinfo = {
-	4096,		/* bsize */
-	128,		/* ffactor */
-	1024,		/* nelem */
-	2048 * 1024,	/* cachesize */
-	NULL,		/* hash() */
-	0		/* lorder */
+		4096,		/* bsize */
+		128,		/* ffactor */
+		1024,		/* nelem */
+		2048 * 1024,/* cachesize */
+		NULL,		/* hash() */
+		0			/* lorder */
 };
 
 static DB *db;
-static char *dbname = NULL;
+static const char *dbname = NULL;
 static char dbtemp[MAXPATHLEN];
 
 int
-main(argc, argv)
-	int argc;
-	char *argv[];
+main(int argc, char *argv[])
 {
 	int ch;
-	char *nlistpath;
+	const char *nlistpath;
 	int docheck = 0;
 	int fd;
 
@@ -182,14 +180,14 @@ main(argc, argv)
 }
 
 void
-usage()
+usage(void)
 {
 	(void)fprintf(stderr, "usage: kvm_mkdb [-o database] [file]\n");
 	exit(1);
 }
 
 void
-punt()
+punt(void)
 {
 
 	if (db != NULL)

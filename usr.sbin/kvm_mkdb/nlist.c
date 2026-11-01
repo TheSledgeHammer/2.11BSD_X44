@@ -87,7 +87,7 @@ __RCSID("$NetBSD: nlist.c,v 1.19 2003/08/07 11:25:23 agc Exp $");
 #include "extern.h"
 
 static struct {
-        int     (*knlist)(const char *, DB *);
+        int (*knlist)(const char *, DB *);
 } knlist_fmts[] = {
 #ifdef NLIST_AOUT
         {       create_knlist_aout          },
@@ -107,15 +107,13 @@ static struct {
 };
         
 void
-create_knlist(name, db)
-	const char *name;
-	DB *db;
+create_knlist(const char *name, DB *db)
 {
 	int i;
 
-        for (i = 0; i < sizeof(knlist_fmts) / sizeof(knlist_fmts[0]); i++)
-                if ((*knlist_fmts[i].knlist)(name, db) != -1)
-                        return;
+	for (i = 0; i < sizeof(knlist_fmts) / sizeof(knlist_fmts[0]); i++)
+		if ((*knlist_fmts[i].knlist)(name, db) != -1)
+			return;
 	warnx("%s: file format not recognized", name);
 	punt();
 }

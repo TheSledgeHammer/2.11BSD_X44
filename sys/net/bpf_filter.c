@@ -86,9 +86,7 @@ static int m_xword(struct mbuf *, int, int *);
 static int m_xhalf(struct mbuf *, int, int *);
 
 static int
-m_xword(m, k, err)
-	struct mbuf *m;
-	int k, *err;
+m_xword(struct mbuf *m, int k, int *err)
 {
 	int len;
 	u_char *cp, *np;
@@ -122,9 +120,7 @@ m_xword(m, k, err)
 }
 
 static int
-m_xhalf(m, k, err)
-	struct mbuf *m;
-	int k, *err;
+m_xhalf(struct mbuf *m, int k, int *err)
 {
 	int len;
 	u_char *cp;
@@ -157,11 +153,7 @@ m_xhalf(m, k, err)
  * buflen is the amount of data present
  */
 u_int
-bpf_filter(pc, p, wirelen, buflen)
-	struct bpf_insn *pc;
-	u_char *p;
-	u_int wirelen;
-	u_int buflen;
+bpf_filter(struct bpf_insn *pc, u_char *p, u_int wirelen, u_int buflen)
 {
 	u_int32_t A, X;
 	int k;
@@ -486,9 +478,7 @@ bpf_filter(pc, p, wirelen, buflen)
  * Otherwise, a bogus program could easily crash the system.
  */
 int
-bpf_validate(f, len)
-	struct bpf_insn *f;
-	int len;
+bpf_validate(struct bpf_insn *f, int len)
 {
 	int i;
 	struct bpf_insn *p;

@@ -71,15 +71,13 @@ typedef struct nlist NLIST;
 	} while (0)
 
 #define	check(off, size)	((off < 0) || (off + size > mappedsize))
-#define	BAD			do { rv = -1; goto out; } while (0)
-#define	BADUNMAP		do { rv = -1; goto unmap; } while (0)
+#define	BAD					do { rv = -1; goto out; } while (0)
+#define	BADUNMAP			do { rv = -1; goto unmap; } while (0)
 
 static const char *kfile;
 
 int
-create_knlist_coff(name, db)
-	const char *name;
-	DB *db;
+create_knlist_coff(const char *name, DB *db)
 {
 	struct coff_filehdr *filehdrp;
 	struct coff_aouthdr *aouthdrp;

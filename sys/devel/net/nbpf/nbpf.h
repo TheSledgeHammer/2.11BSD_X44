@@ -74,6 +74,7 @@ struct nbpf_tblent;
 typedef struct nbpf_table	nbpf_table_t;
 typedef struct nbpf_tblent 	nbpf_tblent_t;
 typedef nbpf_table_t 		*nbpf_tableset_t;
+typedef struct nbpf_ioctl_table nbpf_ioctl_table_t;
 
 typedef void 				nbpf_buf_t;
 typedef void 				nbpf_cache_t;
@@ -261,6 +262,6 @@ int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *,
 int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
 
-int     nbpf_table_ioctl(struct nbpf_ioctl_table *, nbpf_tableset_t *);
+int     nbpf_table_ioctl(nbpf_ioctl_table_t *, nbpf_tableset_t *);
 int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
 #endif /* _NET_NBPF_H_ */

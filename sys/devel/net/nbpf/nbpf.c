@@ -71,7 +71,7 @@ nbpf_state_init(struct nbpf_d *nd, int layer, int tag)
 
 	state = (nbpf_state_t *)malloc(sizeof(*state), M_DEVBUF, M_DONTWAIT);
 	nbpf_set_tag(state, tag);
-	nd->nbd_state = state;
+	nd->nbd_statehandler = state;
 	nd->nbd_layer = layer;
 }
 
@@ -103,8 +103,8 @@ nbpf_attachd(struct nbpf_d *nd)
 void
 nbpf_detachd(struct nbpf_d *nd)
 {
-	if (nd->nbd_state != NULL) {
-		free(nd->nbd_state, M_DEVBUF);
+	if (nd->nbd_statehandler != NULL) {
+		free(nd->nbd_statehandler, M_DEVBUF);
 	}
 	if (nd != NULL) {
 		nbpf_d_free(nd);
@@ -212,9 +212,11 @@ nbpf_setf(struct nbpf_d *nd, struct nbpf_program *fp, int *error)
 }
 
 void
-nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int slen, void *(*cpfn)(void *, const void *, size_t))
+nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, void *(*cpfn)(void *, const void *, size_t))
 {
-	slen = nbpf_filter(nd->nbd_state, nd->nbd_filter, nd->nbd_nbuf, nd->nbd_layer);
+	u_int slen;
+
+	slen = nbpf_filter(nd->nbd_statehandler, nd->nbd_filter, nd->nbd_nbuf, nd->nbd_layer);
 	if (slen != 0) {
 		nbpf_catchpacket(nd, pkt, pktlen, slen, (NBPC_IP46 | NBPC_LAYER4), cpfn);
 	}
@@ -230,6 +232,7 @@ nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int slen, void *
 /*
  * TODO:
  * - updating the bpf
+ * -
  */
 static void
 nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, int flags, void *(*cpfn)(void *, const void *, size_t))
@@ -239,7 +242,7 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	int mflags, error;
 	struct bpf_hdr *hp;
 
-	mflags = (nd->nbd_state->nbs_info & flags);
+	mflags = (nd->nbd_statehandler->nbs_info & flags);
 	nptr = nbpf_dataptr(pkt);
 	hdrlen = nd->nbd_bif->bif_hdrlen;
 	totlen = hdrlen + min(snaplen, pktlen);
@@ -253,7 +256,10 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 			return;
 		}
 		BPF_ROTATE_BUFFERS(nd);
+		//bpf_wakeup();
 		curlen = 0;
+	} else if (nd->nbd_immediate || nd->nbd_state == BPF_TIMED_OUT) {
+		//bpf_wakeup();
 	}
 
 	/*
@@ -269,9 +275,9 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	 * Append the nbpf buffer
 	 */
 	nbpf_set_d(nd, pkt, (u_char *)(hp + hdrlen), hp->bh_caplen, hp->bh_hdrlen);
-	error = nbpf_advcache(nd->nbd_state, nd->nbd_nbuf, nd->nbd_nptr, nd->nbd_nlen, nd->nbd_nsize, pkt, cpfn);
+	error = nbpf_advcache(nd->nbd_statehandler, nd->nbd_nbuf, nd->nbd_nptr, nd->nbd_nlen, nd->nbd_nsize, pkt, cpfn);
 	if (error == mflags) {
-		nd->nbd_state->nbs_info = 0;
+		nd->nbd_statehandler->nbs_info = 0;
 	}
 	nd->nbd_slen = (curlen + totlen);
 }

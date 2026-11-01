@@ -56,7 +56,7 @@ __RCSID("$NetBSD: testdb.c,v 1.10 2003/08/07 11:25:23 agc Exp $");
 
 /* Return true if the db file is valid, else false */
 int
-testdb()
+testdb(void)
 {
 	DB *db;
 	int ret, dbversionlen;
@@ -97,7 +97,8 @@ testdb()
 	/* If they match, we win */
 	ret = memcmp(dbversion, kversion, dbversionlen) == 0;
 
-close:	if (db)
+close:
+	if (db)
 		(void)(db->close)(db);
 	return (ret);
 }

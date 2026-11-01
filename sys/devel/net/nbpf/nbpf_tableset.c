@@ -298,7 +298,7 @@ nbpf_table_create(u_int tid, int type)
 		t->t_hashl = hashinit(NBPF_TABLE_HSIZE, M_NBPF, &t->t_hashmask);
 		if (t->t_hashl == NULL) {
 			free(t, M_NBPF);
-			return NULL;
+			return (NULL);
 		}
 		break;
 	default:
@@ -308,7 +308,7 @@ nbpf_table_create(u_int tid, int type)
 	t->t_type = type;
 	t->t_id = tid;
 
-	return t;
+	return (t);
 }
 
 /*
@@ -352,26 +352,26 @@ int
 nbpf_table_check(const nbpf_tableset_t *tset, u_int tid, int type)
 {
 	if ((u_int)tid >= NBPF_TABLE_SLOTS) {
-		return EINVAL;
+		return (EINVAL);
 	}
 	if (tset[tid] != NULL) {
-		return EEXIST;
+		return (EEXIST);
 	}
 	if (type != NBPF_TABLE_LPM && type != NBPF_TABLE_HASH
 			&& type != NBPF_TABLE_TREE) {
-		return EINVAL;
+		return (EINVAL);
 	}
-	return 0;
+	return (0);
 }
 
 static int
 table_cidr_check(const u_int aidx, const nbpf_addr_t *addr, const nbpf_netmask_t mask)
 {
 	if (mask > NBPF_MAX_NETMASK && mask != NBPF_NO_NETMASK) {
-		return EINVAL;
+		return (EINVAL);
 	}
 	if (aidx > 1) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	/*
@@ -379,9 +379,9 @@ table_cidr_check(const u_int aidx, const nbpf_addr_t *addr, const nbpf_netmask_t
 	 * If it is a host - shall use NPF_NO_NETMASK.
 	 */
 	if (mask >= (aidx ? 128 : 32) && mask != NBPF_NO_NETMASK) {
-		return EINVAL;
+		return (EINVAL);
 	}
-	return 0;
+	return (0);
 }
 
 /*
@@ -397,12 +397,12 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 
 	t = tset[tid];
 	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	error = table_cidr_check(aidx, addr, mask);
 	if (error) {
-		return error;
+		return (error);
 	}
 	ent = malloc(sizeof(*ent), M_NBPF, M_NOWAIT);
 	memcpy(&ent->te_addr, addr, alen);
@@ -471,7 +471,7 @@ nbpf_table_insert(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	if (error) {
 		free(ent, M_NBPF);
 	}
-	return error;
+	return (error);
 }
 
 /*
@@ -487,12 +487,12 @@ nbpf_table_remove(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 
 	error = table_cidr_check(aidx, addr, mask);
 	if (error) {
-		return error;
+		return (error);
 	}
 
 	t = tset[tid];
 	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	simple_rwlock_lock(&t->t_lock);
@@ -534,10 +534,10 @@ nbpf_table_remove(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	simple_rwlock_unlock(&t->t_lock);
 
 	if (ent == NULL) {
-		return ENOENT;
+		return (ENOENT);
 	}
 	free(ent, M_NBPF);
-	return 0;
+	return (0);
 }
 
 /*
@@ -552,12 +552,12 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	nbpf_table_t *t;
 
 	if (__predict_false(aidx > 1)) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	t = tset[tid];
 	if ((u_int)tid >= NBPF_TABLE_SLOTS || t == NULL) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	simple_rwlock_lock(&t->t_lock);
@@ -582,7 +582,7 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	}
 	simple_rwlock_unlock(&t->t_lock);
 
-	return ent ? 0 : ENOENT;
+	return (ent ? 0 : ENOENT);
 }
 
 int
@@ -614,7 +614,7 @@ nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl)
 }
 
 int
-nbpf_table_ioctl(struct nbpf_ioctl_table *nbiot, nbpf_tableset_t *tblset)
+nbpf_table_ioctl(nbpf_ioctl_table_t *nbiot, nbpf_tableset_t *tblset)
 {
 	int error;
 
@@ -638,19 +638,21 @@ nbpf_table_ioctl(struct nbpf_ioctl_table *nbiot, nbpf_tableset_t *tblset)
 	return (error);
 }
 
+#ifdef notyet
+
 static int
 table_ent_copyout(nbpf_tblent_t *ent, nbpf_netmask_t mask, void *ubuf, size_t len, size_t *off)
 {
 	void *ubufp = (uint8_t *)ubuf + *off;
-	struct nbpf_ioctl_table uent;
+	nbpf_ioctl_table_t uent;
 
-	if ((*off += sizeof(struct nbpf_ioctl_table)) > len) {
+	if ((*off += sizeof(nbpf_ioctl_table_t)) > len) {
 		return (ENOMEM);
 	}
 	uent.nct_alen = ent->te_alen;
 	memcpy(&uent.nct_addr, &ent->te_addr, sizeof(nbpf_addr_t));
 	uent.nct_mask = mask;
-	return (copyout(&uent, ubufp, sizeof(struct nbpf_ioctl_table)));
+	return (copyout(&uent, ubufp, sizeof(nbpf_ioctl_table_t)));
 }
 
 static int
@@ -749,3 +751,4 @@ nbpf_table_list(nbpf_tableset_t *tset, u_int tid, void *ubuf, size_t len)
 
 	return (error);
 }
+#endif

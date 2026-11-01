@@ -99,14 +99,12 @@ typedef struct nlist NLIST;
 	} while (0)
 
 static void	badread(int, char *);
-static u_long	get_kerntext(const char *kfn);
+static u_long get_kerntext(const char *kfn);
 
 static const char *kfile;
 
 int
-create_knlist_aout(name, db)
-	const char *name;
-	DB *db;
+create_knlist_aout(const char *name, DB *db)
 {
 	int nsyms;
 	//struct exec ebuf;
@@ -241,9 +239,7 @@ create_knlist_aout(name, db)
 }
 
 static void
-badread(nr, p)
-	int nr;
-	char *p;
+badread(int nr, char *p)
 {
 	if (nr < 0) {
 		warn("%s", kfile);
@@ -259,8 +255,7 @@ badread(nr, p)
  * when the standard symbol name is not found.
  */
 static u_long
-get_kerntext(name)
-	const char *name;
+get_kerntext(const char *name)
 {
 	struct nlist nl[2];
 

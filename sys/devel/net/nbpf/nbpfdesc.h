@@ -39,12 +39,12 @@ struct nbpf_program {
 /* nbpf descriptor: */
 struct nbpf_d {
 	/* nbpf tables */
-	nbpf_tableset_t		*nbd_tableset;
-	nbpf_table_t 		*nbd_table;
+	nbpf_tableset_t		*nbd_tableset;		/* nbpf tableset */
+	nbpf_table_t 		*nbd_table;			/* nbpf table */
 
 	/* nbpf ncode */
-	nbpf_state_t		*nbd_state;
-	struct nbpf_insn 	*nbd_filter;
+	nbpf_state_t		*nbd_statehandler;
+	struct nbpf_insn 	*nbd_filter;		/* nbpf filter code */
 	int 				nbd_layer;
 
 	/* nbpf buffer */
@@ -67,6 +67,8 @@ struct nbpf_d {
 #define nbd_rcount		nbd_bpf->bd_rcount
 #define nbd_dcount		nbd_bpf->bd_dcount
 #define nbd_ccount		nbd_bpf->bd_ccount
+#define nbd_state		nbd_bpf->bd_state
+#define nbd_immediate	nbd_bpf->bd_immediate
 };
 
 #define BIOCSTBLF	_IOW('B', 115, struct nbpf_program) /* nbpf tblset */
@@ -77,6 +79,6 @@ void nbpf_d_free(struct nbpf_d *);
 void nbpf_attachd(struct nbpf_d *);
 void nbpf_detachd(struct nbpf_d *);
 int	nbpfioctl(struct nbpf_d *, dev_t, u_long, caddr_t, int, struct proc *);
-void nbpf_filtncatch(struct bpf_d *, struct nbpf_d *, u_char *, u_int, u_int, void *(*)(void *, const void *, size_t));
+void nbpf_filtncatch(struct bpf_d *, struct nbpf_d *, u_char *, u_int, void *(*)(void *, const void *, size_t));
 
 #endif /* _NBPF_NBPFDESC_H_ */

@@ -84,15 +84,13 @@ typedef struct nlist NLIST;
 	} while (0)
 
 #define	check(off, size)	((off < 0) || (off + size > mappedsize))
-#define	BAD			do { rv = -1; goto out; } while (0)
-#define	BADUNMAP		do { rv = -1; goto unmap; } while (0)
+#define	BAD					do { rv = -1; goto out; } while (0)
+#define	BADUNMAP			do { rv = -1; goto unmap; } while (0)
 
 static const char *kfile;
 
 int
-ELFNAMEEND(create_knlist)(name, db)
-	const char *name;
-	DB *db;
+ELFNAMEEND(create_knlist)(const char *name, DB *db)
 {
 	struct stat st;
 	struct nlist nbuf;
