@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)lfs.c	8.5 (Berkeley) 5/24/95";
 #include <ufs/lfs/lfs.h>
 
 #include <unistd.h>
+#include <err.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -407,6 +408,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 
 	ipagepsize = 0;
 	sumpsize = 0;
+	dip = malloc(sizeof(*dip));
 	if (!(bsize = block_size))
 		bsize = DFL_LFSBLOCK;
 	if (!(fsize = frag_size))
@@ -802,6 +804,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 		put(fd, seg_seek, sp, LFS_SUMMARY_SIZE);
 	}
 	free(ipagep);
+	free(dip);
 	close(fd);
 	return (0);
 }
@@ -809,20 +812,12 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 /*
  * Allocate an inode on the disk
  */
-
-static union dinode *node;
-
 static void
 dinode_alloc(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
 {
 	struct ufs1_dinode *dp1;
 	struct ufs2_dinode *dp2;
 
-	node = malloc(sizeof(*node));
-	if (node != NULL) {
-		dp = node;
-		memset(dp, 0, sizeof(*dp));
-	}
 	if (ufs2) {
 		dp2 = (struct ufs2_dinode *)dpagep;
 		memset(dp2, 0, lfsp->lfs_bsize);
@@ -832,7 +827,6 @@ dinode_alloc(caddr_t dpagep, union dinode *dp, struct lfs *lfsp, int ufs2)
 		memset(dp1, 0, lfsp->lfs_bsize);
 		*dp1 = dp->dp1;
 	}
-	free(node);
 }
 
 static ufs2_daddr_t
