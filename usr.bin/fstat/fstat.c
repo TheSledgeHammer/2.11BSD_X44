@@ -46,10 +46,10 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #endif
 #endif /* not lint */
 
+#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/proc.h>
-#include <sys/user.h>
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
@@ -672,7 +672,7 @@ socktrans(struct socket *sock, int i)
 			if (so.so_pcb) {
 				if (kvm_read(kd, (u_long) so.so_pcb, (char *)&inpcb,
 						sizeof(struct inpcb)) != sizeof(struct inpcb)) {
-					dprintf("can't read inpcb at %x\n", so.so_pcb);
+					dprintf("can't read inpcb at %p\n", so.so_pcb);
 					goto bad;
 				}
 				inet_addrstr(lbuf, sizeof(lbuf), &inpcb.inp_laddr, ntohs(inpcb.inp_lport));
@@ -683,7 +683,7 @@ socktrans(struct socket *sock, int i)
 			if (so.so_pcb) {
 				if (kvm_read(kd, (u_long) so.so_pcb, (char *)&inpcb,
 						sizeof(struct inpcb)) != sizeof(struct inpcb)) {
-					dprintf("can't read inpcb at %x\n", so.so_pcb);
+					dprintf("can't read inpcb at %p\n", so.so_pcb);
 					goto bad;
 				}
 				inet_addrstr(lbuf, sizeof(lbuf), &inpcb.inp_laddr, ntohs(inpcb.inp_lport));
@@ -730,7 +730,7 @@ socktrans(struct socket *sock, int i)
 			printf(" %x", (int)so.so_pcb);
 			if (kvm_read(kd, (u_long) so.so_pcb, (char *)&unpcb,
 					sizeof(struct unpcb)) != sizeof(struct unpcb)) {
-				dprintf("can't read unpcb at %x\n", so.so_pcb);
+				dprintf("can't read unpcb at %p\n", so.so_pcb);
 				goto bad;
 			}
 			if (unpcb.unp_conn) {
@@ -749,7 +749,7 @@ socktrans(struct socket *sock, int i)
 		break;
 	default:
 		/* print protocol number and socket address */
-		printf(" %d %x", proto.pr_protocol, (int)sock);
+		printf(" %d %d", proto.pr_protocol, (int)sock);
 	}
 	printf("\n");
 	return;
