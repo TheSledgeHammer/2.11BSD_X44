@@ -116,7 +116,9 @@ char *progname, *special;
 
 static struct disklabel *getdisklabel(char *, int);
 static struct disklabel *debug_readlabel(int);
+#ifdef notyet
 static void rewritelabel(char *, int, struct disklabel *);
+#endif
 static void usage(void);
 
 int
@@ -125,10 +127,11 @@ main(int argc, char *argv[])
 	register int ch;
 	register struct partition *pp;
 	register struct disklabel *lp;
-	struct partition oldpartition;
+	//struct partition oldpartition;
 	struct stat st;
 	int debug, lfs, fsi, fso, segsize;
-	char *cp, *opstring;
+	char *cp;
+    const char *opstring;
 
 	if (progname == strrchr(*argv, '/'))
 		++progname;
@@ -371,6 +374,8 @@ debug_readlabel(int fd)
 	return(&lab);
 }
 
+#ifdef notyet
+
 static void
 rewritelabel(char *s, int fd, struct disklabel *lp)
 {
@@ -421,6 +426,8 @@ rewritelabel(char *s, int fd, struct disklabel *lp)
 	}
 #endif
 }
+
+#endif
 
 void
 usage(void)
