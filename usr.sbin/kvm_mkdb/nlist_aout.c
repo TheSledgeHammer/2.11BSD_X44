@@ -98,7 +98,7 @@ typedef struct nlist NLIST;
 		punt();							\
 	} while (0)
 
-static void	badread(int, char *);
+static void	badread(int, const char *);
 static u_long get_kerntext(const char *kfn);
 
 static const char *kfile;
@@ -217,7 +217,7 @@ create_knlist_aout(const char *name, DB *db)
 			if (fgets(buf, sizeof(buf), fp) == NULL)
 				badfmt("corrupted string table");
 
-			key.data = (u_char *)VRS_KEY;
+			key.data = __UNCONST(VRS_KEY);
 			key.size = sizeof(VRS_KEY) - 1;
 			data.data = (u_char *)buf;
 			data.size = strlen(buf);
@@ -239,13 +239,13 @@ create_knlist_aout(const char *name, DB *db)
 }
 
 static void
-badread(int nr, char *p)
+badread(int nr, const char *p)
 {
 	if (nr < 0) {
 		warn("%s", kfile);
 		punt();
 	}
-	badfmt(__UNCONST(p));
+	badfmt(p);
 }
 
 /*
