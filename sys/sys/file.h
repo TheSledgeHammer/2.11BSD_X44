@@ -44,7 +44,7 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-#ifdef _KERNEL
+#if defined(_KERNEL)
 #include <sys/queue.h>
 #include <sys/lock.h>
 
@@ -97,6 +97,13 @@ extern struct filelist  filehead;	/* head of list of open files */
 extern int 				maxfiles;	/* kernel limit on number of open files */
 extern int 				nfiles;		/* actual number of open files */
 
+#define	DTYPE_VNODE		1	/* file */
+#define	DTYPE_SOCKET	2	/* communications endpoint */
+#define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
+#define	DTYPE_KQUEUE	4	/* event queue */
+#define DTYPE_CRYPTO 	5	/* crypto */
+#define	DTYPE_MISC		6	/* misc file descriptor type */
+
 /*
  * Access call.
  */
@@ -113,7 +120,7 @@ extern int 				nfiles;		/* actual number of open files */
 #define	L_SET		0	/* absolute offset */
 #define	L_INCR		1	/* relative to current offset */
 #define	L_XTND		2	/* relative to end of file */
-#endif
+#endif /* !_POSIX_SOURCE */
 
 #define	GETF(fp, fd) { 													\
 	if ((unsigned)(fd) >= NOFILE || ((fp) = u.u_ofile[fd]) == NULL) { 	\
@@ -139,7 +146,7 @@ extern int 				nfiles;		/* actual number of open files */
 } while (/* CONSTCOND */ 0)
 #else
 #define	FILE_USE_CHECK(fp, str)		/* nothing */
-#endif
+#endif /* DIAGNOSTIC */
 
 /*
  * FILE_USE() must be called with the file lock held.
@@ -165,13 +172,6 @@ extern int 				nfiles;		/* actual number of open files */
 	}																	\
 	simple_unlock(&(fp)->f_slock);										\
 } while (/* CONSTCOND */ 0)
-
-#define	DTYPE_VNODE		1	/* file */
-#define	DTYPE_SOCKET	2	/* communications endpoint */
-#define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
-#define	DTYPE_KQUEUE	4	/* event queue */
-#define DTYPE_CRYPTO 	5	/* crypto */
-#define	DTYPE_MISC		6	/* misc file descriptor type */
 
 int fset(struct file *, int, int);
 int fgetown(struct file *, int *);
