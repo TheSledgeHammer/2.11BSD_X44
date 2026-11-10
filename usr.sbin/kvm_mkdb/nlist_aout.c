@@ -245,7 +245,7 @@ badread(int nr, char *p)
 		warn("%s", kfile);
 		punt();
 	}
-	badfmt(__UNCOST(p));
+	badfmt(__UNCONST(p));
 }
 
 /*
@@ -260,7 +260,7 @@ get_kerntext(const char *name)
 	struct nlist nl[2];
 
 	memset((caddr_t)nl, 0, sizeof(nl));
-	nl[0].n_un.n_name = __UNCOST("_kernel_text");
+	nl[0].n_un.n_name = __UNCONST("_kernel_text");
 
 	if (nlist(name, nl) != 0) {
 		warnx("%s: %s symbol missing",
