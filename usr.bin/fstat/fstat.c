@@ -60,8 +60,8 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/sysctl.h>
 #include <sys/filedesc.h>
 #define	_KERNEL
-#include <sys/mount.h>
 #include <sys/file.h>
+#include <sys/mount.h>
 #undef _KERNEL
 
 #include <net/route.h>
