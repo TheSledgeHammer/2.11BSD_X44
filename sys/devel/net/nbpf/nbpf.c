@@ -114,18 +114,62 @@ nbpf_detachd(struct nbpf_d *nd)
 int
 nbpfioctl(struct nbpf_d *nd, dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 {
-	int error, ret;
+	int s, error = 0, ret;
 
 	switch (cmd) {
-	case BIOCSETF:
+	/*
+	 * Get buffer len [for read()].
+	 */
+	case BIOCGNBLEN:
+		*(u_int *)addr = nd->nbd_nbufsize;
+		break;
+
+	/*
+	 * Set buffer length.
+	 */
+	case BIOCSNBLEN:
+		if (nd->nbd_bif != 0) {
+			error = EINVAL;
+		} else {
+			u_int size = *(u_int *)addr;
+
+			if (size > bpf_maxbufsize) {
+				*(u_int *)addr = size = bpf_maxbufsize;
+			} else if (size < BPF_MINBUFSIZE) {
+				*(u_int *)addr = size = BPF_MINBUFSIZE;
+			}
+			nd->nbd_nbufsize = size;
+		}
+		break;
+
+	/*
+	 * Set link layer read filter.
+	 */
+	case BIOCSETNF:
 		error = nbpf_setf(nd, (struct nbpf_program *)addr, &ret);
 		if (ret != 0) {
 			error = ret;
 		}
 		break;
 
-	case BIOCSTBLF:
+	/*
+	 * Flush read packet buffer.
+	 */
+	case BIOCNBFLUSH:
+		s = splnet();
+		nbpf_reset_d(nd);
+		splx(s);
+		break;
+
+	/*
+	 * NBPF state table controls.
+	 */
+	case BIOCSETTBLNF:
 		error = nbpf_table_ioctl((struct nbpf_ioctl_table *)addr, nd->nbd_tableset);
+		break;
+
+	default:
+		error = EINVAL;
 		break;
 	}
 	return (error);
@@ -150,9 +194,12 @@ nbpf_reset_d(struct nbpf_d *nd)
 }
 
 int
-nbpf_allocbufs(struct nbpf_d *nd)
+nbpf_allocbufs(struct nbpf_d *nd, size_t nbufsize)
 {
-	nd->nbd_nbuf = malloc(nd->nbd_bufsize, M_DEVBUF, M_NOWAIT);
+	if (nd->nbd_nbufsize == 0) {
+		nd->nbd_nbufsize = nbufsize;
+	}
+	nd->nbd_nbuf = malloc(nbufsize, M_DEVBUF, M_NOWAIT);
 	if (!nd->nbd_nbuf) {
 		free(nd->nbd_nbuf, M_DEVBUF);
 		return (ENOBUFS);
@@ -212,13 +259,13 @@ nbpf_setf(struct nbpf_d *nd, struct nbpf_program *fp, int *error)
 }
 
 void
-nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, void *(*cpfn)(void *, const void *, size_t))
+nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, void *(*cpfn)(void *, const void *, size_t), int *do_wakeup)
 {
 	u_int slen;
 
 	slen = nbpf_filter(nd->nbd_statehandler, nd->nbd_filter, nd->nbd_nbuf, nd->nbd_layer);
 	if (slen != 0) {
-		nbpf_catchpacket(nd, pkt, pktlen, slen, (NBPC_IP46 | NBPC_LAYER4), cpfn);
+		nbpf_catchpacket(nd, pkt, pktlen, slen, (NBPC_IP46 | NBPC_LAYER4), cpfn, do_wakeup);
 	}
 }
 
@@ -230,36 +277,42 @@ nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, void *(*cpfn)(void
 	(nd)->nbd_fbuf = 0;
 
 /*
+ * GOAL:
+ * - To provide a secondary filter on buffer overflows in catchpacket.
+ *
  * TODO:
- * - updating the bpf
- * -
+ * - fix up: to work better within bpf's catchpacket.
+ * - perform check on nbuf, if overflow increment bpf dcount and return
+ *
  */
 static void
-nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, int flags, void *(*cpfn)(void *, const void *, size_t))
+nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, int flags, void *(*cpfn)(void *, const void *, size_t), int *do_wakeup)
 {
 	void *nptr;
 	int totlen, hdrlen, curlen;
 	int mflags, error;
 	struct bpf_hdr *hp;
 
+	++nd->nbd_ccount;
+
 	mflags = (nd->nbd_statehandler->nbs_info & flags);
 	nptr = nbpf_dataptr(pkt);
 	hdrlen = nd->nbd_bif->bif_hdrlen;
 	totlen = hdrlen + min(snaplen, pktlen);
-	if (totlen > nd->nbd_bufsize) {
-		totlen = nd->nbd_bufsize;
+	if (totlen > nd->nbd_nbufsize) {
+		totlen = nd->nbd_nbufsize;
 	}
 	curlen = BPF_WORDALIGN(nd->nbd_slen);
-	if (curlen + totlen > nd->nbd_bufsize) {
+	if (curlen + totlen > nd->nbd_nbufsize) {
 		if (nd->nbd_fbuf == 0) {
 			++nd->nbd_dcount;
 			return;
 		}
 		BPF_ROTATE_BUFFERS(nd);
-		//bpf_wakeup();
+		*do_wakeup = 1;
 		curlen = 0;
 	} else if (nd->nbd_immediate || nd->nbd_state == BPF_TIMED_OUT) {
-		//bpf_wakeup();
+		*do_wakeup = 1;
 	}
 
 	/*
@@ -274,12 +327,12 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	/*
 	 * Append the nbpf buffer
 	 */
-	nbpf_set_d(nd, pkt, (u_char *)(hp + hdrlen), hp->bh_caplen, hp->bh_hdrlen);
+	nbpf_set_d(nd, (u_char *)(hp + hdrlen), nptr, hp->bh_caplen, hp->bh_hdrlen);
 	error = nbpf_advcache(nd->nbd_statehandler, nd->nbd_nbuf, nd->nbd_nptr, nd->nbd_nlen, nd->nbd_nsize, pkt, cpfn);
 	if (error == mflags) {
 		nd->nbd_statehandler->nbs_info = 0;
 	}
-	nd->nbd_slen = (curlen + totlen);
+	nd->nbd_bpf->bd_slen = (curlen + totlen);
 }
 
 static int
@@ -299,13 +352,13 @@ nbpf_advcache(nbpf_state_t *state, nbpf_buf_t *nbuf, void *nptr, u_int hdrlen, s
 		if (error) {
 			return (error);
 		}
-		cpfn(nbuf, buf, hlen);
+		(*cpfn)(nbuf, buf, hlen);
 	} else {
 		error = nbpf_advstore(&nbuf, &nptr, hdrlen, size, buf);
 		if (error) {
 			return (error);
 		}
-		cpfn(nbuf, buf, hdrlen);
+		(*cpfn)(nbuf, buf, hdrlen);
 	}
 	return (flags);
 }

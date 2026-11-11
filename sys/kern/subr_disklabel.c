@@ -179,7 +179,7 @@ writedisklabel(dev, strat, lp)
 	if ((error = biowait(bp))) {
 		goto done;
 	}
-	for (dlp = (struct disklabel*) bp->b_data; dlp <= (struct disklabel*) ((char*) bp->b_data + lp->d_secsize - sizeof(*dlp)); dlp = (struct disklabel*) ((char*) dlp + sizeof(long))) {
+	for (dlp = (struct disklabel *)bp->b_data; dlp <= (struct disklabel *) ((char *) bp->b_data + lp->d_secsize - sizeof(*dlp)); dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
 		if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) == 0) {
 			bcopy(lp, dlp, sizeof (struct disklabel));
 			*dlp = *lp;
@@ -209,13 +209,14 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	void 	*data;
 	int		flag;
 {
-  register struct disklabel *lp;
-  int error;
-  disk->dk_label = LABELDESC;
-  bcopy((struct disklabel *)disk->dk_label, lp, sizeof (*lp));
+	register struct disklabel *lp;
+	int error;
 
-  switch (cmd) {
-  	case DIOCSBAD:
+	disk->dk_label = LABELDESC;
+	bcopy((struct disklabel *)disk->dk_label, lp, sizeof(*lp));
+
+	switch (cmd) {
+	case DIOCSBAD:
   		if ((flag & FWRITE) == 0) {
   			return (EBADF);
   		}
@@ -225,16 +226,16 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
   		return (0);
 
 	case DIOCGDINFO:
-		bcopy(lp, (struct disklabel*) data, sizeof(*lp));
+		bcopy(lp, (struct disklabel *)data, sizeof(*lp));
 		return (0);
 
 	case DIOCGPART:
-		((struct partinfo*) data)->disklab = (struct disklabel*) disk->dk_label;
-		((struct partinfo*) data)->part = &disk->dk_parts[dkpart(dev)];
+		((struct partinfo *)data)->disklab = (struct disklabel *)disk->dk_label;
+		((struct partinfo *)data)->part = &disk->dk_parts[dkpart(dev)];
 		return (0);
 
 	case DIOCKLABEL:
-		if (*(int *) data) {
+		if (*(int *)data) {
 			disk->dk_flags |= DKF_KLABEL;
 		} else {
 			disk->dk_flags &= ~DKF_KLABEL;
@@ -245,7 +246,7 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0) {
 			return (EBADF);
 		}
-		if (*(int*) data) {
+		if (*(int *)data) {
 			disk->dk_flags |= DKF_WLABEL;
 		} else {
 			disk->dk_flags &= ~DKF_WLABEL;
@@ -256,11 +257,11 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0) {
 			return (EBADF);
 		}
-		error = setdisklabel(lp, (struct disklabel*) data,
+		error = setdisklabel(lp, (struct disklabel *)data,
 				disk->dk_flags & DKF_WLABEL ? 0 : disk->dk_openmask);
 		if (error == 0) {
 			disk->dk_label = LABELDESC;
-			bcopy((struct disklabel*) disk->dk_label, lp, sizeof(*lp));
+			bcopy((struct disklabel *)disk->dk_label, lp, sizeof(*lp));
 			bcopy(&lp->d_partitions, &disk->dk_parts, sizeof(lp->d_partitions));
 		}
 		return (error);
@@ -269,13 +270,13 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0) {
 			return (EBADF);
 		}
-		error = setdisklabel(lp, (struct disklabel*) data,
+		error = setdisklabel(lp, (struct disklabel *)data,
 				disk->dk_flags & DKF_WLABEL ? 0 : disk->dk_openmask);
 		if (error) {
 			return (error);
 		}
 		disk->dk_label = LABELDESC;
-		bcopy((struct disklabel*) disk->dk_label, lp, sizeof(*lp));
+		bcopy((struct disklabel *)disk->dk_label, lp, sizeof(*lp));
 		bcopy(&lp->d_partitions, &disk->dk_parts, sizeof(lp->d_partitions));
 
 		flag = disk->dk_flags;

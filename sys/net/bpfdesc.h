@@ -89,6 +89,7 @@ struct bpf_d {
 	struct callout	bd_callout;	/* for BPF timeouts with select */
 #ifdef NBPF
 	struct nbpf_d  	*bd_nbpf;    /* nbpf extension structure */
+	int 			bd_use_nbpf;
 #endif /* NBPF */
 };
 

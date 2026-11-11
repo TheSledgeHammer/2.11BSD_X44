@@ -408,7 +408,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 
 	ipagepsize = 0;
 	sumpsize = 0;
-    dip = malloc(sizeof(*dip));
+	dip = malloc(sizeof(*dip));
 	if (!(bsize = block_size))
 		bsize = DFL_LFSBLOCK;
 	if (!(fsize = frag_size))
@@ -804,7 +804,7 @@ build_lfs(struct lfs *lfsp, int fd, struct disklabel *lp, struct partition *part
 		put(fd, seg_seek, sp, LFS_SUMMARY_SIZE);
 	}
 	free(ipagep);
-    free(dip);
+	free(dip);
 	close(fd);
 	return (0);
 }
@@ -891,7 +891,7 @@ lfs_segcopy(void *sump, size_t sumpsize, size_t size)
 
 static void
 lfs_pagecopy(void *ipagep, size_t ipagepsize, size_t size)
-{   
-    ipagepsize += size;
+{
+	ipagepsize += size;
 	memmove(ipagep, &ipagepsize, sizeof(ipagepsize));
 }

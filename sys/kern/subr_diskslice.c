@@ -108,7 +108,6 @@ dsinit(disk, dev, lp, sspp)
 	struct disklabel *lp;
 	struct diskslices **sspp;
 {
-
 	return (mbrinit(disk, dev, lp, sspp));
 }
 
@@ -302,11 +301,12 @@ dsgone(sspp)
  * is subject to the same restriction as dsopen().
  */
 int
-dsioctl(diskp, dev, cmd, data, flags, sspp)
+dsioctl(diskp, strat, dev, cmd, data, flags, sspp)
 	struct dkdevice *diskp;
+	void (*strat)(struct buf *);
 	dev_t	dev;
-	u_long	cmd;
-	caddr_t	data;
+	int	cmd;
+	void *data;
 	int	flags;
 	struct diskslices **sspp;
 {
@@ -326,23 +326,23 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 	case DIOCGDINFO:
 		if (lp == NULL)
 			return (EINVAL);
-		*(struct disklabel*) data = *lp;
+		*(struct disklabel *)data = *lp;
 		return (0);
 
 	case DIOCGMEDIASIZE:
 		if (lp == NULL) {
-			*(off_t*) data = (off_t) sp->ds_size * ssp->dss_secsize;
+			*(off_t *)data = (off_t)sp->ds_size * ssp->dss_secsize;
 		} else {
-			*(off_t*) data = (off_t) lp->d_partitions[dkpart(dev)].p_size * lp->d_secsize;
+			*(off_t *)data = (off_t)lp->d_partitions[dkpart(dev)].p_size * lp->d_secsize;
 		}
 		return (0);
 
 	case DIOCGSECTORSIZE:
-		*(u_int*) data = ssp->dss_secsize;
+		*(u_int *)data = ssp->dss_secsize;
 		return (0);
 
 	case DIOCGSLICEINFO:
-		bcopy(ssp, data, (char*) &ssp->dss_slices[ssp->dss_nslices] - (char*) ssp);
+		bcopy(ssp, data, (char *)&ssp->dss_slices[ssp->dss_nslices] - (char *)ssp);
 		return (0);
 
 	case DIOCSDINFO:
@@ -352,9 +352,9 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 			return (EBADF);
 		lp = malloc(sizeof *lp, M_DEVBUF, M_WAITOK);
 		if (sp->ds_label == NULL)
-			bzero(lp, sizeof *lp);
+			bzero(lp, sizeof(*lp));
 		else
-			bcopy(sp->ds_label, lp, sizeof *lp);
+			bcopy(sp->ds_label, lp, sizeof(*lp));
 		if (sp->ds_label == NULL)
 			openmask = 0;
 		else {
@@ -365,7 +365,7 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 				openmask |= ssp->dss_slices[COMPATIBILITY_SLICE].ds_openmask;
 			}
 		}
-		error = setdisklabel(lp, (struct disklabel*) data, (u_long) openmask);
+		error = setdisklabel(lp, (struct disklabel *)data, (u_long)openmask);
 		/* XXX why doesn't setdisklabel() check this? */
 		if (error == 0 && lp->d_partitions[RAW_PART].p_offset != 0) {
 			error = EXDEV;
@@ -444,7 +444,7 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 		return (0);
 
 	case DIOCWDINFO:
-		error = dsioctl(diskp, dev, DIOCSDINFO, data, flags, &ssp);
+		error = dsioctl(diskp, strat, dev, DIOCSDINFO, data, flags, &ssp);
 		if (error != 0) {
 			return (error);
 		}
@@ -454,25 +454,26 @@ dsioctl(diskp, dev, cmd, data, flags, sspp)
 		 */
 		old_wlabel = sp->ds_wlabel;
 		set_ds_wlabel(ssp, slice, TRUE);
-		error = writedisklabel(dev, diskp->dk_driver->d_strategy, sp->ds_label);
+		error = writedisklabel(dev, strat, sp->ds_label);
 		/* XXX should invalidate in-core label if write failed. */
 		set_ds_wlabel(ssp, slice, old_wlabel);
 		return (error);
 
 	case DIOCKLABEL:
-		set_ds_klabel(ssp, slice, *(int*) data != 0);
+		set_ds_klabel(ssp, slice, *(int *)data != 0);
 		return (0);
 
 	case DIOCWLABEL:
 		if (!(flags & FWRITE)) {
 			return (EBADF);
 		}
-		set_ds_wlabel(ssp, slice, *(int*) data != 0);
+		set_ds_wlabel(ssp, slice, *(int *)data != 0);
 		return (0);
 
 	default:
 		return (ENOIOCTL);
 	}
+	return (EINVAL);
 }
 
 static void
@@ -489,7 +490,7 @@ dsiodone(bp)
 	if (!(bp->b_flags & B_READ)
 			|| (!(bp->b_flags & B_ERROR) && bp->b_error == 0)) {
 		msg = fixlabel((char*) NULL, ic->ic_args[1].ia_ptr,
-				(struct disklabel*) (bp->b_data + ic->ic_args[0].ia_long),
+				(struct disklabel *)(bp->b_data + ic->ic_args[0].ia_long),
 				FALSE);
 		if (msg != NULL) {
 			printf("%s\n", msg);
@@ -662,7 +663,7 @@ dsopen(diskp, dev, mode, flags, lp)
 
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
-		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long) lp->d_secsize);
+		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long)lp->d_secsize);
 		return (EINVAL);
 	}
 
@@ -772,17 +773,17 @@ dssize(diskp, dev)
 	slice = dkslice(dev);
 	ssp = disk_slices(diskp, dev);
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
-		if ((*diskp->dk_driver->d_open)(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL) != 0) {
+		if ((*diskp->dk_driver->d_open)(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc *)NULL) != 0) {
 			return (-1);
 		}
-		(*diskp->dk_driver->d_close)(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc*) NULL);
+		(*diskp->dk_driver->d_close)(dev, FREAD, (S_IFCHR | S_IFBLK), (struct proc *)NULL);
 		ssp = disk_slices(diskp, dev);
 	}
 	lp = ssp->dss_slices[slice].ds_label;
 	if (lp == NULL) {
 		return (-1);
 	}
-	return ((int) lp->d_partitions[part].p_size);
+	return ((int)lp->d_partitions[part].p_size);
 }
 
 static void
@@ -799,7 +800,7 @@ free_ds_label(ssp, slice)
 		return;
 	}
 	free(lp, M_DEVBUF);
-	set_ds_label(ssp, slice, (struct disklabel*) NULL);
+	set_ds_label(ssp, slice, (struct disklabel *)NULL);
 }
 
 static char *
@@ -916,10 +917,11 @@ set_ds_label(ssp, slice, lp)
 	struct disklabel *lp;
 {
 	ssp->dss_slices[slice].ds_label = lp;
-	if (slice == COMPATIBILITY_SLICE)
+	if (slice == COMPATIBILITY_SLICE) {
 		ssp->dss_slices[ssp->dss_first_bsd_slice].ds_label = lp;
-	else if (slice == ssp->dss_first_bsd_slice)
+	} else if (slice == ssp->dss_first_bsd_slice) {
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_label = lp;
+	}
 }
 
 static void

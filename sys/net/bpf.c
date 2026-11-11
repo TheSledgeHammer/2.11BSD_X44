@@ -104,6 +104,12 @@ int bpf_maxbufsize = BPF_DFLTBUFSIZE;	/* XXX set dynamically, see above */
 struct bpf_if	*bpf_iflist;
 struct bpf_d	bpf_dtab[NBPFILTER];
 
+#ifdef NBPF
+#define bpf_enable_nbpf(d) 	((d)->bd_use_nbpf = 1)
+#define bpf_disable_nbpf(d) ((d)->bd_use_nbpf = 0)
+#endif /* NBPF */
+
+
 static int	bpf_allocbufs(struct bpf_d *);
 static void	bpf_freed(struct bpf_d *);
 static void	bpf_ifname(struct ifnet *, struct ifreq *);
@@ -115,6 +121,7 @@ static int	bpf_setif(struct bpf_d *, struct ifreq *);
 static void	bpf_timed_out(void *);
 static __inline void bpf_wakeup(struct bpf_d *);
 static void	catchpacket(struct bpf_d *, u_char *, u_int, u_int, void *(*)(void *, const void *, size_t));
+static void bpf_do_filter(struct bpf_d *d, u_char *, u_int, u_int , void *(*)(void *, const void *, size_t));
 static void	reset_d(struct bpf_d *);
 static int	bpf_getdltlist(struct bpf_d *, struct bpf_dltlist *);
 static int	bpf_setdlt(struct bpf_d *, u_int);
@@ -141,6 +148,17 @@ const struct cdevsw bpf_cdevsw = {
 		.d_discard = nodiscard,
 		.d_type = D_OTHER
 };
+
+#ifdef NBPF
+static bool_t
+bpf_can_execute_nbpf(struct bpf_d *d)
+{
+	if ((d->bd_use_nbpf == 1) && (d->bd_nbpf != NULL)) {
+		return (TRUE);
+	}
+	return (FALSE);
+}
+#endif /* NBPF */
 
 static int
 bpf_movein(struct uio *uio, int linktype, int mtu, struct mbuf **mp, struct sockaddr *sockp)
@@ -278,6 +296,12 @@ bpf_attachd(struct bpf_d *d, struct bpf_if *bp)
 	bp->bif_dlist = d;
 
 	*bp->bif_driverp = bp;
+
+#ifdef NBPF
+	/* setup nbpf */
+	bpf_enable_nbpf(d);
+	nbpf_attachd(d->bd_nbpf);
+#endif /* NBPF */
 }
 
 /*
@@ -323,6 +347,10 @@ bpf_detachd(struct bpf_d *d)
 		 */
 		*d->bd_bif->bif_driverp = 0;
 	d->bd_bif = 0;
+
+#ifdef NBPF
+	nbpf_detachd(d->bd_nbpf);
+#endif /* NBPF */
 }
 
 
@@ -349,7 +377,6 @@ bpfilterattach(int n)
 	for (i = 0; i < NBPFILTER; ++i) {
 		D_MARKFREE(&bpf_dtab[i]);
 	}
-
 }
 
 /*
@@ -621,6 +648,7 @@ extern struct bpf_insn *bpf_udp_filter;
  *  BIOGHDRCMPLT	Get "header already complete" flag.
  *  BIOSHDRCMPLT	Set "header already complete" flag.
  */
+
 /* ARGSUSED */
 int
 bpfioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
@@ -636,6 +664,28 @@ bpfioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 		callout_stop(&d->bd_callout);
 	d->bd_state = BPF_IDLE;
 	splx(s);
+
+#ifdef NBPF
+	switch (cmd) {
+	/* enable nbpf on the fly */
+	case BIOCSTARTNBPF:
+		bpf_enable_nbpf(d);
+		break;
+
+	/* disable nbpf on the fly */
+	case BIOCSTOPNBPF:
+		bpf_disable_nbpf(d);
+		break;
+
+	default:
+		d->bd_use_nbpf = use_nbpf_default;
+		break;
+	}
+
+	if (bpf_can_execute_nbpf(d) == TRUE) {
+		error = nbpfioctl(d->bd_nbpf, dev, cmd, addr, flag, p);
+	}
+#endif
 
 	switch (cmd) {
 
@@ -883,7 +933,7 @@ bpfioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 		d->bd_seesent = *(u_int *)addr;
 		break;
 	}	
-        switch (cmd) {
+       switch (cmd) {
 
 	default:
 		error = EINVAL;
@@ -1160,9 +1210,12 @@ bpf_tap(caddr_t arg, u_char *pkt, u_int pktlen)
 	bp = (struct bpf_if *)arg;
 	for (d = bp->bif_dlist; d != 0; d = d->bd_next) {
 		++d->bd_rcount;
+#ifdef notyet
 		slen = bpf_filter(d->bd_filter, pkt, pktlen, pktlen);
 		if (slen != 0)
 			catchpacket(d, pkt, pktlen, slen, memcpy);
+#endif
+		bpf_do_filter(d, pkt, pktlen, pktlen, memcpy);
 	}
 }
 
@@ -1222,10 +1275,60 @@ bpf_mtap(caddr_t arg, struct mbuf *m)
 		if (!d->bd_seesent && (m->m_pkthdr.rcvif == NULL))
 			continue;
 		++d->bd_rcount;
+#ifdef notyet
 		slen = bpf_filter(d->bd_filter, marg, pktlen, buflen);
 		if (slen != 0)
 			catchpacket(d, marg, pktlen, slen, cpfn);
+#endif
+		bpf_do_filter(d, marg, pktlen, buflen, cpfn);
 	}
+}
+
+static void
+bpf_do_filter(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(*cpfn)(void *, const void *, size_t))
+{
+	u_int slen;
+#ifdef NBPF
+	int filter_count = 0; /* check if a filter (bpf or nbpf) has already run */
+#endif /* NBPF */
+
+	slen = bpf_filter(d->bd_filter, pkt, pktlen, snaplen);
+	if (slen != 0) {
+		catchpacket(d, pkt, pktlen, slen, cpfn);
+#ifdef NBPF
+		filter_count = 1;
+#endif /* NBPF */
+	}
+
+#ifdef NBPF
+	/*
+	 * filter_count = 0; catchpacket has not run.
+	 * filter_count = 1: catchpacket has run.
+	 * We only check for both packet storage overflow and/or dropped packets,
+	 * if the filter_count is 0, as free buffer may produce a false
+	 * positive from catchpacket having already run.
+	 */
+
+	if (bpf_can_execute_nbpf(d) == TRUE) {
+		int do_wakeup = 0;
+
+		if (filter_count == 0) {
+			if ((d->bd_fbuf == 0) || (d->bd_dcount > 0)) {
+				nbpf_filtncatch(d->bd_nbpf, pkt, pktlen, snaplen, cpfn, &do_wakeup);
+				if (do_wakeup) {
+					bpf_wakeup(d);
+				}
+			}
+		} else {
+			if ((d->bd_dcount > 0)) {
+				nbpf_filtncatch(d->bd_nbpf, pkt, pktlen, snaplen, cpfn, &do_wakeup);
+				if (do_wakeup) {
+					bpf_wakeup(d);
+				}
+			}
+		}
+	}
+#endif /* NBPF */
 }
 
 /*
@@ -1242,6 +1345,7 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(*c
 	struct bpf_hdr *hp;
 	int totlen, curlen;
 	int hdrlen = d->bd_bif->bif_hdrlen;
+	int do_wakeup = 0;
 
 	++d->bd_ccount;
 	/*
@@ -1273,7 +1377,7 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(*c
 			return;
 		}
 		ROTATE_BUFFERS(d);
-		bpf_wakeup(d);
+		do_wakeup = 1;
 		curlen = 0;
 	} else if (d->bd_immediate || d->bd_state == BPF_TIMED_OUT) {
 		/*
@@ -1281,7 +1385,7 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(*c
 		 * already expired during a select call.  A packet
 		 * arrived, so the reader should be woken up.
 		 */
-		bpf_wakeup(d);
+		do_wakeup = 1;
 	}
 
 	/*
@@ -1291,11 +1395,16 @@ catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(*c
 	microtime(&hp->bh_tstamp);
 	hp->bh_datalen = pktlen;
 	hp->bh_hdrlen = hdrlen;
+
 	/*
 	 * Copy the packet data into the store buffer and update its length.
 	 */
 	(*cpfn)((u_char *)hp + hdrlen, pkt, (hp->bh_caplen = totlen - hdrlen));
 	d->bd_slen = curlen + totlen;
+
+	if (do_wakeup) {
+		bpf_wakeup(d);
+	}
 }
 
 /*
@@ -1315,6 +1424,12 @@ bpf_allocbufs(struct bpf_d *d)
 	}
 	d->bd_slen = 0;
 	d->bd_hlen = 0;
+
+#ifdef NBPF
+	if (bpf_can_execute_nbpf(d) == TRUE) {
+		return (nbpf_allocbufs(d->bd_nbpf, d->bd_bufsize));
+	}
+#endif /* NBPF */
 	return (0);
 }
 
@@ -1340,6 +1455,11 @@ bpf_freed(struct bpf_d *d)
 	if (d->bd_filter)
 		free((caddr_t)d->bd_filter, M_DEVBUF);
 
+#ifdef NBPF
+	if (bpf_can_execute_nbpf(d) == TRUE) {
+		nbpf_freed(d->bd_nbpf);
+	}
+#endif /* NBPF */
 	D_MARKFREE(d);
 }
 

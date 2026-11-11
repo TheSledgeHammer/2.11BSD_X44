@@ -135,6 +135,11 @@ struct bpf_version {
 #define BIOCGSEESENT	_IOR('B',120, u_int)
 #define BIOCSSEESENT	_IOW('B',121, u_int)
 
+#ifdef NBPF
+#define BIOCSTARTNBPF	_IOW('B',122, u_int)
+#define BIOCSTOPNBPF	_IOW('B',123, u_int)
+#endif
+
 /*
  * Structure prepended to each packet.
  */

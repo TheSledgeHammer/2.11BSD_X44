@@ -1274,7 +1274,7 @@ ccdioctl(dev, cmd, data, flag, p)
 	cs = &ccd_softc[unit];
 
 	error = ccdioctl_sc(cs, dev, cmd, data, flag, p);
-	if(error != 0) {
+	if (error != 0) {
 		error = ioctldisklabel(&cs->sc_dkdev, ccdstrategy, dev, cmd, data, flag);
 	}
 	return (error);
