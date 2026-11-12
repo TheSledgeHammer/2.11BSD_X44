@@ -158,8 +158,9 @@ ELFNAMEEND(create_knlist)(const char *name, DB *db)
 		int allocsiz, readsz;
 
 		if (isksyms != 0) {
-			if (ioctl(fd, KIOCGSIZE, &allocsiz) < 0)
-				BAD;
+//			if (ioctl(fd, KIOCGSIZE, &allocsiz) < 0)
+//				BAD;
+            allocsiz = st.st_size;
 			mappedsize = allocsiz;
 		} else
 			allocsiz = mappedsize;
@@ -170,7 +171,7 @@ ELFNAMEEND(create_knlist)(const char *name, DB *db)
 		if ((readsz = read(fd, mappedfile, mappedsize)) < 0)
 			BADUNMAP;
 
-		if (readsz != mappedsize) /* Sanity */
+		if ((size_t)readsz != mappedsize) /* Sanity */
 			BADUNMAP;
 	}
 	/*
@@ -321,7 +322,7 @@ ELFNAMEEND(create_knlist)(const char *name, DB *db)
 		 * entered string) of the version string.
 		 */
 		if (strcmp((char *)key.data, VRS_SYM) == 0) {
-			key.data = (u_char *)VRS_KEY;
+			key.data = __UNCONST(VRS_KEY);
 			key.size = sizeof(VRS_KEY) - 1;
 			/* Find the version string, relative to its section */
 			if (isksyms) {

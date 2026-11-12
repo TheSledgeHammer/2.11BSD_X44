@@ -73,7 +73,7 @@ testdb(void)
 		goto close;
 
 	/* Read the version out of the database */
-	rec.data = VRS_KEY;
+	rec.data = __UNCONST(VRS_KEY);
 	rec.size = sizeof(VRS_KEY) - 1;
 	if ((db->get)(db, &rec, &rec, 0))
 		goto close;

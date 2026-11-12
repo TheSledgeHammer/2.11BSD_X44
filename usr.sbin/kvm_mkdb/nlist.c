@@ -111,7 +111,7 @@ create_knlist(const char *name, DB *db)
 {
 	int i;
 
-	for (i = 0; i < sizeof(knlist_fmts) / sizeof(knlist_fmts[0]); i++)
+	for (i = 0; (u_int)i < sizeof(knlist_fmts) / sizeof(knlist_fmts[0]); i++)
 		if ((*knlist_fmts[i].knlist)(name, db) != -1)
 			return;
 	warnx("%s: file format not recognized", name);
