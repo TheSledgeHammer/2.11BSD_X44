@@ -110,9 +110,16 @@ struct bpf_d	bpf_dtab[NBPFILTER];
 
 #ifdef NBPF
 #define bpf_enable_nbpf(d) 	((d)->bd_use_nbpf = 1)
-#define bpf_disable_nbpf(d) ((d)->bd_use_nbpf = 0)
-#endif /* NBPF */
+/* NBPF Enable and Disable are setup once during boot */
+static int nbpf_initialized = 0;
 
+#define bpf_enable_nbpf(d) 	\
+	((d)->bd_use_nbpf = 1)
+
+#define bpf_disable_nbpf(d) \
+	((d)->bd_use_nbpf = 0)
+
+#endif /* NBPF */
 
 static int	bpf_allocbufs(struct bpf_d *);
 static void	bpf_freed(struct bpf_d *);
@@ -157,7 +164,7 @@ const struct cdevsw bpf_cdevsw = {
 static bool_t
 bpf_can_execute_nbpf(struct bpf_d *d)
 {
-	if ((d->bd_use_nbpf == 1) && (d->bd_nbpf != NULL)) {
+	if ((nbpf_initialized == 1) && (d->bd_use_nbpf == 1) && (d->bd_nbpf != NULL)) {
 		return (TRUE);
 	}
 	return (FALSE);
@@ -302,9 +309,9 @@ bpf_attachd(struct bpf_d *d, struct bpf_if *bp)
 	*bp->bif_driverp = bp;
 
 #ifdef NBPF
-	/* setup nbpf */
-	bpf_enable_nbpf(d);
-	nbpf_attachd(d->bd_nbpf, d);
+	if (bpf_can_execute_nbpf(d) == TRUE) {
+		nbpf_attachd(d->bd_nbpf, d);
+	}
 #endif /* NBPF */
 }
 
@@ -353,7 +360,9 @@ bpf_detachd(struct bpf_d *d)
 	d->bd_bif = 0;
 
 #ifdef NBPF
-	nbpf_detachd(d->bd_nbpf, d);
+	if (bpf_can_execute_nbpf(d) == TRUE) {
+		nbpf_detachd(d->bd_nbpf, d);
+	}
 #endif /* NBPF */
 }
 
@@ -375,6 +384,14 @@ void
 bpfilterattach(int n)
 {
 	int i;
+
+#ifdef NBPF
+	/* setup nbpf */
+	if (nbpf_initialized == 0) {
+		nbpf_initialized = 1;
+	}
+#endif /* NBPF */
+
 	/*
 	 * Mark all the descriptors free.
 	 */
@@ -651,6 +668,8 @@ extern struct bpf_insn *bpf_udp_filter;
  *  BIOCVERSION		Get filter language version.
  *  BIOGHDRCMPLT	Get "header already complete" flag.
  *  BIOSHDRCMPLT	Set "header already complete" flag.
+ *  BIOCSTOPNBPF	Stop NBPF running
+ *  BIOCSTARTNBPF	Start NBPF running
  */
 
 /* ARGSUSED */
@@ -671,23 +690,32 @@ bpfioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 
 #ifdef NBPF
 	switch (cmd) {
-	/* enable nbpf on the fly */
-	case BIOCSTARTNBPF:
-		bpf_enable_nbpf(d);
-		break;
-
 	/* disable nbpf on the fly */
 	case BIOCSTOPNBPF:
 		bpf_disable_nbpf(d);
 		break;
 
+	/* enable nbpf on the fly */
+	case BIOCSTARTNBPF:
+		/* FALLTHROUGH */
 	default:
-		d->bd_use_nbpf = use_nbpf_default;
+		bpf_enable_nbpf(d);
 		break;
 	}
 
 	if (bpf_can_execute_nbpf(d) == TRUE) {
-		error = nbpfioctl(d->bd_nbpf, dev, cmd, addr, flag, p);
+		switch (cmd) {
+		case BIOCGNBLEN:
+		case BIOCSNBLEN:
+		case BIOCSETNF:
+		case BIOCNBFLUSH:
+		case BIOCSETTBLNF:
+			error = nbpfioctl(d->bd_nbpf, dev, cmd, addr, flag, p);
+			if (error == 0) {
+				goto out;
+			}
+			break;
+		}
 	}
 #endif
 
@@ -964,6 +992,8 @@ bpfioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 		error = fgetown(d->bd_file, (int *)addr);
 		break;
 	}
+
+out:
 	return (error);
 }
 

@@ -133,6 +133,14 @@ nbpf_detachd(struct nbpf_d *nd, struct bpf_d *d)
 	}
 }
 
+/*
+ *  BIOCGNBLEN		Get buffer len [for read()].
+ *  BIOCSNBLEN		Set buffer len [for write()].
+ *  BIOCSETNF		Set ethernet read filter.
+ *  BIOCNBFLUSH		Flush read packet buffer.
+ *  BIOCSETTBLNF	State Table Controls [Add, Remove, Lookup]
+ */
+
 int
 nbpfioctl(struct nbpf_d *nd, dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 {
