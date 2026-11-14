@@ -79,6 +79,10 @@ __KERNEL_RCSID(0, "$NetBSD: bpf.c,v 1.90.2.2 2004/05/28 07:24:55 tron Exp $");
 #include <netinet/in.h>
 #include <netinet/if_inarp.h>
 
+#ifdef NBPF
+#include <net/nbpf/nbpfdesc.h>
+#endif /* NBPF */
+
 #ifndef BPF_BUFSIZE
 /*
  * 4096 is too small for FDDI frames. 8192 is too small for gigabit Ethernet
@@ -300,7 +304,7 @@ bpf_attachd(struct bpf_d *d, struct bpf_if *bp)
 #ifdef NBPF
 	/* setup nbpf */
 	bpf_enable_nbpf(d);
-	nbpf_attachd(d->bd_nbpf);
+	nbpf_attachd(d->bd_nbpf, d);
 #endif /* NBPF */
 }
 
@@ -349,7 +353,7 @@ bpf_detachd(struct bpf_d *d)
 	d->bd_bif = 0;
 
 #ifdef NBPF
-	nbpf_detachd(d->bd_nbpf);
+	nbpf_detachd(d->bd_nbpf, d);
 #endif /* NBPF */
 }
 
