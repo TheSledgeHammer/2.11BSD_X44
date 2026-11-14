@@ -3,7 +3,7 @@
 # Public Domain.
 #
 
-INCSDIR=	/usr/include/net
+INCSDIR=	/usr/include/net/npf
 INCS=		npf.h npf_ncode.h
 
 .include <bsd.kinc.mk>
