@@ -221,12 +221,12 @@ clnp_output(struct mbuf *m0, ...)
 		src = &isop->isop_laddr->siso_addr;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_OUTPUT]) {
+	IFDEBUG(D_OUTPUT)
 		printf("clnp_output: to %s", clnp_iso_addrp(dst));
 		printf(" from %s of %d bytes\n", clnp_iso_addrp(src), datalen);
 		printf("\toptions %p, flags x%x, isop_clnpcache %p\n",
 		    isop->isop_options, flags, isop->isop_clnpcache);
-	}
+	ENDDEBUG
 #endif
 
 	if (isop->isop_clnpcache != NULL) {
@@ -236,7 +236,7 @@ clnp_output(struct mbuf *m0, ...)
 	 *	Check if cache is valid ...
 	 */
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_OUTPUT]) {
+	IFDEBUG(D_OUTPUT)
 		printf("clnp_output: ck cache: clcp %p\n", clcp);
 		if (clcp != NULL) {
 			printf("\tclc_dst %s\n", clnp_iso_addrp(&clcp->clc_dst));
@@ -250,7 +250,7 @@ clnp_output(struct mbuf *m0, ...)
 			    clcp->clc_flags);
 			printf("\tclc_hdr %p\n", clcp->clc_hdr);
 		}
-	}
+	ENDDEBUG
 #endif
 	if ((clcp != NULL) &&	/* cache exists */
 	    (isop->isop_options == clcp->clc_options) &&	/* same options */
@@ -265,9 +265,9 @@ clnp_output(struct mbuf *m0, ...)
 		 */
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OUTPUT]) {
+		IFDEBUG(D_OUTPUT)
 			printf("clnp_output: using cache\n");
-		}
+		ENDDEBUG
 #endif
 
 		m = m_copy(clcp->clc_hdr, 0, (int)M_COPYALL);
@@ -306,9 +306,9 @@ clnp_output(struct mbuf *m0, ...)
 					 * don't want caching this time.
 					 */
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_OUTPUT]) {
+					IFDEBUG(D_OUTPUT)
 						printf("clnp_output: no mbufs to allocate to cache\n");
-					}
+					ENDDEBUG
 #endif
 					flags |= CLNP_NOCACHE;
 					clcp = &clc;
@@ -332,25 +332,25 @@ clnp_output(struct mbuf *m0, ...)
 					 * before we lose the pointer to it.
 					 */
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_OUTPUT]) {
+					IFDEBUG(D_OUTPUT)
 						printf(
 				    "clnp_output: freeing old clc_hdr %p\n",
 					       clcp->clc_hdr);
-					}
+					ENDDEBUG
 #endif
 					m_free(clcp->clc_hdr);
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_OUTPUT]) {
+					IFDEBUG(D_OUTPUT)
 						printf("clnp_output: freed old clc_hdr (done)\n");
-					}
+					ENDDEBUG
 #endif
 				}
 			}
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OUTPUT]) {
+		IFDEBUG(D_OUTPUT)
 			printf("clnp_output: NEW clcp %p\n", clcp);
-		}
+		ENDDEBUG
 #endif
 		bzero((caddr_t) clcp, sizeof(struct clnp_cache));
 
@@ -367,9 +367,9 @@ clnp_output(struct mbuf *m0, ...)
 			    (oidx->cni_qos_formatp) ||
 			    (oidx->cni_er_reason != ER_INVALREAS)) {
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_OUTPUT]) {
+				IFDEBUG(D_OUTPUT)
 					printf("clnp_output: pkt dropped - option unsupported\n");
-				}
+				ENDDEBUG
 #endif
 				m_freem(m0);
 				return (EINVAL);
@@ -380,9 +380,9 @@ clnp_output(struct mbuf *m0, ...)
 		 */
 		if ((flags & (CLNP_VFLAGS)) != flags) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_OUTPUT]) {
+			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: packet dropped - flags unsupported\n");
-			}
+			ENDDEBUG
 #endif
 			INCSTAT(cns_odropped);
 			m_freem(m0);
@@ -435,15 +435,15 @@ clnp_output(struct mbuf *m0, ...)
 		 */
 		if ((isop->isop_options) && CLNPSRCRT_VALID(oidx)) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_OUTPUT]) {
+			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: calling clnp_srcroute\n");
-			}
+			ENDDEBUG
 #endif
 			error = clnp_srcroute(isop->isop_options, oidx, &isop->isop_route,
 				  &clcp->clc_firsthop, &clcp->clc_ifa, dst);
 		} else {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_OUTPUT]) {
+			IFDEBUG(D_OUTPUT)
 
 			}
 #endif
@@ -452,11 +452,11 @@ clnp_output(struct mbuf *m0, ...)
 		}
 		if (error || (clcp->clc_ifa == 0)) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_OUTPUT]) {
+			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: route failed, errno %d\n", error);
 				printf("@clcp:\n");
 				dump_buf(clcp, sizeof(struct clnp_cache));
-			}
+		ENDDEBUG
 #endif
 			goto bad;
 		}
@@ -464,11 +464,11 @@ clnp_output(struct mbuf *m0, ...)
 		clcp->clc_ifp = clcp->clc_ifa->ia_ifp;	/* XXX */
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OUTPUT]) {
+		IFDEBUG(D_OUTPUT)
 			printf("clnp_output: packet routed to %s\n",
 			    clnp_iso_addrp(
 				 &satosiso(clcp->clc_firsthop)->siso_addr));
-		}
+		ENDDEBUG
 #endif
 
 		/*
@@ -479,9 +479,9 @@ clnp_output(struct mbuf *m0, ...)
 		if (src->isoa_len == 0) {
 			src = &(clcp->clc_ifa->ia_addr.siso_addr);
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_OUTPUT]) {
+			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: new src %s\n", clnp_iso_addrp(src));
-			}
+			ENDDEBUG
 #endif
 		}
 		/*
@@ -576,14 +576,14 @@ clnp_output(struct mbuf *m0, ...)
 		}
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_DUMPOUT]) {
+		IFDEBUG(D_DUMPOUT)
 			struct mbuf    *mdump = m;
 			printf("clnp_output: sending dg:\n");
 			while (mdump != NULL) {
 				dump_buf(mtod(mdump, caddr_t), mdump->m_len);
 				mdump = mdump->m_next;
 			}
-		}
+		ENDDEBUG
 #endif
 
 		error = SN_OUTPUT(clcp, m);

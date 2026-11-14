@@ -93,11 +93,11 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 				e->ev_union.EV_CR_TPDU.e_data, 0, 0);
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("CR datalen 0x%x data %p",
 				e->ev_union.EV_CR_TPDU.e_datalen,
 				e->ev_union.EV_CR_TPDU.e_data);
-		}
+		ENDDEBUG
 #endif
 		p->tp_refstate = REF_OPEN;	/* has timers */
 		p->tp_fcredit = e->ev_union.EV_CR_TPDU.e_cdt;
@@ -117,9 +117,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 			tptrace(TPPTmisc, "Confiming", p, 0, 0, 0);
 #endif
 #ifdef ARGO_DEBUG
-		    if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("Confirming connection: p");
-		}
+		ENDDEBUG
 #endif
 		soisconnected(p->tp_sock);
 		(void)tp_emit(CC_TPDU_type, p, 0, 0, NULL);
@@ -132,9 +132,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 			tptrace(TPPTmisc, "Confiming", p, 0, 0, 0);
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("Confirming connection: p");
-		}
+		ENDDEBUG
 #endif
 		tp_getoptions(p);
 		soisconnecting(p->tp_sock);
@@ -145,9 +145,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0x9:
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("event: CR_TPDU emit CC failed done ");
-		}
+		ENDDEBUG
 #endif
 		soisdisconnected(p->tp_sock);
 		tp_recycle_tsuffix(p);
@@ -163,11 +163,11 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		data = MCPY(p->tp_ucddata, M_WAIT);
 		if (data) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+			IFDEBUG(D_CONN)
 				printf("T_CONN_req.trans m_copy cc %p\n",
 				       p->tp_ucddata);
 				dump_mbuf(data, "sosnd @ T_CONN_req");
-			}
+			ENDDEBUG
 #endif
 		}
 		if ((error = tp_emit(CR_TPDU_type, p, 0, 0, data)) != 0)
@@ -271,10 +271,10 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		break;
 	case 0x15:
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("trans: CC_TPDU in CRSENT state flags 0x%x\n",
 			       (int) p->tp_flags);
-		}
+		ENDDEBUG
 #endif
 		IncStat(ts_tp4_conn);
 		p->tp_fref = e->ev_union.EV_CC_TPDU.e_sref;
@@ -286,10 +286,10 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		tp_cuntimeout(p, TM_retrans);
 		if (p->tp_ucddata) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+			IFDEBUG(D_CONN)
 				printf("dropping user connect data cc 0x%x\n",
 				       p->tp_ucddata->m_len);
-			}
+			ENDDEBUG
 #endif
 			m_freem(p->tp_ucddata);
 			p->tp_ucddata = 0;
@@ -310,11 +310,11 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		data = MCPY(p->tp_ucddata, M_NOWAIT);
 		if (p->tp_ucddata) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+			IFDEBUG(D_CONN)
 				printf("TM_retrans.trans m_copy cc %p\n",
 					data);
 				dump_mbuf(p->tp_ucddata, "sosnd @ TM_retrans");
-			}
+			ENDDEBUG
 #endif
 			if (data == NULL)
 				return ENOBUFS;
@@ -361,9 +361,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 
 		doack = tp_stash(p, e);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_DATA]) {
+		IFDEBUG(D_DATA)
 			printf("tp_stash returns %d\n", doack);
-		}
+		ENDDEBUG
 #endif
 
 		if (doack) {
@@ -373,9 +373,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 			tp_ctimeout(p, TM_sendack, (int) p->tp_sendack_ticks);
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_DATA]) {
+		IFDEBUG(D_DATA)
 			printf("after stash calling sbwakeup\n");
-		}
+		ENDDEBUG
 #endif
 		break;
 	case 0x1a:
@@ -383,9 +383,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		sbwakeup(&p->tp_sock->so_rcv);
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_DATA]) {
+		IFDEBUG(D_DATA)
 			printf("after stash calling sbwakeup\n");
-		}
+		ENDDEBUG
 #endif
 		break;
 	case 0x1b:
@@ -394,9 +394,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 
 		doack = tp_stash(p, e);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_DATA]) {
+		IFDEBUG(D_DATA)
 			printf("tp_stash returns %d\n", doack);
-		}
+		ENDDEBUG
 #endif
 
 		if (doack)
@@ -405,9 +405,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 			tp_ctimeout_MIN(p, TM_sendack, (int) p->tp_sendack_ticks);
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_DATA]) {
+		IFDEBUG(D_DATA)
 			printf("after stash calling sbwakeup\n");
-		}
+		ENDDEBUG
 #endif
 		break;
 	case 0x1c:
@@ -473,9 +473,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		e->ev_union.EV_XPD_TPDU.e_data->m_flags |= M_EOR;
 		sbinsertoob(&p->tp_Xrcv, e->ev_union.EV_XPD_TPDU.e_data);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_XPD]) {
+		IFDEBUG(D_XPD)
 			dump_mbuf(e->ev_union.EV_XPD_TPDU.e_data, "XPD TPDU: tp_Xrcv");
-		}
+		ENDDEBUG
 #endif
 		tp_indicate(T_XDATA, p, 0);
 		sbwakeup(&p->tp_Xrcv);
@@ -553,11 +553,11 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		}
 		if (data) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+			IFDEBUG(D_CONN)
 				printf("T_DISC_req.trans tp_ucddata %p\n",
 				       p->tp_ucddata);
 				dump_mbuf(data, "ucddata @ T_DISC_req");
-			}
+			ENDDEBUG
 #endif
 		}
 		tp_soisdisconnecting(p->tp_sock);
@@ -619,9 +619,9 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 			}
 #endif
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_XPD]) {
+			IFDEBUG(D_XPD)
 				dump_mbuf(m, "XPD retrans emitting M");
-			}
+			ENDDEBUG
 #endif
 			IncStat(ts_retrans_xpd);
 			p->tp_retrans--;
@@ -690,10 +690,10 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 					p->tp_snduna);
 #endif
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_XPD]) {
+			IFDEBUG(D_XPD)
 				printf("T_XPD_req: sb_cc 0x%lx\n", p->tp_Xsnd.sb_cc);
 				dump_mbuf(m, "XPD req emitting M");
-			}
+			ENDDEBUG
 #endif
 			error =
 				tp_emit(XPD_TPDU_type, p, p->tp_Xuna, 1, m);
@@ -709,18 +709,18 @@ _Xebec_action(int a, struct tp_event *e, struct tp_pcb *p)
 		sb = &p->tp_sock->so_snd;
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ACKRECV]) {
+		IFDEBUG(D_ACKRECV)
 			printf("GOOD ACK seq 0x%x cdt 0x%x\n", e->ev_union.EV_AK_TPDU.e_seq, e->ev_union.EV_AK_TPDU.e_cdt);
-		}
+		ENDDEBUG
 #endif
 		if (p->tp_class != TP_CLASS_0) {
 			tp_ctimeout(p, TM_inact, (int) p->tp_inact_ticks);
 		}
 		sbwakeup(sb);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ACKRECV]) {
+		IFDEBUG(D_ACKRECV)
 			printf("GOOD ACK new sndnxt 0x%x\n", p->tp_sndnxt);
-		}
+		ENDDEBUG
 #endif
 		break;
 	case 0x31:

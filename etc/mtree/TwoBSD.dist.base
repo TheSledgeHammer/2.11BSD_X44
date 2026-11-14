@@ -42,7 +42,7 @@
 ./usr/games
 ./usr/games/hide					gname=games mode=0750
 ./usr/include
-./usr/include/altq
+./usr/include/altq					ignore optional
 ./usr/include/arpa
 ./usr/include/c++
 ./usr/include/c++/experimental
@@ -157,6 +157,10 @@
 ./usr/include/miscfs/specfs
 ./usr/include/miscfs/union
 ./usr/include/net
+./usr/include/net/altq
+./usr/include/net/nbpf
+./usr/include/net/npf
+./usr/include/net/pf
 ./usr/include/net80211
 ./usr/include/netccitt
 ./usr/include/netinet
@@ -164,6 +168,7 @@
 ./usr/include/netinet6/ipsec
 ./usr/include/netipsec
 ./usr/include/netiso
+./usr/include/netiso/tp_proto
 ./usr/include/netkey
 ./usr/include/netmpls
 ./usr/include/netns

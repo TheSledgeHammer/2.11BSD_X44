@@ -682,30 +682,30 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 			}
 #endif
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_SYSCALL]) {
+			IFDEBUG(D_SYSCALL)
 				printf(
 				       "PRU_SEND: eot %ld before sbappend %p len 0x%x to sb @ %p\n",
 				       eotsdu, m, totlen, sb);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 				dump_mbuf(m, "m : to be added");
-			}
+			ENDDEBUG
 #endif
 			tp_packetize(tpcb, m, eotsdu);
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_SYSCALL]) {
+			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: eot %ld after sbappend %p\n", eotsdu, m);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
-			}
+			ENDDEBUG
 #endif
 			if (tpcb->tp_state == TP_OPEN)
 				error = DoEvent(T_DATA_req);
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_SYSCALL]) {
+			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: after driver error 0x%x \n", error);
 				printf("so_snd %p cc 0t%ld mbcnt 0t%ld\n",
 				       sb, sb->sb_cc, sb->sb_mbcnt);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb after driver");
-			}
+			ENDDEBUG
 #endif
 		}
 		break;

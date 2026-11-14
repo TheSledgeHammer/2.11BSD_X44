@@ -121,7 +121,7 @@ isis_input(struct mbuf *m0, ...)
 	ifp = shp->snh_ifp;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ISISINPUT]) {
+	IFDEBUG(D_ISISINPUT)
 		int             i;
 
 		printf("isis_input: pkt on ifp %p (%s): from:",
@@ -134,7 +134,7 @@ isis_input(struct mbuf *m0, ...)
 			printf("%x%c", shp->snh_dhost[i] & 0xff,
 			    (i < 5) ? ':' : ' ');
 		printf("\n");
-	}
+	ENDDEBUG
 #endif
 	esis_dl.sdl_alen = ifp->if_addrlen;
 	esis_dl.sdl_index = ifp->if_index;
@@ -152,10 +152,10 @@ isis_input(struct mbuf *m0, ...)
 				sorwakeup(rp->rcb_socket);
 			} else {
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_ISISINPUT]) {
+				IFDEBUG(D_ISISINPUT)
 					printf(
 				    "Error in sbappenaddr, mm = %p\n", mm);
-				}
+				ENDDEBUG
 #endif
 				m_freem(mm);
 			}
@@ -187,9 +187,9 @@ isis_output(struct mbuf *m, ...)
 	ifa = ifa_ifwithnet((struct sockaddr *) sdl);	/* get ifp from sdl */
 	if (ifa == 0) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ISISOUTPUT]) {
+		IFDEBUG(D_ISISOUTPUT)
 			printf("isis_output: interface not found\n");
-		}
+		ENDDEBUG
 #endif
 		error = EINVAL;
 		goto release;
@@ -197,7 +197,7 @@ isis_output(struct mbuf *m, ...)
 	ifp = ifa->ifa_ifp;
 	sn_len = sdl->sdl_alen;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ISISOUTPUT]) {
+	IFDEBUG(D_ISISOUTPUT)
 		u_char *cp = (u_char *) LLADDR(sdl), *cplim = cp + sn_len;
 		printf("isis_output: ifp %p (%s), to: ",
 		    ifp, ifp->if_xname);
@@ -206,7 +206,7 @@ isis_output(struct mbuf *m, ...)
 			printf("%c", (cp < cplim) ? ':' : ' ');
 		}
 		printf("\n");
-	}
+	ENDDEBUG
 #endif
 	bzero((caddr_t) & siso, sizeof(siso));
 	siso.siso_family = AF_ISO;	/* This convention may be useful for
@@ -221,10 +221,10 @@ isis_output(struct mbuf *m, ...)
 	error = (ifp->if_output) (ifp, m, sisotosa(&siso), 0);
 	if (error) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ISISOUTPUT]) {
+		IFDEBUG(D_ISISOUTPUT)
 			printf("isis_output: error from if_output is %d\n",
 			    error);
-		}
+		ENDDEBUG
 #endif
 	}
 	return (error);

@@ -31,8 +31,12 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)misc.c	8.2 (Berkeley) 4/28/95";
+#endif
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,6 +47,7 @@ static char sccsid[] = "@(#)misc.c	8.2 (Berkeley) 4/28/95";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "extern.h"
 
 void

@@ -132,11 +132,11 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 	}
 #endif
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_SETPARAMS]) {
+	IFDEBUG(D_SETPARAMS)
 		printf("tp_consistency %s %s\n",
 		       cmd & TP_FORCE ? "TP_FORCE" : "",
 		       cmd & TP_STRICT ? "TP_STRICT" : "");
-	}
+	ENDDEBUG
 #endif
 	if ((cmd & TP_FORCE) && (param->p_dont_change_params)) {
 		cmd &= ~TP_FORCE;
@@ -165,10 +165,10 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 	}
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_SETPARAMS]) {
+	IFDEBUG(D_SETPARAMS)
 		printf("p_class 0x%x, class_to_use 0x%x\n", param->p_class,
 		       class_to_use);
-	}
+	ENDDEBUG
 #endif
 	if ((param->p_netservice > TP_MAX_NETSERVICES)) {
 		error = EINVAL;
@@ -179,9 +179,9 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 		goto done;
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_SETPARAMS]) {
+	IFDEBUG(D_SETPARAMS)
 		printf("Nretrans 0x%x\n", param->p_Nretrans);
-	}
+	ENDDEBUG
 #endif
 	if ((param->p_Nretrans < 1) ||
 	    (param->p_cr_ticks < 1) || (param->p_cc_ticks < 1)) {
@@ -193,13 +193,13 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 		goto done;
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_SETPARAMS]) {
+	IFDEBUG(D_SETPARAMS)
 		printf("use_csum 0x%x\n", param->p_use_checksum);
 		printf("xtd_format 0x%x\n", param->p_xtd_format);
 		printf("xpd_service 0x%x\n", param->p_xpd_service);
 		printf("tpdusize 0x%x\n", param->p_tpdusize);
 		printf("tpcb->flags 0x%x\n", tpcb->tp_flags);
-	}
+	ENDDEBUG
 #endif
 	switch (class_to_use) {
 
@@ -245,7 +245,7 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 
 	case 4:
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_SETPARAMS]) {
+		IFDEBUG(D_SETPARAMS)
 			printf("dt_ticks 0x%x\n", param->p_dt_ticks);
 			printf("x_ticks 0x%x\n", param->p_x_ticks);
 			printf("dr_ticks 0x%x\n", param->p_dr_ticks);
@@ -253,7 +253,7 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 			printf("sendack 0x%x\n", param->p_sendack_ticks);
 			printf("inact 0x%x\n", param->p_inact_ticks);
 			printf("ref 0x%x\n", param->p_ref_ticks);
-		}
+		ENDDEBUG
 #endif
 		if ((param->p_class & TP_CLASS_4) && (
 		       (param->p_dt_ticks < 1) || (param->p_dr_ticks < 1) ||
@@ -264,9 +264,9 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 			break;
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_SETPARAMS]) {
+		IFDEBUG(D_SETPARAMS)
 			printf("rx_strat 0x%x\n", param->p_rx_strat);
-		}
+		ENDDEBUG
 #endif
 		if (param->p_rx_strat >
 		    (TPRX_USE_CW | TPRX_EACH | TPRX_FASTSTART)) {
@@ -278,9 +278,9 @@ tp_consistency(struct tp_pcb *tpcb, u_int cmd, struct tp_conn_param *param)
 			break;
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_SETPARAMS]) {
+		IFDEBUG(D_SETPARAMS)
 			printf("ack_strat 0x%x\n", param->p_ack_strat);
-		}
+		ENDDEBUG
 #endif
 		if ((param->p_ack_strat != 0) && (param->p_ack_strat != 1)) {
 			if (cmd & TP_STRICT) {
@@ -341,11 +341,11 @@ done:
 	}
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+	IFDEBUG(D_CONN)
 		printf(
 		  "tp_consist rtns 0x%x class 0x%x xtd_fmt 0x%x cmd 0x%x\n",
 		       error, tpcb->tp_class, tpcb->tp_xtd_format, cmd);
-	}
+	ENDDEBUG
 #endif
 	return error;
 }
@@ -403,11 +403,11 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 	}
 #endif
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_REQUEST]) {
+	IFDEBUG(D_REQUEST)
 		printf(
 		       "tp_ctloutput so %p cmd 0x%x optname 0x%x, mp %p *mp %p tpcb %p\n",
 		       so, cmd, optname, mp, mp ? *mp : 0, tpcb);
-	}
+	ENDDEBUG
 #endif
 	if (tpcb == (struct tp_pcb *) 0) {
 		error = ENOTSOCK;
@@ -587,13 +587,13 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 
 	case TPOPT_FLAGS:
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_REQUEST]) {
+		IFDEBUG(D_REQUEST)
 			printf("%s TPOPT_FLAGS value %p *value 0x%x, flags 0x%x \n",
 			       cmd == PRCO_GETOPT ? "GET" : "SET",
 			       value,
 			       *value,
 			       tpcb->tp_flags);
-		}
+		ENDDEBUG
 #endif
 
 		if (cmd == PRCO_GETOPT) {
@@ -613,16 +613,16 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 		 * data
 		 */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_SETPARAMS]) {
+		IFDEBUG(D_SETPARAMS)
 			printf("TPOPT_PARAMS value %p, cmd %s \n", value,
 			       cmd == PRCO_GETOPT ? "GET" : "SET");
-		}
+		ENDDEBUG
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_REQUEST]) {
+		IFDEBUG(D_REQUEST)
 			printf("TPOPT_PARAMS value %p, cmd %s \n", value,
 			       cmd == PRCO_GETOPT ? "GET" : "SET");
-		}
+		ENDDEBUG
 #endif
 
 		if (cmd == PRCO_GETOPT) {
@@ -685,12 +685,12 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 			break;
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_REQUEST]) {
+		IFDEBUG(D_REQUEST)
 			printf("%s\n", optname == TPOPT_DISC_DATA ? "DISC data" : "CONN data");
 			printf("m_len 0x%x, vallen 0x%x so_snd.cc 0x%lx\n",
 			       (*mp)->m_len, val_len, so->so_snd.sb_cc);
 			dump_mbuf(so->so_snd.sb_mb, "tp_ctloutput: sosnd ");
-		}
+		ENDDEBUG
 #endif
 		if (cmd == PRCO_SETOPT) {
 			int             len = tpcb->tp_ucddata ? tpcb->tp_ucddata->m_len : 0;
@@ -707,9 +707,9 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 			else
 				tpcb->tp_ucddata = *mp;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_REQUEST]) {
+			IFDEBUG(D_REQUEST)
 				dump_mbuf(tpcb->tp_ucddata, "tp_ctloutput after CONN_DATA");
-			}
+			ENDDEBUG
 #endif
 #ifdef TPPT
 			if (tp_traceflags[D_REQUEST]) {
@@ -748,10 +748,10 @@ tp_ctloutput(int cmd, struct socket *so, int level, int optname, struct mbuf **m
 
 done:
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_REQUEST]) {
+	IFDEBUG(D_REQUEST)
 		dump_mbuf(so->so_snd.sb_mb, "tp_ctloutput sosnd at end");
 		dump_mbuf(*mp, "tp_ctloutput *mp");
-	}
+	ENDDEBUG
 #endif
 	/*
 	 * sigh: getsockopt looks only at m_len : all output data must reside
@@ -766,9 +766,9 @@ done:
 			if (error)
 				(*mp)->m_len = 0;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_REQUEST]) {
+			IFDEBUG(D_REQUEST)
 				dump_mbuf(*mp, "tp_ctloutput *mp after compress");
-			}
+			ENDDEBUG
 #endif
 		}
 	}

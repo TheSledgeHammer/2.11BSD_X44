@@ -80,9 +80,10 @@ struct nbpf_d {
 #define BIOCNBFLUSH		_IO('B',104)
 #define BIOCSETTBLNF	_IOWR('B',105, struct nbpf_program) 	/* nbpf tblset */
 
+#ifdef _KERNEL
 void nbpf_attachd(struct nbpf_d *, struct bpf_d *);
 void nbpf_detachd(struct nbpf_d *, struct bpf_d *);
 int	nbpfioctl(struct nbpf_d *, dev_t, u_long, caddr_t, int, struct proc *);
 void nbpf_filtncatch(struct nbpf_d *, u_char *, u_int, void *(*)(void *, const void *, size_t), int *);
-
+#endif /* _KERNEL */
 #endif /* _NBPF_NBPFDESC_H_ */

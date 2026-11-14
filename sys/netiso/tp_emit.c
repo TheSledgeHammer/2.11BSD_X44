@@ -176,11 +176,11 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 	 * option.
 	 */
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EMIT]) {
+	IFDEBUG(D_EMIT)
 		printf(
 		       "tp_emit dutype 0x%x, tpcb %p, eot 0x%x, seq 0x%x, data %p",
 		       dutype, tpcb, eot, seq, data);
-	}
+	ENDDEBUG
 #endif
 
 	if (dutype == CR_TPDU || dutype == CC_TPDU) {
@@ -223,11 +223,11 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 			csum_offset = hdr->tpdu_li + 2;	/* DOESN'T include csum */
 			ADDOPTION(TPP_checksum, hdr, 2, eot /* dummy arg */ );
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CHKSUM]) {
+			IFDEBUG(D_CHKSUM)
 				printf(
 				       "tp_emit: csum_offset 0x%x, hdr->tpdu_li 0x%x\n",
 				       csum_offset, hdr->tpdu_li);
-			}
+			ENDDEBUG
 #endif
 		}
 		/*
@@ -419,7 +419,7 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 
 			/* kludge to test the input size checking */
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_SIZE_CHECK]) {
+			IFDEBUG(D_SIZE_CHECK)
 #if 0
 				 if (data->m_len <= 16 && 
 				     data->m_off < (MLEN-18)) {
@@ -427,7 +427,7 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 					data->m_len = 18; 
 				}
 #endif
-			}
+			ENDDEBUG
 #endif
 			break;
 
@@ -453,18 +453,18 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 #endif				/* BYTE_ORDER */
 			} else if (tpcb->tp_class == TP_CLASS_0) {
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_EMIT]) {
+				IFDEBUG(D_EMIT)
 					printf("DT tpdu: class 0 m %p hdr %p\n", m, hdr);
 					dump_buf(hdr, hdr->tpdu_li + 1);
-				}
+				ENDDEBUG
 #endif
 				((struct tp0du *) hdr)->tp0du_eot = eot;
 				((struct tp0du *) hdr)->tp0du_mbz = 0;
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_EMIT]) {
+				IFDEBUG(D_EMIT)
 					printf("DT 2 tpdu: class 0 m %p hdr %p\n", m, hdr);
 					dump_buf(hdr, hdr->tpdu_li + 1);
-				}
+				ENDDEBUG
 #endif
 			} else {
 				hdr->tpdu_DTseq = seq;
@@ -492,7 +492,7 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 				acking_ooo = 1;
 
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_RENEG]) {
+			IFDEBUG(D_RENEG)
 				/*
 				 * occasionally fake a reneging so you can test
 				 * subsequencing
@@ -501,7 +501,7 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 					tpcb->tp_reneged = 1;
 					IncStat(ts_ldebug);
 				}
-			}
+			ENDDEBUG
 #endif
 			/*
 			 * Are we about to reneg on credit? When might we do
@@ -596,9 +596,9 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 				 * 12.2.3.8.2, p. 74)
 				 */
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_RENEG]) {
+				IFDEBUG(D_RENEG)
 					printf("Adding subseq 0x%x\n", tpcb->tp_s_subseq);
-				}
+				ENDDEBUG
 #endif
 				tpcb->tp_s_subseq++;
 				/*
@@ -665,21 +665,21 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 #endif
 
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_ACKSEND]) {
+				IFDEBUG(D_ACKSEND)
 					printf("Calling ADDOPTION 0x%x, %p, 0x%lx,0x%x\n",
 					       TPP_flow_cntl_conf,
 					       hdr, (unsigned long)sizeof(bogus), bogus[0]);
-				}
+				ENDDEBUG
 #endif
 				ADDOPTION(TPP_flow_cntl_conf, hdr, sizeof(bogus), bogus[0]);
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_ACKSEND]) {
+				IFDEBUG(D_ACKSEND)
 					printf("after ADDOPTION hdr %p hdr->tpdu_li 0x%x\n",
 					       hdr, hdr->tpdu_li);
 					printf(
 					       "after ADDOPTION csum_offset 0x%x, hdr->tpdu_li 0x%x\n",
 					       csum_offset, hdr->tpdu_li);
-				}
+				ENDDEBUG
 #endif
 
 			}
@@ -696,11 +696,11 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 			IncStat(ts_AK_sent);
 			IncPStat(tpcb, tps_AK_sent);
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ACKSEND]) {
+			IFDEBUG(D_ACKSEND)
 				printf(
 				       "2 after rADDOPTION csum_offset 0x%x, hdr->tpdu_li 0x%x\n",
 				       csum_offset, hdr->tpdu_li);
-			}
+			ENDDEBUG
 #endif
 			break;
 
@@ -735,33 +735,33 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 						 * CLNP is used; leave in
 						 * here for the time being */
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ACKSEND]) {
+	IFDEBUG(D_ACKSEND)
 		printf(
 		 "4 after rADDOPTION csum_offset 0x%x, hdr->tpdu_li 0x%x\n",
 		       csum_offset, hdr->tpdu_li);
-	}
+	ENDDEBUG
 #endif
 	if (datalen > tpcb->tp_l_tpdusize) {
 		printf("data len 0x%x tpcb->tp_l_tpdusize 0x%x\n",
 		       datalen, tpcb->tp_l_tpdusize);
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EMIT]) {
+	IFDEBUG(D_EMIT)
 		printf(
 		       "tp_emit before gen_csum m_len 0x%x, csum_offset 0x%x, datalen 0x%x\n",
 		       m->m_len, csum_offset, datalen);
-	}
+	ENDDEBUG
 #endif
 	if (tpcb->tp_use_checksum ||
 	    (dutype == CR_TPDU_type && (tpcb->tp_class & TP_CLASS_4))) {
 		iso_gen_csum(m, csum_offset, datalen);
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EMIT]) {
+	IFDEBUG(D_EMIT)
 		printf("tp_emit before tpxxx_output tpcb %p, dutype 0x%x, datalen 0x%x\n",
 		       tpcb, dutype, datalen);
 		dump_buf(mtod(m, caddr_t), datalen);
-	}
+	ENDDEBUG
 #endif
 
 #ifdef TP_PERF_MEAS
@@ -781,10 +781,10 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 	}
 #endif
 #ifdef ARGO_DEBUG
-	    if (argo_debug[D_EMIT]) {
+	   IFDEBUG(D_EMIT)
 		printf("OUTPUT: tpcb %p, isop %p, so %p\n",
 		       tpcb, tpcb->tp_npcb, tpcb->tp_sock);
-	}
+	    ENDDEBUG
 #endif
 
 	{
@@ -801,9 +801,9 @@ tp_emit(int dutype, struct tp_pcb *tpcb, SeqNum seq, u_int eot, struct mbuf *dat
 	error = (tpcb->tp_tpproto->tp_output) (m, datalen, tpcb->tp_npcb,
 						!tpcb->tp_use_checksum);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EMIT]) {
+	IFDEBUG(D_EMIT)
 		printf("OUTPUT: returned 0x%x\n", error);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_EMIT]) {
@@ -868,11 +868,11 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 	}
 #endif
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ERROR_EMIT]) {
+	IFDEBUG(D_ERROR_EMIT)
 		printf(
 		       "tp_error_emit error 0x%x sref %lx tpcb %p erlen 0x%x chan %p\n",
 		       error, sref, tpcb, erlen, cons_channel);
-	}
+	ENDDEBUG
 #endif
 
 	MGET(m, M_DONTWAIT, TPMT_TPHDR);
@@ -885,10 +885,10 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 	hdr = mtod(m, struct tpdu *);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ERROR_EMIT]) {
+	IFDEBUG(D_ERROR_EMIT)
 		printf("[error 0x%x] [error&0xff  0x%x] [(char)error 0x%x]\n",
 		       error, error & 0xff, (char) error);
-	}
+	ENDDEBUG
 #endif
 
 
@@ -912,10 +912,10 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 		hdr->tpdu_DCdref = htons(sref);
 		hdr->tpdu_DCsref = tpcb ? htons(tpcb->tp_lref) : 0;
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("DC case:\n");
 			dump_buf(hdr, 6);
-		}
+		ENDDEBUG
 #endif
 		/* forget the add'l information variable part */
 		break;
@@ -927,10 +927,10 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 		hdr->tpdu_DRsref = 0;
 		hdr->tpdu_DRreason = (char) error;
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("DR case:\n");
 			dump_buf(hdr, 7);
-		}
+		ENDDEBUG
 #endif
 		/* forget the add'l information variable part */
 		break;
@@ -967,9 +967,9 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 		}
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("error_emit ER len 0x%x tpduli 0x%x\n", erlen, hdr->tpdu_li);
-		}
+		ENDDEBUG
 #endif
 
 		/* copy at most as many octets for which you have room */
@@ -999,10 +999,10 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 		m_freem(erdata);
 	} else {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("error_emit DR error %d tpduli %x\n", error, hdr->tpdu_li);
 			dump_buf((char *) hdr, hdr->tpdu_li);
-		}
+		ENDDEBUG
 #endif
 		m->m_len = hdr->tpdu_li;
 		m_freem(erdata);
@@ -1024,19 +1024,19 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 			}
 #endif
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ERROR_EMIT]) {
+			IFDEBUG(D_ERROR_EMIT)
 				printf("before gen csum datalen 0x%x, csum_offset 0x%x\n",
 				       datalen, csum_offset);
-			}
+			ENDDEBUG
 #endif
 
 			iso_gen_csum(m, csum_offset, datalen);
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("OUTPUT: tpcb %p, isop %p, so %p\n",
 			       tpcb, tpcb->tp_npcb, tpcb->tp_sock);
-		}
+		ENDDEBUG
 #endif
 	}
 	if (cons_channel) {
@@ -1056,10 +1056,10 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 		 */
 		lcp->lcd_flags |= X25_DG_CIRCUIT;
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("OUTPUT: dutype 0x%x channel 0x%x\n",
 			       dutype, cons_channel);
-		}
+		ENDDEBUG
 #endif
 #else
 		printf("TP panic! cons channel %p but not cons configured\n",
@@ -1069,12 +1069,12 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 	} else if (tpcb) {
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("tp_error_emit 1 sending DG: Laddr\n");
 			dump_addr(sisotosa(laddr));
 			printf("Faddr\n");
 			dump_addr(sisotosa(faddr));
-		}
+		ENDDEBUG
 #endif
 		return (*tpcb->tp_tpproto->tp_dgoutput)(m, datalen,
 							 &laddr->siso_addr,
@@ -1082,20 +1082,20 @@ tp_error_emit(int error, u_long sref, struct sockaddr_iso *faddr,
 		        /* no route */ (caddr_t) 0, !tpcb->tp_use_checksum);
 	} else if (dgout_routine) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("tp_error_emit sending DG: Laddr\n");
 			dump_addr(sisotosa(laddr));
 			printf("Faddr\n");
 			dump_addr(sisotosa(faddr));
-		}
+		ENDDEBUG
 #endif
 		return (*dgout_routine)(m, datalen, &laddr->siso_addr, &faddr->siso_addr,
 				        (caddr_t) 0, /* nochecksum==false */ 0);
 	} else {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ERROR_EMIT]) {
+		IFDEBUG(D_ERROR_EMIT)
 			printf("tp_error_emit DROPPING %p\n", m);
-		}
+		ENDDEBUG
 #endif
 		IncStat(ts_send_drop);
 		m_freem(m);

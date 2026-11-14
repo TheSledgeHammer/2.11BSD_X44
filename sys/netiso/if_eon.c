@@ -144,7 +144,7 @@ eonattach(void)
 	struct ifnet *ifp = eonif;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonattach()\n");
 	}
 #endif
@@ -165,7 +165,7 @@ eonattach(void)
 	LIST_INIT(&llinfo_eon);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonattach()\n");
 	}
 #endif
@@ -190,7 +190,7 @@ eonioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	int error = 0;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonioctl (cmd 0x%lx) \n", cmd);
 	}
 #endif
@@ -252,7 +252,7 @@ eoniphdr(struct eon_iphdr *hdr, caddr_t loc, struct route *ro, int class, int ze
 	mhead.m_len = sizeof(struct eon_hdr);
 	mhead.m_next = 0;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonoutput : gen csum (%p, offset %lu, datalen %ld)\n",
 		    &mhead, (unsigned long)offsetof(struct eon_hdr, eonh_csum),
 		    (long)sizeof(struct eon_hdr));
@@ -357,7 +357,7 @@ eonoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sdst, struct rtent
 	static struct route route;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonoutput \n");
 	}
 #endif
@@ -429,7 +429,7 @@ send:
 	*mtod(m, struct eon_iphdr *) = *ei;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonoutput dst ip addr : %x\n", ei->ei_ip.ip_dst.s_addr);
 		printf("eonoutput ip_output : eonip header:\n");
 		dump_buf(ei, sizeof(struct eon_iphdr));
@@ -468,7 +468,7 @@ eoninput(struct mbuf *m, ...)
 				 * for eon, not for the real device */
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eoninput() %p m_data %p m_len 0x%x dequeued\n",
 		    m, (m ? m->m_data : 0), m ? m->m_len : 0);
 	}
@@ -483,7 +483,7 @@ eoninput(struct mbuf *m, ...)
 			IncStat(es_badhdr);
 	drop:
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_EON]) {
+			IFDEBUG(D_EON)
 				printf("eoninput: DROP \n");
 			}
 #endif
@@ -509,7 +509,7 @@ eoninput(struct mbuf *m, ...)
 	m->m_data -= sizeof(struct ip);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eoninput csum ok class 0x%x\n", eonhdr->eonh_class);
 		printf("eoninput: eon header:\n");
 		dump_buf(eonhdr, sizeof(struct eon_hdr));
@@ -548,7 +548,7 @@ eoninput(struct mbuf *m, ...)
 
 		m->m_pkthdr.rcvif = eonifp;	/* KLUDGE */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_EON]) {
+		IFDEBUG(D_EON)
 			printf("eoninput to clnl IFQ\n");
 		}
 #endif
@@ -564,7 +564,7 @@ eoninput(struct mbuf *m, ...)
 		}
 		IF_ENQUEUE(ifq, m);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_EON]) {
+		IFDEBUG(D_EON)
 			printf(
 			    "%p enqueued on clnp Q: m_len 0x%x m_type 0x%x m_data %p\n",
 			    m, m->m_len, m->m_type, m->m_data);
@@ -581,7 +581,7 @@ eonctlinput(int cmd, struct sockaddr *sa, void *dummy)
 {
 	struct sockaddr_in *sin = (struct sockaddr_in *) sa;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_EON]) {
+	IFDEBUG(D_EON)
 		printf("eonctlinput: cmd 0x%x addr: ", cmd);
 		dump_isoaddr((struct sockaddr_iso *) sin);
 		printf("\n");

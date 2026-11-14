@@ -373,7 +373,7 @@ esis_rdoutput(
 	}
 	esis_stat.es_rdsent++;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ESISOUTPUT]) {
+	IFDEBUG(D_ESISOUTPUT)
 		printf(
 		    "esis_rdoutput: ifp %p (%s), ht %d, m %p, oidx %p\n",
 		    ifp, ifp->if_xname, esis_holding_time,
@@ -596,7 +596,7 @@ esis_eshinput(
 				break;
 			}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ESISINPUT]) {
+		IFDEBUG(D_ESISINPUT)
 			printf(
 			"esis_eshinput: esh: ht %d, naddr %d nsellength %d\n",
 			       ht, naddr, nsellength);
@@ -614,7 +614,7 @@ esis_eshinput(
 				for (buf2 = buf; buf2 < buflim;) {
 					ESIS_EXTRACT_ADDR(nsap2, buf2);
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_ESISINPUT]) {
+					IFDEBUG(D_ESISINPUT)
 						printf(
 						"esis_eshinput: comparing %s ",
 						       clnp_iso_addrp(nsap));
@@ -636,7 +636,7 @@ esis_eshinput(
 		}
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ESISINPUT]) {
+	IFDEBUG(D_ESISINPUT)
 		printf("esis_eshinput: nsap %s is %s\n",
 		       clnp_iso_addrp(nsap), new_entry ? "new" : "old");
 	}
@@ -675,7 +675,7 @@ esis_ishinput(
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ESISINPUT]) {
+	IFDEBUG(D_ESISINPUT)
 		printf("esis_ishinput: ish: ht %d\n", ht);
 	}
 #endif
@@ -707,7 +707,7 @@ esis_ishinput(
 	new_entry = snpac_add(shp->snh_ifp, nsap, shp->snh_shost, SNPA_IS,
 			      ht, 0);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ESISINPUT]) {
+	IFDEBUG(D_ESISINPUT)
 		printf("esis_ishinput: nsap %s is %s\n",
 		   clnp_iso_addrp(nsap), new_entry ? "new" : "old");
 	}
@@ -791,7 +791,7 @@ esis_rdinput(
 	}
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ESISINPUT]) {
+	IFDEBUG(D_ESISINPUT)
 		printf("esis_rdinput: rd: ht %d, da %s\n", ht,
 		    clnp_iso_addrp(da));
 		if (net)
@@ -903,7 +903,7 @@ esis_shoutput(struct ifnet *ifp, int type, int ht, caddr_t sn_addr,
 	}
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ESISOUTPUT]) {
+	IFDEBUG(D_ESISOUTPUT)
 		int i;
 		printf("esis_shoutput: ifp %p (%s), %s, ht %d, to: [%d] ",
 		    ifp, ifp->if_xname,
@@ -973,7 +973,7 @@ esis_shoutput(struct ifnet *ifp, int type, int ht, caddr_t sn_addr,
 			continue;	/* Ditto */
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ESISOUTPUT]) {
+		IFDEBUG(D_ESISOUTPUT)
 			printf("esis_shoutput: adding NSAP %s\n",
 			    clnp_iso_addrp(&ia->ia_addr.siso_addr));
 		}
@@ -1002,7 +1002,7 @@ esis_shoutput(struct ifnet *ifp, int type, int ht, caddr_t sn_addr,
 		len += 4;
 		m->m_len += 4;
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ESISOUTPUT]) {
+		IFDEBUG(D_ESISOUTPUT)
 			printf("m0 %p, m %p, data %p, len %d, cp %p\n",
 			    m0, m, m->m_data, m->m_len, cp);
 		}

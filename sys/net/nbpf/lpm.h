@@ -41,7 +41,6 @@ int		lpm_remove(lpm_t *, const void *, size_t, unsigned);
 void 	*lpm_lookup(lpm_t *, const void *, size_t);
 void 	*lpm_lookup_prefix(lpm_t *, const void *, size_t, unsigned);
 int		lpm_strtobin(const char *, void *, size_t *, unsigned *);
-
 __END_DECLS
 
 #endif

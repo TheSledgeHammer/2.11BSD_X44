@@ -1,6 +1,6 @@
 #	$NetBSD: Makefile,v 1.14 2003/10/13 08:34:15 dyoung Exp $
 
-SUBDIR= altq npf pf
+SUBDIR= altq nbpf npf pf
 
 INCSDIR= /usr/include/net
 

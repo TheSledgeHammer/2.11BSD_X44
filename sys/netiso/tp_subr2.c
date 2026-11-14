@@ -145,7 +145,7 @@ tp_local_credit(struct tp_pcb *tpcb)
 {
 	LOCAL_CREDIT(tpcb);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CREDIT]) {
+	IFDEBUG(D_CREDIT)
 		printf("ref 0x%x lcdt 0x%x l_tpdusize 0x%x decbit 0x%x cong_win 0x%lx\n",
 		       tpcb->tp_lref,
 		       tpcb->tp_lcredit,
@@ -153,7 +153,7 @@ tp_local_credit(struct tp_pcb *tpcb)
 		       tpcb->tp_decbit,
 		       tpcb->tp_cong_win
 			);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_CREDIT]) {
@@ -235,7 +235,7 @@ tp_indicate(int ind, struct tp_pcb *tpcb, u_short error)
 	}
 #endif
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_INDICATION]) {
+	IFDEBUG(D_INDICATION)
 		char           *ls, *fs;
 		ls = tpcb->tp_lsuffix,
 			fs = tpcb->tp_fsuffix,
@@ -247,7 +247,7 @@ tp_indicate(int ind, struct tp_pcb *tpcb, u_short error)
 			       error,	/* so->so_pgrp, */
 			       tpcb->tp_no_disc_indications,
 			       tpcb->tp_lref);
-	}
+	ENDDEBUG
 #endif
 
 	if (ind == ER_TPDU) {
@@ -370,12 +370,12 @@ void
 tp_quench(struct tp_pcb *tpcb, int cmd)
 {
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_QUENCH]) {
+	IFDEBUG(D_QUENCH)
 		printf("tp_quench tpcb %p ref 0x%x sufx 0x%x\n",
 		       tpcb, tpcb->tp_lref, *(u_short *) (tpcb->tp_lsuffix));
 		printf("cong_win 0x%lx decbit 0x%x \n",
 		       tpcb->tp_cong_win, tpcb->tp_decbit);
-	}
+	ENDDEBUG
 #endif
 	switch (cmd) {
 	case PRC_QUENCH:
@@ -469,9 +469,9 @@ tp_mask_to_num(u_char x)
 	}
 #endif
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("tp_mask_to_num(0x%x) returns 0x%x\n", x, j);
-	}
+	ENDDEBUG
 #endif
 	return j;
 }
@@ -642,12 +642,12 @@ tp_route_to(struct mbuf *m, struct tp_pcb *tpcb, caddr_t channel)
 	}
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+	IFDEBUG(D_CONN)
 		printf("tp_route_to( m %p, channel %p, tpcb %p netserv 0x%x)\n",
 		       m, channel, tpcb, tpcb->tp_netservice);
 		printf("m->mlen x%x, m->m_data:\n", m->m_len);
 		dump_buf(mtod(m, caddr_t), m->m_len);
-	}
+	ENDDEBUG
 #endif
 	if (channel) {
 #ifdef TPCONS
@@ -700,19 +700,19 @@ tp_route_to(struct mbuf *m, struct tp_pcb *tpcb, caddr_t channel)
 		}
 		if (tpcb->tp_tpproto->tp_afamily != siso->siso_family) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+			IFDEBUG(D_CONN)
 				printf("tp_route_to( CHANGING nlproto old 0x%x new 0x%x)\n",
 				       save_netservice, tpcb->tp_netservice);
-			}
+			ENDDEBUG
 #endif
 			if ((error = tp_set_npcb(tpcb)) != 0)
 				goto done;
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("tp_route_to  calling nlp_pcbconn, netserv %d\n",
 			       tpcb->tp_netservice);
-		}
+		ENDDEBUG
 #endif
 		tpcb->tp_tpproto = tp_protosw[tpcb->tp_netservice];
 		error = (*tpcb->tp_tpproto->tp_pcbconnect)(tpcb->tp_npcb, m);
@@ -724,9 +724,9 @@ tp_route_to(struct mbuf *m, struct tp_pcb *tpcb, caddr_t channel)
 	tp_mss(tpcb, nhdr_size);
 done:
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CONN]) {
+	IFDEBUG(D_CONN)
 		printf("tp_route_to  returns 0x%x\n", error);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_CONN]) {
@@ -763,7 +763,7 @@ tp0_stash(struct tp_pcb *tpcb, struct tp_event *e)
 #endif
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_STASH]) {
+		IFDEBUG(D_STASH)
 		printf("stash EQ: seq 0x%x datalen 0x%x eot 0x%x",
 		       E.e_seq, E.e_datalen, E.e_eot);
 	}
@@ -783,7 +783,7 @@ tp0_stash(struct tp_pcb *tpcb, struct tp_event *e)
 	}
 	sbappend(sb, E.e_data);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_STASH]) {
+	IFDEBUG(D_STASH)
 		dump_mbuf(sb->sb_mb, "stash 0: so_rcv after appending");
 	}
 #endif
@@ -828,7 +828,7 @@ tp_setup_perf(struct tp_pcb *tpcb)
 		tpcb->tp_p_meas = malloc(sizeof(struct tp_pmeas), M_PCB, M_WAITOK);
 		bzero((caddr_t)tpcb->tp_p_meas, sizeof(struct tp_pmeas));
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_PERF_MEAS]) {
+		IFDEBUG(D_PERF_MEAS)
 			printf(
 			       "tpcb 0x%x so 0x%x ref 0x%x tp_p_meas 0x%x tp_perf_on 0x%x\n",
 			       tpcb, tpcb->tp_sock, tpcb->tp_lref,

@@ -145,6 +145,8 @@ struct nbpf_state {
 	nbpf_icmp_t			nbs_icmp;
 };
 
+#ifdef _KERNEL
+
 static inline bool_t
 nbpf_iscached(const nbpf_state_t *state, const int inf)
 {
@@ -176,6 +178,8 @@ nbpf_get_tag(const nbpf_state_t *state)
 {
 	return (state->nbs_tag);
 }
+
+#endif /* _KERNEL */
 
 #define	NBPF_CMD_TABLE_LOOKUP	1
 #define	NBPF_CMD_TABLE_ADD		2
@@ -211,6 +215,8 @@ struct nbpf_ioctl_table {
 #ifndef NBPF_TABLE_HSIZE
 #define NBPF_TABLE_HSIZE			NBPF_TABLE_HSIZE_DEFAULT
 #endif
+
+#ifdef _KERNEL
 
 /* Network buffer interface. */
 void 	*nbpf_dataptr(void *);
@@ -267,4 +273,5 @@ int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *)
 
 int     nbpf_table_ioctl(nbpf_ioctl_table_t *, nbpf_tableset_t *);
 int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
+#endif /* _KERNEL */
 #endif /* _NET_NBPF_H_ */

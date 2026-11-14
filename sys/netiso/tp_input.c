@@ -123,9 +123,9 @@ tp_inputprep(struct mbuf *m)
 	int hdrlen;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("tp_inputprep: m %p\n", m);
-	}
+	ENDDEBUG
 #endif
 
 	while (m->m_len < 1) {
@@ -173,11 +173,11 @@ tp_inputprep(struct mbuf *m)
 		}
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_INPUT]) {
+	IFDEBUG(D_INPUT)
 		printf(
 		       " at end: m %p hdr->tpdu_li 0x%x m_len 0x%x\n", m,
 		       hdrlen, m->m_len);
-	}
+	ENDDEBUG
 #endif
 	return m;
 }
@@ -285,7 +285,7 @@ tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_
 #endif
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_NEWSOCK]) {
+	IFDEBUG(D_NEWSOCK)
 		printf("tp_newsocket(channel %p)  after sonewconn so %p \n",
 		       cons_channel, so);
 		dump_addr(fname);
@@ -301,7 +301,7 @@ tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_
 				       t, t->so_head, t->so_q0.tqh_first,
 				       t->so_q0len);
 		}
-	}
+	ENDDEBUG
 #endif
 
 	/*
@@ -325,9 +325,9 @@ tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_
 
 		conndata = m_copy(tpcb->tp_ucddata, 0, (int) M_COPYALL);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			dump_mbuf(conndata, "conndata after mcopy");
-		}
+		ENDDEBUG
 #endif
 		newtpcb->tp_ucddata = conndata;
 	}
@@ -369,20 +369,20 @@ tp_newsocket(struct socket *so, struct sockaddr *fname, caddr_t cons_channel, u_
 				goto ok;
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("tp_route_to FAILED! detaching tpcb %p, so %p\n",
 			       tpcb, so);
-		}
+		ENDDEBUG
 #endif
 		(void) tp_detach(tpcb);
 		return 0;
 	}
 ok:
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("tp_newsocket returning so %p, sototpcb(so) %p\n",
 		       so, sototpcb(so));
-	}
+	ENDDEBUG
 #endif
 	return so;
 }
@@ -462,9 +462,9 @@ again:
 #endif				/* TP_PERF_MEAS */
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("tp_input(%p, ... %p)\n", m, cons_channel);
-	}
+	ENDDEBUG
 #endif
 
 
@@ -484,14 +484,14 @@ again:
 		for (;;) {
 			tpdu_len += n->m_len;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_MBUF_MEAS]) {
+			IFDEBUG(D_MBUF_MEAS)
 				if (n->m_flags & M_EXT) {
 					IncStat(ts_mb_cluster);
 				} else {
 					IncStat(ts_mb_small);
 				}
 				chain_length++;
-			}
+			ENDDEBUG
 #endif
 			if (n->m_next == NULL) {
 				break;
@@ -499,12 +499,12 @@ again:
 			n = n->m_next;
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_MBUF_MEAS]) {
+		IFDEBUG(D_MBUF_MEAS)
 			if (chain_length > 16)
 				chain_length = 0;	/* zero used for
 							 * anything > 16 */
 			tp_stat.ts_mb_len_distr[chain_length]++;
-		}
+		ENDDEBUG
 #endif
 	}
 #ifdef TPPT
@@ -519,11 +519,11 @@ again:
 	dutype = (int) hdr->tpdu_type;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("input: dutype 0x%x cons_channel %p dref 0x%x\n",
 		    dutype, cons_channel, dref);
 		printf("input: dref 0x%x sref 0x%x\n", dref, sref);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_TPINPUT]) {
@@ -569,9 +569,9 @@ again:
 		case TPP_tpdu_size:
 			vb_getval(P, u_char, dusize);
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CR dusize 0x%x\n", dusize);
-			}
+			ENDDEBUG
 #endif
 			/* COS tests: NBS IA (Dec. 1987) Sec. 4.5.2.1 */
 			if (dusize < TP_MIN_TPDUSIZE || dusize > TP_MAX_TPDUSIZE)
@@ -587,9 +587,9 @@ again:
 				break;
 			default:;
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_TPINPUT]) {
+				IFDEBUG(D_TPINPUT)
 					printf("malformed prefered TPDU option\n");
-				}
+				ENDDEBUG
 #endif
 			}
 			break;
@@ -604,7 +604,7 @@ again:
 			fsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			fsufxlen = vbptr(P)->tpv_len;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CR fsufx:");
 				{
 					int    j;
@@ -613,7 +613,7 @@ again:
 					}
 					printf("\n");
 				}
-			}
+			ENDDEBUG
 #endif
 			break;
 		case TPP_called_sufx:
@@ -624,7 +624,7 @@ again:
 			lsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			lsufxlen = vbptr(P)->tpv_len;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CR lsufx:");
 				{
 					int    j;
@@ -633,7 +633,7 @@ again:
 					}
 					printf("\n");
 				}
-			}
+			ENDDEBUG
 #endif
 			break;
 
@@ -664,9 +664,9 @@ again:
 				acktime = 2;	/* don't allow a bad peer to
 						 * screw us up */
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CR acktime 0x%x\n", acktime);
-			}
+			ENDDEBUG
 #endif
 			break;
 
@@ -686,9 +686,9 @@ again:
 				      E_TP_INV_PVAL, ts_inv_aclass, respond,
 				      ((caddr_t)aclass) - (caddr_t)hdr);
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_TPINPUT]) {
+				IFDEBUG(D_TPINPUT)
 					printf("alt_classes 0x%x\n", alt_classes);
-				}
+				ENDDEBUG
 #endif
 			}
 			break;
@@ -702,27 +702,27 @@ again:
 		case TPP_subseq:
 		default:
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("param ignored CR_TPDU code= 0x%x\n",
 				       vbptr(P)->tpv_code);
-			}
+			ENDDEBUG
 #endif
 			IncStat(ts_param_ignored);
 			break;
 
 		case TPP_checksum:
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CR before cksum\n");
-			}
+			ENDDEBUG
 #endif
 
 			CHECK(iso_check_csum(m, tpdu_len),
 			      E_TP_INV_PVAL, ts_bad_csum, discard, 0)
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CR before cksum\n");
-			}
+			ENDDEBUG
 #endif
 			break;
 		}
@@ -766,9 +766,9 @@ again:
 			 * a bit field)
 			 */
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("checking if dup CR\n");
-			}
+			ENDDEBUG
 #endif
 			tpcb = t;
 			for (t = LIST_NEXT(tpcb, tp_list); t != tpcb; t = LIST_NEXT(t, tp_list)) {
@@ -778,9 +778,9 @@ again:
 				if ((*tpcb->tp_tpproto->tp_cmpnetaddr) (
 					   t->tp_npcb, faddr, TP_FOREIGN)) {
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_TPINPUT]) {
+					IFDEBUG(D_TPINPUT)
 						printf("duplicate CR discarded\n");
-					}
+					ENDDEBUG
 #endif
 					goto discard;
 				}
@@ -800,16 +800,16 @@ again:
 		 */
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_TPINPUT]) {
+		IFDEBUG(D_TPINPUT)
 			printf("HAVE A TPCB 1: %p\n", tpcb);
-		}
+		ENDDEBUG
 #endif
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf(
 			       "CR: bef CHKS: flags 0x%x class_to_use 0x%x alt 0x%x opt 0x%x tp_class 0x%x\n",
 			       tpcb->tp_flags, class_to_use, alt_classes, opt, tpcb->tp_class);
-		}
+		ENDDEBUG
 #endif
 		/* tpcb->tp_class doesn't include any classes not implemented  */
 		class_to_use = (preferred_class & tpcb->tp_class);
@@ -858,10 +858,10 @@ again:
 		/* ^ more or less the location of class */
 			)
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+		IFDEBUG(D_CONN)
 			printf("CR: after CRCCCHECKS: tpcb %p, flags 0x%x\n",
 			       tpcb, tpcb->tp_flags);
-		}
+		ENDDEBUG
 #endif
 		takes_data = TRUE;
 		e.TPDU_ATTR(CR).e_cdt = hdr->tpdu_CRcdt;
@@ -875,10 +875,10 @@ again:
 			 * newborn connection, and fill in all the values.
 			 */
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_CONN]) {
+			IFDEBUG(D_CONN)
 				printf("abt to call tp_newsocket(%p, %p, %p, %p)\n",
 				       so, laddr, faddr, cons_channel);
-			}
+			ENDDEBUG
 #endif
 			if ((so =
 			     tp_newsocket(so, faddr, cons_channel,
@@ -892,9 +892,9 @@ again:
 				 * only differences are CO vs CL
 				 */
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_CONN]) {
+				IFDEBUG(D_CONN])
 					printf("tp_newsocket returns 0\n");
-				}
+				ENDDEBUG
 #endif
 				goto discard;
 		clear_parent_tcb:
@@ -957,10 +957,10 @@ again:
 			 * establishment.
 			 */
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ZDREF]) {
+			IFDEBUG(D_ZDREF)
 				IncStat(ts_zdebug);
 				/* tpcb->tp_fref = 0; */
-			}
+			ENDDEBUG
 #endif
 		}
 		LOCAL_CREDIT(tpcb);
@@ -1004,9 +1004,9 @@ again:
 			    (tpcb = sototpcb(isop->isop_socket)) &&
 			    (tpcb->tp_class == TP_CLASS_0 /* || == CLASS_1 */ )) {
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_TPINPUT]) {
+				IFDEBUG(D_TPINPUT)
 					printf("tpinput_dt: class 0 short circuit\n");
-				}
+				ENDDEBUG
 #endif
 				dref = tpcb->tp_lref;
 				sref = tpcb->tp_fref;
@@ -1031,9 +1031,9 @@ again:
 		}
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_TPINPUT]) {
+		IFDEBUG(D_TPINPUT)
 			printf("HAVE A TPCB 2: %p\n", tpcb);
-		}
+		ENDDEBUG
 #endif
 
 		/* causes a DR to be sent for CC; ER for all else */
@@ -1042,9 +1042,9 @@ again:
 		      ts_inv_dref, respond,
 		      (1 + 2 + (caddr_t) & hdr->_tpduf - (caddr_t) hdr))
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_TPINPUT]) {
+		IFDEBUG(D_TPINPUT)
 			printf("state of dref %d ok, tpcb %p\n", dref, tpcb);
-		}
+		ENDDEBUG
 #endif
 		/*
 		 * At this point the state of the dref could be FROZEN:
@@ -1080,9 +1080,9 @@ again:
 				      E_TP_INV_PVAL, ts_inv_pval, respond,
 				      (1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr))
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_TPINPUT]) {
+				IFDEBUG(D_TPINPUT)
 					printf("CC dusize 0x%x\n", dusize);
-				}
+				ENDDEBUG
 #endif
 			}
 			break;
@@ -1098,9 +1098,9 @@ again:
 					break;
 				default:;
 #ifdef ARGO_DEBUG
-					if (argo_debug[D_TPINPUT]) {
+					IFDEBUG(D_TPINPUT)
 						printf("malformed prefered TPDU option\n");
-					}
+					ENDDEBUG
 #endif
 				}
 				CHECK((pdusize == 0 ||
@@ -1111,9 +1111,9 @@ again:
 			break;
 	caseof(CC_TPDU_type, TPP_calling_sufx):
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CC calling (local) sufxlen 0x%x\n", lsufxlen);
-			}
+			ENDDEBUG
 #endif
 			lsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			lsufxlen = vbptr(P)->tpv_len;
@@ -1131,9 +1131,9 @@ again:
 			fsufxloc = (caddr_t)&vbptr(P)->tpv_val;
 			fsufxlen = vbptr(P)->tpv_len;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("CC called (foreign) sufx len %d\n", fsufxlen);
-			}
+			ENDDEBUG
 #endif
 			break;
 
@@ -1175,9 +1175,9 @@ again:
 			vb_getval(P, u_short, subseq);
 			subseq = ntohs(subseq);
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ACKRECV]) {
+			IFDEBUG(D_ACKRECV)
 				printf("AK dref 0x%x Subseq 0x%x\n", dref, subseq);
-			}
+			ENDDEBUG
 #endif
 			break;
 
@@ -1194,20 +1194,20 @@ again:
 				ysubseq = ntohs(ysubseq);
 				ycredit = ntohs(ycredit);
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_ACKRECV]) {
+				IFDEBUG(D_ACKRECV)
 					printf("%s%x, subseq 0x%x, cdt 0x%x dref 0x%x\n",
 					       "AK FCC lwe 0x", ylwe, ysubseq, ycredit, dref);
-				}
+				ENDDEBUG
 #endif
 			}
 			break;
 
 		default:
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("param ignored dutype 0x%x, code  0x%x\n",
 				       dutype, vbptr(P)->tpv_code);
-			}
+			ENDDEBUG
 #endif
 #ifdef TPPT
 			if (tp_traceflags[D_TPINPUT]) {
@@ -1436,13 +1436,13 @@ again:
 			 */
 
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_DROP]) {
+			IFDEBUG(D_DROP)
 				if ((time.tv_usec & 0x4) &&
 				    (hdr->tpdu_DTseq & 0x1)) {
 					IncStat(ts_ydebug);
 					goto discard;
 				}
-			}
+			ENDDEBUG
 #endif
 			if (tpcb->tp_class == TP_CLASS_0) {
 #ifdef TPCONS
@@ -1483,9 +1483,9 @@ again:
 			 */
 			error = E_TP_INV_TPDU;	/* causes an ER  */
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				printf("INVALID dutype 0x%x\n", hdr->tpdu_type);
-			}
+			ENDDEBUG
 #endif
 			IncStat(ts_inv_dutype);
 			goto respond;
@@ -1581,13 +1581,13 @@ again:
 	IncStat(ts_tpdu_rcvd);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("tp_input: before driver, state 0x%x event 0x%x m %p",
 		       tpcb->tp_state, e.ev_number, m);
 		printf(" e.e_data %p\n", e.TPDU_ATTR(DT).e_data);
 		printf("takes_data 0x%x m_len 0x%x, tpdu_len 0x%x\n",
 		       takes_data, (m == NULL) ? 0 : m->m_len, tpdu_len);
-	}
+	ENDDEBUG
 #endif
 
 	error = tp_driver(tpcb, &e);
@@ -1609,10 +1609,10 @@ again:
 		m = e.TPDU_ATTR(CC).e_data;	/* same field for all three
 						 * dutypes */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_TPINPUT]) {
+		IFDEBUG(D_TPINPUT)
 			printf("after driver, restoring m to %p, takes_data 0x%x\n",
 			       m, takes_data);
-		}
+		ENDDEBUG
 #endif
 		break;
 	default:
@@ -1633,12 +1633,12 @@ again:
 
 		if ((m = tp_inputprep(m)) != NULL) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_TPINPUT]) {
+			IFDEBUG(D_TPINPUT)
 				hdr = mtod(m, struct tpdu *);
 				printf("tp_input @ separate: hdr %p size %d m %p\n",
 				       hdr, (int) hdr->tpdu_li + 1, m);
 				dump_mbuf(m, "tp_input after driver, at separate");
-			}
+			ENDDEBUG
 #endif
 
 			IncStat(ts_concat_rcvd);
@@ -1647,13 +1647,13 @@ again:
 	}
 	if (m != NULL) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_TPINPUT]) {
+		IFDEBUG(D_TPINPUT)
 			printf("tp_input : m_freem(%p)\n", m);
-		}
+		ENDDEBUG
 #endif
 		m_freem(m);
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_TPINPUT]) {
+		IFDEBUG(D_TPINPUT)
 			printf("tp_input : after m_freem %p\n", m);
 		}
 #endif
@@ -1667,9 +1667,9 @@ discard:
 	 * to which connection it applies
 	 */
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("tp_input DISCARD\n");
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_TPINPUT]) {
@@ -1692,9 +1692,9 @@ nonx_dref:
 	}
 respond:
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_TPINPUT]) {
+	IFDEBUG(D_TPINPUT)
 		printf("RESPOND: error 0x%x, errlen 0x%x\n", error, errlen);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_TPINPUT]) {
@@ -1707,9 +1707,9 @@ respond:
 			     satosiso(laddr), m, errlen, tpcb,
 			     cons_channel, dgout_routine);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ERROR_EMIT]) {
+	IFDEBUG(D_ERROR_EMIT)
 		printf("tp_input after error_emit\n");
-	}
+	ENDDEBUG
 #endif
 
 #ifdef lint

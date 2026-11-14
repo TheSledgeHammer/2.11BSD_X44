@@ -192,10 +192,10 @@ nibble_copy(char *src_octet, unsigned src_nibble, char *dst_octet, unsigned dst_
 	unsigned dshift, sshift;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("nibble_copy ( 0x%x, 0x%x, 0x%x, 0x%x 0x%x)\n",
 		    src_octet, src_nibble, dst_octet, dst_nibble, len);
-	}
+	ENDDEBUG
 #endif
 #define SHIFT 0x4
 
@@ -217,9 +217,9 @@ nibble_copy(char *src_octet, unsigned src_nibble, char *dst_octet, unsigned dst_
 		dst_octet += dst_nibble;
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("nibble_copy DONE\n");
-	}
+	ENDDEBUG
 #endif
 }
 
@@ -237,10 +237,10 @@ nibble_match(char *src_octet, unsigned src_nibble, char *dst_octet, unsigned dst
 	u_char nibble_a, nibble_b;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("nibble_match ( 0x%x, 0x%x, 0x%x, 0x%x 0x%x)\n",
 		       src_octet, src_nibble, dst_octet, dst_nibble, len);
-	}
+	ENDDEBUG
 #endif
 #define SHIFT 0x4
 
@@ -261,9 +261,9 @@ nibble_match(char *src_octet, unsigned src_nibble, char *dst_octet, unsigned dst
 		dst_octet += dst_nibble;
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("nibble_match DONE\n");
-	}
+	ENDDEBUG
 #endif
 	return 1;
 }
@@ -285,10 +285,10 @@ cons_init(void)
 	X25_proto = pffindproto(AF_ISO, ISOPROTO_X25, SOCK_STREAM);
 	TP_proto = pffindproto(AF_ISO, ISOPROTO_TP0, SOCK_SEQPACKET);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CCONS]) {
+	IFDEBUG(D_CCONS)
 		printf("cons_init end : cnlp_proto 0x%x cons proto 0x%x tp proto 0x%x\n",
 		       CLNP_proto, X25_proto, TP_proto);
-	}
+	ENDDEBUG
 #endif
 #ifdef notdef
 	pk_protolisten(0x81, 0, clnp_incoming);
@@ -387,24 +387,24 @@ cons_connect(struct isopcb *isop)
 	int error;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CCONN]) {
+	IFDEBUG(D_CCONN)
 		printf("cons_connect(0x%x): ", isop);
 		dump_isoaddr(isop->isop_faddr);
 		printf("myaddr: ");
 		dump_isoaddr(isop->isop_laddr);
 		printf("\n");
-	}
+	ENDDEBUG
 #endif
 	NSAPtoDTE(isop->isop_faddr, &lcp->lcd_faddr);
 	lcp->lcd_upper = cons_tpinput;
 	lcp->lcd_upnext = (caddr_t) isop;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CCONN]) {
+	IFDEBUG(D_CCONN)
 		printf(
 		    "calling make_partial_x25_packet( 0x%x, 0x%x, 0x%x)\n",
 		    &lcp->lcd_faddr, &lcp->lcd_laddr,
 		    isop->isop_socket->so_proto->pr_protocol);
-	}
+	ENDDEBUG
 #endif
 	if ((error = make_partial_x25_packet(isop, lcp)) == 0)
 		error = pk_connect(lcp, &lcp->lcd_faddr);
@@ -543,10 +543,10 @@ make_partial_x25_packet(struct isopcb *isop, struct pklcd *lcp)
 	struct mbuf *m = NULL;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CCONN]) {
+	IFDEBUG(D_CCONN)
 		printf("make_partial_x25_packet(0x%x, 0x%x, 0x%x, 0x%x, 0x%x)\n",
 		    isop->isop_laddr, isop->isop_faddr, proto, m, flag);
-	}
+	ENDDEBUG
 #endif
 	if (cons_use_udata) {
 		if (isop->isop_x25crud_len > 0) {
@@ -572,10 +572,10 @@ make_partial_x25_packet(struct isopcb *isop, struct pklcd *lcp)
 	pk_build_facilities(m, &lcp->lcd_faddr, 0);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("make_partial  calling: ptr 0x%x, len 0x%x\n", ptr,
 		    isop->isop_laddr->siso_addr.isoa_len);
-	}
+	ENDDEBUG
 #endif
 	if (cons_use_facils) {
 		*ptr++ = 0;	/* Marker to separate X.25 facitilies from
@@ -594,10 +594,10 @@ make_partial_x25_packet(struct isopcb *isop, struct pklcd *lcp)
 		ptr += len;
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_CADDR]) {
+		IFDEBUG(D_CADDR)
 			printf("make_partial  called: ptr 0x%x, len 0x%x\n", ptr,
 			    isop->isop_faddr->siso_addr.isoa_len);
-		}
+		ENDDEBUG
 #endif
 		*ptr = 0xc9;	/* called facility code */
 		ptr++;
@@ -621,7 +621,7 @@ make_partial_x25_packet(struct isopcb *isop, struct pklcd *lcp)
 	buflen = (int) (ptr - buf);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CDUMP_REQ]) {
+	IFDEBUG(D_CDUMP_REQ)
 		int    i;
 
 		printf("ECN_CONNECT DATA buf 0x%x len %d (0x%x)\n",
@@ -633,13 +633,13 @@ make_partial_x25_packet(struct isopcb *isop, struct pklcd *lcp)
 			    *(buf + i + 4), *(buf + i + 5), *(buf + i + 6), *(buf + i + 7));
 			i += 8;
 		}
-	}
+	ENDDEBUG
 #endif
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("make_partial returns buf 0x%x size 0x%x bytes\n",
 		       mtod(m, caddr_t), buflen);
-	}
+	ENDDEBUG
 #endif
 
 	if (buflen > MHLEN)
@@ -682,10 +682,10 @@ NSAPtoDTE(struct sockaddr_iso *siso, struct sockaddr_x25 *sx25)
 	int dtelen = -1;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("NSAPtoDTE: nsap: %s\n",
 		    clnp_iso_addrp(&siso->siso_addr));
-	}
+	ENDDEBUG
 #endif
 
 	if (siso->siso_data[0] == AFI_37) {
@@ -751,10 +751,10 @@ FACILtoNSAP(struct sockaddr_iso *addr, u_char *buf)
 	u_char buf_len = (len_in_nibbles + 1) >> 1; /* in bytes */
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("FACILtoNSAP( 0x%x, 0x%x, 0x%x )\n",
 		    buf, buf_len, addr);
-	}
+	ENDDEBUG
 #endif
 
 	len_in_nibbles = *buf & 0x3f;
@@ -855,11 +855,11 @@ parse_facil(struct pklcd *lcp, struct isopcb *isop, caddr_t buf, u_char buf_len 
 	int facil_param_len = 0, facil_len;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("parse_facil(0x%x, 0x%x, 0x%x, 0x%x)\n",
 		    lcp, isop, buf, buf_len);
 		dump_buf(buf, buf_len);
-	}
+	ENDDEBUG
 #endif
 
 	/*
@@ -877,9 +877,9 @@ parse_facil(struct pklcd *lcp, struct isopcb *isop, caddr_t buf, u_char buf_len 
 	facil_len = *ptr++;
 	facil_lim = ptr + facil_len;
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CADDR]) {
+	IFDEBUG(D_CADDR)
 		printf("parse_facils: facil length is  0x%x\n", (int) facil_len);
-	}
+	ENDDEBUG
 #endif
 
 	while (ptr < facil_lim) {

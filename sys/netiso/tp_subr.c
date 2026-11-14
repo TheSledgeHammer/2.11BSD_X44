@@ -129,10 +129,10 @@ tp_goodXack(struct tp_pcb *tpcb, SeqNum seq)
 		 * w/ each XPD tpdu, so this will get messier
 		 */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_XPD]) {
+		IFDEBUG(D_XPD)
 			dump_mbuf(tpcb->tp_Xsnd.sb_mb,
 				  "tp_goodXack Xsnd before sbdrop");
-		}
+		ENDDEBUG
 #endif
 
 #ifdef TPPT
@@ -218,10 +218,10 @@ tp_rtt_rtv(struct tp_pcb *tpcb)
 	TP_RANGESET(tpcb->tp_dt_ticks, TP_REXMTVAL(tpcb),
 		    tpcb->tp_peer_acktime, 128 /* XXX */ );
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_RTT]) {
+	IFDEBUG(D_RTT)
 		printf("%s tpcb %p, elapsed %d, delta %d, rtt %d, rtv %d, old %d\n",
 		       "tp_rtt_rtv:", tpcb, elapsed, delta, tpcb->tp_rtt, tpcb->tp_rtv, old);
-	}
+	ENDDEBUG
 #endif
 	tpcb->tp_rxtcur = tpcb->tp_dt_ticks;
 }
@@ -253,10 +253,10 @@ tp_goodack(struct tp_pcb *tpcb, u_int cdt, SeqNum seq, u_int subseq)
 	u_int bytes_acked;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ACKRECV]) {
+	IFDEBUG(D_ACKRECV)
 		printf("goodack tpcb %p seq 0x%x cdt %d una 0x%x new 0x%x nxt 0x%x\n",
 		       tpcb, seq, cdt, tpcb->tp_snduna, tpcb->tp_sndnew, tpcb->tp_sndnxt);
-	}
+	ENDDEBUG
 #endif
 
 #ifdef TPPT
@@ -277,10 +277,10 @@ tp_goodack(struct tp_pcb *tpcb, u_int cdt, SeqNum seq, u_int subseq)
 		 (subseq == tpcb->tp_r_subseq && cdt <= tpcb->tp_fcredit)) {
 	discard_the_ack:
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_ACKRECV]) {
+			IFDEBUG(D_ACKRECV)
 				printf("goodack discard : tpcb %p subseq %d r_subseq %d\n",
 				       tpcb, subseq, tpcb->tp_r_subseq);
-			}
+			ENDDEBUG
 #endif
 			goto done;
 		}
@@ -302,10 +302,10 @@ tp_goodack(struct tp_pcb *tpcb, u_int cdt, SeqNum seq, u_int subseq)
 				u_int           win = min(tpcb->tp_fcredit,
 				tpcb->tp_cong_win / tpcb->tp_l_tpdusize) / 2;
 #ifdef ARGO_DEBUG
-				if (argo_debug[D_ACKRECV]) {
+				IFDEBUG(D_ACKRECV)
 					printf("%s tpcb %p seq 0x%x rttseq 0x%x onxt 0x%x\n",
 					       "goodack dupacks:", tpcb, seq, tpcb->tp_rttseq, onxt);
-				}
+				ENDDEBUG
 #endif
 				if (win < 2)
 					win = 2;
@@ -413,10 +413,10 @@ tp_goodack(struct tp_pcb *tpcb, u_int cdt, SeqNum seq, u_int subseq)
 
 done:
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ACKRECV]) {
+	IFDEBUG(D_ACKRECV)
 		printf("goodack returns 0x%x, cdt 0x%x ocdt 0x%x cwin 0x%lx\n",
 		       bang, cdt, old_fcredit, tpcb->tp_cong_win);
-	}
+	ENDDEBUG
 #endif
 	/*
 	 * if (bang) XXXXX Very bad to remove this test, but somethings
@@ -445,10 +445,10 @@ tp_sbdrop(struct tp_pcb *tpcb, SeqNum seq)
 	while (i-- > 0)
 		sbdroprecord(sb);
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ACKRECV]) {
+	IFDEBUG(D_ACKRECV)
 		printf("tp_sbdroping %d pkts %ld bytes on %p at 0x%x\n",
 		       oldi, oldcc - sb->sb_cc, tpcb, seq);
-	}
+	ENDDEBUG
 #endif
 	if (sb->sb_flags & SB_NOTIFY)
 		sowwakeup(tpcb->tp_sock);
@@ -505,10 +505,10 @@ tp_send(struct tp_pcb *tpcb)
 		highseq = SEQ_MIN(tpcb, highseq, tpcb->tp_sndnew);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_DATA]) {
+	IFDEBUG(D_DATA)
 		printf("tp_send enter tpcb %p nxt 0x%x win %d high 0x%x\n",
 		       tpcb, tpcb->tp_sndnxt, cong_win, highseq);
-	}
+	ENDDEBUG
 #endif
 #ifdef TPPT
 	if (tp_traceflags[D_DATA]) {
@@ -565,10 +565,10 @@ tp_send(struct tp_pcb *tpcb)
 #endif
 
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_DATA]) {
+		IFDEBUG(D_DATA)
 			printf("tp_sending tpcb %p nxt 0x%x\n",
 			       tpcb, tpcb->tp_sndnxt);
-		}
+		ENDDEBUG
 #endif
 		/*
 		 * when headers are precomputed, may need to fill in checksum
@@ -676,10 +676,10 @@ tp_packetize(struct tp_pcb *tpcb, struct mbuf *m, int eotsdu)
 	 * TODO: allocate space for header and fill it in (once!).
 	 */
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_DATA]) {
+	IFDEBUG(D_DATA)
 		printf("SEND BF: maxsize %d totlen %d eotsdu %d sndnum 0x%x\n",
 		       maxsize, totlen, eotsdu, tpcb->tp_sndnum);
-	}
+	ENDDEBUG
 #endif
 	if (tpcb->tp_oktonagle) {
 		if ((n = sb->sb_mb) == 0)
@@ -731,10 +731,10 @@ out:
 	}
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_DATA]) {
+	IFDEBUG(D_DATA)
 		printf("SEND out: oktonagle %d sndnum 0x%x\n",
 		       tpcb->tp_oktonagle, tpcb->tp_sndnum);
-	}
+	ENDDEBUG
 #endif
 	return 0;
 }
@@ -774,12 +774,12 @@ tp_stash(struct tp_pcb *tpcb, struct tp_event *e)
 		n->m_nextpkt = 0;
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_STASH]) {
+	IFDEBUG(D_STASH)
 		dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb,
 			  "stash: so_rcv before appending");
 		dump_mbuf(E.e_data,
 			  "stash: e_data before appending");
-	}
+	ENDDEBUG
 #endif
 
 #ifdef TP_PERF_MEAS
@@ -795,10 +795,10 @@ tp_stash(struct tp_pcb *tpcb, struct tp_event *e)
 	if (E.e_seq == tpcb->tp_rcvnxt) {
 
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_STASH]) {
+		IFDEBUG(D_STASH)
 			printf("stash EQ: seq 0x%x datalen 0x%x eot 0x%x\n",
 			     E.e_seq, E.e_datalen, E.e_eot);
-		}
+		ENDDEBUG
 #endif
 
 #ifdef TPPT
@@ -835,10 +835,10 @@ tp_stash(struct tp_pcb *tpcb, struct tp_event *e)
 			}
 		}
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_STASH]) {
+		IFDEBUG(D_STASH)
 			dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb,
 			   "stash: so_rcv after appending");
-		}
+		ENDDEBUG
 #endif
 
 	} else {
@@ -863,9 +863,9 @@ tp_stash(struct tp_pcb *tpcb, struct tp_event *e)
 		} else if (*(mp = tpcb->tp_rsyq +
 			     (E.e_seq % tpcb->tp_maxlcredit)) != NULL ) {
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_STASH]) {
+			IFDEBUG(D_STASH)
 				printf("tp_stash - drop & ack\n");
-			}
+			ENDDEBUG
 #endif
 
 			/*

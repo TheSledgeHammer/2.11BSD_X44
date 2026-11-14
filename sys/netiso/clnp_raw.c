@@ -205,14 +205,14 @@ rclnp_ctloutput(op, so, level, optname, m)
 	struct rawisopcb *rp = sotorawisopcb(so);	/* raw cb ptr */
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_CTLOUTPUT]) {
+	IFDEBUG(D_CTLOUTPUT)
 		printf("rclnp_ctloutput: op = x%x, level = x%x, name = x%x\n",
 		    op, level, optname);
 		if (*m != NULL) {
 			printf("rclnp_ctloutput: %d bytes of mbuf data\n", (*m)->m_len);
 			dump_buf(mtod((*m), caddr_t), (*m)->m_len);
 		}
-	}
+	ENDDEBUG
 #endif
 
 #ifdef SOL_NETWORK

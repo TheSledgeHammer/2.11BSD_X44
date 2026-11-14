@@ -210,10 +210,10 @@ clnp_ours(struct iso_addr *dst	/* ptr to destination address */)
 
 	for (ia = TAILQ_FIRST(&iso_ifaddr); ia != 0; ia = TAILQ_NEXT(ia, ia_list)) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ROUTE]) {
+		IFDEBUG(D_ROUTE)
 			printf("clnp_ours: ia_sis %p, dst %p\n", 
 			    &ia->ia_addr, dst);
-		}
+		ENDDEBUG
 #endif
 		/*
 		 * XXX Warning:
@@ -272,9 +272,9 @@ clnp_forward(
 	 */
 	if ((inbound_shp) && (IS_MULTICAST(inbound_shp->snh_dhost))) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_FORWARD]) {
+		IFDEBUG(D_FORWARD)
 			printf("clnp_forward: dropping multicast packet\n");
-		}
+		ENDDEBUG
 #endif
 		clnp->cnf_type &= ~CNF_ERR_OK;	/* so we don't generate an ER */
 		clnp_discard(m, 0);
@@ -282,10 +282,10 @@ clnp_forward(
 		goto done;
 	}
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_FORWARD]) {
+	IFDEBUG(D_FORWARD)
 		printf("clnp_forward: %d bytes, to %s, options %p\n", len,
 		       clnp_iso_addrp(dst), oidx);
-	}
+	ENDDEBUG
 #endif
 
 	/*
@@ -294,9 +294,9 @@ clnp_forward(
 	 */
 	if ((clnp->cnf_ttl == 0) || (--clnp->cnf_ttl == 0)) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_FORWARD]) {
+		IFDEBUG(D_FORWARD)
 			printf("clnp_forward: discarding datagram because ttl is zero\n");
-		}
+		ENDDEBUG
 #endif
 		INCSTAT(cns_ttlexpired);
 		clnp_discard(m, TTL_EXPTRANSIT);
@@ -317,9 +317,9 @@ clnp_forward(
 	}
 	if (error || ia == 0) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_FORWARD]) {
+		IFDEBUG(D_FORWARD)
 			printf("clnp_forward: can't route packet (errno %d)\n", error);
-		}
+		ENDDEBUG
 #endif
 		clnp_discard(m, ADDR_DESTUNREACH);
 		INCSTAT(cns_cantforward);
@@ -328,10 +328,10 @@ clnp_forward(
 	ifp = ia->ia_ifp;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_FORWARD]) {
+	IFDEBUG(D_FORWARD)
 		printf("clnp_forward: packet routed to %s\n",
 		       clnp_iso_addrp(&satosiso(next_hop)->siso_addr));
-	}
+	ENDDEBUG
 #endif
 
 	INCSTAT(cns_forward);
@@ -365,17 +365,17 @@ clnp_forward(
 		 *	Congestion! Set the Dec Bit and thank Dave Oran
 		 */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_FORWARD]) {
+		IFDEBUG(D_FORWARD)
 			printf("clnp_forward: congestion experienced\n");
-		}
+		ENDDEBUG
 #endif
 		if ((oidx) && (oidx->cni_qos_formatp)) {
 			caddr_t qosp = CLNP_OFFTOOPT(m, oidx->cni_qos_formatp);
 			u_char qos = *qosp;
 #ifdef ARGO_DEBUG
-			if (argo_debug[D_FORWARD]) {
+			IFDEBUG(D_FORWARD)
 				printf("clnp_forward: setting congestion bit (qos x%x)\n", qos);
-			}
+			ENDDEBUG
 #endif
 			if ((qos & CLNPOVAL_GLOBAL) == CLNPOVAL_GLOBAL) {
 				qos |= CLNPOVAL_CONGESTED;
@@ -496,11 +496,11 @@ clnp_route(
 					|| (Bcmp(ro->ro_dst.siso_data, dst->isoa_genaddr,
 							dst->isoa_len)))) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ROUTE]) {
+		IFDEBUG(D_ROUTE)
 			printf("clnp_route: freeing old route: ro->ro_rt %p\n", ro->ro_rt);
 			printf("clnp_route: old route refcnt: 0x%x\n",
 					ro->ro_rt->rt_refcnt);
-		}
+		ENDDEBUG
 #endif
 
 		/* free old route entry */
@@ -508,9 +508,9 @@ clnp_route(
 		ro->ro_rt = (struct rtentry*) 0;
 	} else {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ROUTE]) {
+		IFDEBUG(D_ROUTE)
 			printf("clnp_route: OK route exists\n");
-		}
+		ENDDEBUG
 #endif
 	}
 
@@ -526,10 +526,10 @@ clnp_route(
 		(void) memcpy(&ro->ro_dst.siso_addr, dst, len);
 		/* allocate new route */
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ROUTE]) {
+		IFDEBUG(D_ROUTE)
 			printf("clnp_route: allocating new route to %s\n",
 					clnp_iso_addrp(dst));
-		}
+		ENDDEBUG
 #endif
 		rtalloc((struct route*) ro);
 	}
@@ -612,9 +612,9 @@ clnp_srcroute(
 	if ((CLNPSRCRT_TYPE(oidx, options) == CLNPOVAL_COMPRT) &&
 	    (!iso_addrmatch1(&satosiso(*first_hop)->siso_addr, &dst))) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_OPTIONS]) {
+		IFDEBUG(D_OPTIONS)
 			printf("clnp_srcroute: complete src route failed\n");
-		}
+		ENDDEBUG
 #endif
 		return EHOSTUNREACH;	/* RAH? would like ESRCRTFAILED */
 	}
@@ -655,9 +655,9 @@ clnp_echoreply(
 	ret = clnp_output(ec_m, &isopcb, ec_len, flags);
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_OUTPUT]) {
+	IFDEBUG(D_OUTPUT)
 		printf("clnp_echoreply: output returns %d\n", ret);
-	}
+	ENDDEBUG
 #endif
 	return ret;
 }

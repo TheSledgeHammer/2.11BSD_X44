@@ -115,21 +115,21 @@ iso_addrmatch1(struct iso_addr *isoaa, struct iso_addr *isoab)
 	u_int           compare_len;
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ROUTE]) {
+	IFDEBUG(D_ROUTE)
 		printf("iso_addrmatch1: comparing lengths: %d to %d\n", isoaa->isoa_len,
 		    isoab->isoa_len);
 		printf("a:\n");
 		dump_buf(isoaa->isoa_genaddr, isoaa->isoa_len);
 		printf("b:\n");
 		dump_buf(isoab->isoa_genaddr, isoab->isoa_len);
-	}
+	ENDDEBUG
 #endif
 
 	if ((compare_len = isoaa->isoa_len) != isoab->isoa_len) {
 #ifdef ARGO_DEBUG
-		if (argo_debug[D_ROUTE]) {
+		IFDEBUG(D_ROUTE)
 			printf("iso_addrmatch1: returning false because of lengths\n");
-		}
+		ENDDEBUG
 #endif
 		return 0;
 	}
@@ -145,7 +145,7 @@ iso_addrmatch1(struct iso_addr *isoaa, struct iso_addr *isoab)
 #endif
 
 #ifdef ARGO_DEBUG
-	if (argo_debug[D_ROUTE]) {
+	IFDEBUG(D_ROUTE)
 		int             i;
 		char           *a, *b;
 
@@ -162,7 +162,7 @@ iso_addrmatch1(struct iso_addr *isoaa, struct iso_addr *isoab)
 		printf("\n");
 		printf("addrs are equal\n");
 		return (1);
-	}
+	ENDDEBUG
 #endif
 	return (!bcmp(isoaa->isoa_genaddr, isoab->isoa_genaddr, compare_len));
 }
