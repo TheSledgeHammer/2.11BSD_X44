@@ -109,7 +109,6 @@ struct bpf_if	*bpf_iflist;
 struct bpf_d	bpf_dtab[NBPFILTER];
 
 #ifdef NBPF
-#define bpf_enable_nbpf(d) 	((d)->bd_use_nbpf = 1)
 /* NBPF Enable and Disable are setup once during boot */
 static int nbpf_initialized = 0;
 
