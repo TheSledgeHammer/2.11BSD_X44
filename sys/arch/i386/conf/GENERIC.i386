@@ -19,7 +19,6 @@ options 			EXEC_ELF32			# exec ELF binaries
 #options 			EXEC_MACHO		# exec MACH-O binaries
 options			EXEC_SCRIPT		# exec #! scripts
 
-
 options 		INET6_MD_CKSUM		# machine-dependant code for in6_cksum
 #options 		CRYPTO_MD_DES_ENC	# machine-dependant code for DES
 #options 		CRYPTO_MD_DES_CBC	# machine-dependant DES CBC code
@@ -84,6 +83,12 @@ options			QUOTA			# UFS quotas
 #options 		GATEWAY			# packet forwarding
 options 		INET			    	# IP + ICMP + TCP + UDP
 options 		INET6			    	# IPV6
+
+#options    NBPF                   # Enable NBPF, BPF will use the NBPF instruction set
+# NBPF Table options will uses default if not set (Recommended: Unless you know what you are doing)
+#options    NBPF_TABLE_TID   0      # Set NBPF table starting tid (0 or higher)
+#options    NBPF_TABLE_TYPE  3      # Set NBPF table type (LPM: 1, HASH: 2, TREE: 3)
+#options    NBPF_TABLE_HSIZE 1024   # Set NBPF table hash size (default is 1024)
 
 options		    FAST_IPSEC    		# IP security with opencrypto
 #options 		IPSEC			# IP security (kame ipsec w/IPSEC_CRYPTO/IPSEC_XFORM)
