@@ -131,14 +131,14 @@ nbpf_nc_alloc(int size)
 {
 	struct nbpf_insn *ncode;
 
-	ncode = (struct nbpf_insn *)malloc(size, M_DEVBUF, M_WAITOK);
+	ncode = (struct nbpf_insn *)malloc(size, M_NBPF, M_WAITOK);
 	return (ncode);
 }
 
 void
 nbpf_nc_free(struct nbpf_insn *ncode)
 {
-	free(ncode, M_DEVBUF);
+	free(ncode, M_NBPF);
 }
 
 /*

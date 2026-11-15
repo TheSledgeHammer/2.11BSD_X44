@@ -194,6 +194,14 @@ struct nbpf_ioctl_table {
 	int 				nct_type;
 };
 
+#define BIOCGNBLEN		_IOR('B',102, u_int)
+#define BIOCSNBLEN		_IOWR('B',102, u_int)
+#define BIOCSETNF		_IOW('B',103, struct nbpf_program)		/* nbpf setf */
+#define BIOCNBFLUSH		_IO('B',104)
+#define BIOCGETTBLIO	_IOR('B',105, struct nbpf_ioctl_table)	/* nbpf get table */
+#define BIOCSETTBLIO	_IOW('B',106, struct nbpf_ioctl_table) 	/* nbpf set table */
+#define BIOCTBLCTL		_IOWR('B',107, struct nbpf_ioctl_table)
+
 /* Table types. */
 #define	NBPF_TABLE_LPM				1
 #define	NBPF_TABLE_HASH				2
@@ -260,7 +268,6 @@ int		nbpf_match_tcpfl(nbpf_state_t *, nbpf_buf_t *, void *, uint32_t);
 nbpf_tableset_t *nbpf_tableset_create(void);
 void	nbpf_tableset_destroy(nbpf_tableset_t *);
 int		nbpf_tableset_insert(nbpf_tableset_t *, nbpf_table_t *);
-void	nbpf_tableset_reload(nbpf_tableset_t *, nbpf_tableset_t *);
 
 /* Table interface. */
 nbpf_table_t *nbpf_table_create(u_int, int);
@@ -270,8 +277,7 @@ int		nbpf_table_check(const nbpf_tableset_t *, u_int, int);
 int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
-
-int     nbpf_table_ioctl(nbpf_ioctl_table_t *, nbpf_tableset_t *);
 int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
+
 #endif /* _KERNEL */
 #endif /* _NET_NBPF_H_ */

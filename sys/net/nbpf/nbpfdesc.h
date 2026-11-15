@@ -57,28 +57,8 @@ struct nbpf_d {
 
 	/* bpf information: needed by the nbpf */
 	struct bpf_d		*nbd_bpf; 			/* bpf back-pointer */
-
-#define nbd_sbuf		nbd_bpf->bd_sbuf
-#define nbd_hbuf		nbd_bpf->bd_hbuf
-#define nbd_fbuf		nbd_bpf->bd_fbuf
-#define nbd_slen		nbd_bpf->bd_slen
-#define nbd_hlen		nbd_bpf->bd_hlen
-
-#define nbd_bufsize		nbd_bpf->bd_bufsize /* absolute length of buffers */
-
 #define	nbd_bif			nbd_bpf->bd_bif		/* interface descriptor */
-#define nbd_rcount		nbd_bpf->bd_rcount
-#define nbd_dcount		nbd_bpf->bd_dcount
-#define nbd_ccount		nbd_bpf->bd_ccount
-#define nbd_state		nbd_bpf->bd_state
-#define nbd_immediate 	nbd_bpf->bd_immediate
 };
-
-#define BIOCGNBLEN		_IOR('B',102, u_int)
-#define BIOCSNBLEN		_IOWR('B',102, u_int)
-#define BIOCSETNF		_IOW('B',103, struct nbpf_program)		/* nbpf setf */
-#define BIOCNBFLUSH		_IO('B',104)
-#define BIOCSETTBLNF	_IOWR('B',105, struct nbpf_program) 	/* nbpf tblset */
 
 #ifdef _KERNEL
 void nbpf_attachd(struct nbpf_d *, struct bpf_d *);

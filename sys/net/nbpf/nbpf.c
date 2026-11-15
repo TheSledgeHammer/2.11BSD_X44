@@ -29,6 +29,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * TODO:
+ * NBPF Table:
+ * - ioctls for table add, remove and lookup are very likely broken and need fixing.
+ * Issue:
+ * - Based on NetBSD 6.0 NPF tableset, which in turn depends on proplib for access.
+ * - Removed need for proplib but retains the basic ioctl for tableset.
+ *
+ */
 #include <sys/cdefs.h>
 __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $");
 
@@ -56,8 +65,7 @@ __KERNEL_RCSID(0, "$NetBSD: npf_mbuf.c,v 1.6.14.3 2013/02/08 19:18:10 riz Exp $"
 # define BPF_BUFSIZE 	32768
 #endif
 
-extern int bpf_bufsize;// = BPF_BUFSIZE;
-extern int bpf_maxbufsize;// = BPF_DFLTBUFSIZE;	/* XXX set dynamically, see above */
+extern int bpf_maxbufsize;
 
 static struct nbpf_d *nbpf_d_alloc(size_t);
 static void nbpf_d_free(struct nbpf_d *);
@@ -104,10 +112,37 @@ nbpf_table_init(struct nbpf_d *nd)
 
 	error = nbpf_mktable(&tset, &t);
 	if (error != 0) {
+		nbpf_tableset_destroy(tset);
+		nbpf_table_destroy(t);
 		return;
 	}
 	nd->nbd_tableset = tset;
 	nd->nbd_table = t;
+}
+
+static void
+nbpf_table_reload(struct nbpf_d *nd)
+{
+	nbpf_tableset_t *tset, *otset;
+	nbpf_table_t *tbl, *otbl;
+	int error;
+
+	otset = nd->nbd_tableset;
+	otbl = nd->nbd_table;
+	error = nbpf_mktable(&tset, &tbl);
+	if (error != 0) {
+		nbpf_tableset_destroy(tset);
+		nbpf_table_destroy(tbl);
+		return;
+	}
+	if (otset != NULL) {
+		nbpf_tableset_destroy(otset);
+	}
+	if (otbl != NULL) {
+		nbpf_table_destroy(otbl);
+	}
+	nd->nbd_tableset = tset;
+	nd->nbd_table = tbl;
 }
 
 void
@@ -116,7 +151,7 @@ nbpf_attachd(struct nbpf_d *nd, struct bpf_d *d)
 	if (nd == NULL) {
 		nd = nbpf_d_alloc(sizeof(*nd));
 	}
-    nd->nbd_bpf = d;
+	nd->nbd_bpf = d;
 	nbpf_state_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
 	nbpf_table_init(nd);
 }
@@ -128,9 +163,63 @@ nbpf_detachd(struct nbpf_d *nd, struct bpf_d *d)
 		free(nd->nbd_statehandler, M_DEVBUF);
 	}
 	if (nd != NULL) {
-        nd->nbd_bpf = d;
+		nd->nbd_bpf = d;
 		nbpf_d_free(nd);
 	}
+}
+
+/* NBPF set ioctl table from userspace */
+static int
+nbpf_set_table(caddr_t addr)
+{
+	nbpf_ioctl_table_t *nbiot = (nbpf_ioctl_table_t *)addr;
+	nbpf_ioctl_table_t uent;
+
+	if (nbiot != NULL) {
+		return (copyin(nbiot, &uent, sizeof(uent)));
+	}
+	return (EINVAL);
+}
+
+/* NBPF get ioctl table from userspace */
+static int
+nbpf_get_table(caddr_t addr)
+{
+	nbpf_ioctl_table_t *nbiot = (nbpf_ioctl_table_t *)addr;
+	nbpf_ioctl_table_t uent;
+
+	if (nbiot != NULL) {
+		return (copyout(&uent, nbiot, sizeof(uent)));
+	}
+	return (EINVAL);
+}
+
+/* NBPF table controls */
+static int
+nbpf_table_ioctl(struct nbpf_d *nd, nbpf_ioctl_table_t *nbiot)
+{
+	nbpf_tableset_t *tblset = nd->nbd_tableset;
+	int error;
+
+	switch (nbiot->nct_cmd) {
+	case NBPF_CMD_TABLE_LOOKUP:
+		error = nbpf_table_lookup(tblset, nbiot->nct_tid, nbiot->nct_alen,
+				&nbiot->nct_addr);
+		break;
+	case NBPF_CMD_TABLE_ADD:
+		error = nbpf_table_insert(tblset, nbiot->nct_tid, nbiot->nct_alen,
+				&nbiot->nct_addr, nbiot->nct_mask);
+		break;
+	case NBPF_CMD_TABLE_REMOVE:
+		error = nbpf_table_remove(tblset, nbiot->nct_tid, nbiot->nct_alen,
+				&nbiot->nct_addr, nbiot->nct_mask);
+		break;
+	default:
+		error = EINVAL;
+		break;
+	}
+	nbpf_table_reload(nd);
+	return (error);
 }
 
 /*
@@ -138,7 +227,9 @@ nbpf_detachd(struct nbpf_d *nd, struct bpf_d *d)
  *  BIOCSNBLEN		Set buffer len [for write()].
  *  BIOCSETNF		Set ethernet read filter.
  *  BIOCNBFLUSH		Flush read packet buffer.
- *  BIOCSETTBLNF	State Table Controls [Add, Remove, Lookup]
+ *  BIOCGETTBLIO	Get nbpf ioctl table
+ *  BIOCSETTBLIO	Set nbpf ioctl table
+ *  BIOCTBLCTL		Table Controls [Add, Remove, Lookup]
  */
 
 int
@@ -192,10 +283,24 @@ nbpfioctl(struct nbpf_d *nd, dev_t dev, u_long cmd, caddr_t addr, int flag, stru
 		break;
 
 	/*
-	 * NBPF state table controls.
+	 * NBPF get ioctl table
 	 */
-	case BIOCSETTBLNF:
-		error = nbpf_table_ioctl((struct nbpf_ioctl_table *)addr, nd->nbd_tableset);
+	case BIOCGETTBLIO:
+		error = nbpf_get_table(addr);
+		break;
+
+	/*
+	 * NBPF set ioctl table
+	 */
+	case BIOCSETTBLIO:
+		error = nbpf_set_table(addr);
+		break;
+
+	/*
+	 * NBPF table
+	 */
+	case BIOCTBLCTL:
+		error = nbpf_table_ioctl(nd, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	default:
@@ -229,7 +334,7 @@ nbpf_allocbufs(struct nbpf_d *nd, size_t nbufsize)
 	if (nd->nbd_nbufsize == 0) {
 		nd->nbd_nbufsize = nbufsize;
 	}
-	nd->nbd_nbuf = malloc(nbufsize, M_DEVBUF, M_NOWAIT);
+	nd->nbd_nbuf = malloc(nd->nbd_nbufsize, M_DEVBUF, M_NOWAIT);
 	if (!nd->nbd_nbuf) {
 		free(nd->nbd_nbuf, M_DEVBUF);
 		return (ENOBUFS);
@@ -299,20 +404,9 @@ nbpf_filtncatch(struct nbpf_d *nd, u_char *pkt, u_int pktlen, void *(*cpfn)(void
 	}
 }
 
-#define BPF_ROTATE_BUFFERS(nd) 			\
-	(nd)->nbd_hbuf = (nd)->nbd_sbuf; 	\
-	(nd)->nbd_hlen = (nd)->nbd_slen; 	\
-	(nd)->nbd_sbuf = (nd)->nbd_fbuf; 	\
-	(nd)->nbd_slen = 0; 				\
-	(nd)->nbd_fbuf = 0;
-
 /*
  * GOAL:
- * - To provide a secondary filter on buffer overflows in catchpacket.
- *
- * TODO:
- * - fix up: to work better within bpf's catchpacket.
- * - perform check on nbuf, if overflow increment bpf dcount and return
+ * - To provide a secondary filter on buffer overflows and dropped packets in catchpacket.
  *
  */
 static void
@@ -323,7 +417,7 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	int mflags, error;
 	struct bpf_hdr *hp;
 
-	++nd->nbd_ccount;
+	++nd->nbd_bpf->bd_ccount;
 
 	mflags = (nd->nbd_statehandler->nbs_info & flags);
 	nptr = nbpf_dataptr(pkt);
@@ -332,23 +426,28 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	if (totlen > nd->nbd_nbufsize) {
 		totlen = nd->nbd_nbufsize;
 	}
-	curlen = BPF_WORDALIGN(nd->nbd_slen);
+	curlen = BPF_WORDALIGN(nd->nbd_bpf->bd_slen);
 	if (curlen + totlen > nd->nbd_nbufsize) {
-		if (nd->nbd_fbuf == 0) {
-			++nd->nbd_dcount;
+		if (nd->nbd_bpf->bd_fbuf == 0) {
+			++nd->nbd_bpf->bd_dcount;
 			return;
 		}
-		BPF_ROTATE_BUFFERS(nd);
+		/* Rotate Buffers */
+		nd->nbd_bpf->bd_hbuf = nd->nbd_bpf->bd_sbuf;
+		nd->nbd_bpf->bd_hlen = nd->nbd_bpf->bd_slen;
+		nd->nbd_bpf->bd_sbuf = nd->nbd_bpf->bd_fbuf;
+		nd->nbd_bpf->bd_slen = 0;
+		nd->nbd_bpf->bd_fbuf = 0;
 		*do_wakeup = 1;
 		curlen = 0;
-	} else if (nd->nbd_immediate || nd->nbd_state == BPF_TIMED_OUT) {
+	} else if (nd->nbd_bpf->bd_immediate || nd->nbd_bpf->bd_state == BPF_TIMED_OUT) {
 		*do_wakeup = 1;
 	}
 
 	/*
 	 * Append the bpf header.
 	 */
-	hp = (struct bpf_hdr *)(nd->nbd_sbuf + curlen);
+	hp = (struct bpf_hdr *)(nd->nbd_bpf->bd_sbuf + curlen);
 	microtime(&hp->bh_tstamp);
 	hp->bh_datalen = pktlen;
 	hp->bh_hdrlen = hdrlen;

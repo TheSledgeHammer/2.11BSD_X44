@@ -105,8 +105,6 @@ struct nbpf_table {
 
 extern const pt_tree_ops_t nbpf_table_ptree_ops;
 
-#define M_NBPF 	M_DEVBUF
-
 nbpf_tableset_t *
 nbpf_tableset_create(void)
 {
@@ -156,6 +154,7 @@ nbpf_tableset_insert(nbpf_tableset_t *tblset, nbpf_table_t *t)
 	return (error);
 }
 
+#ifdef notyet
 /*
  * npf_tableset_reload: iterate all tables and if the new table is of the
  * same type and has no items, then we preserve the old one and its entries.
@@ -187,6 +186,7 @@ nbpf_tableset_reload(nbpf_tableset_t *ntset, nbpf_tableset_t *otset)
 		nbpf_table_destroy(t);
 	}
 }
+#endif
 
 /*
  * Few helper routines.
@@ -611,31 +611,6 @@ nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl)
 	*tset = ts;
 	*tbl = tb;
 	return (0);
-}
-
-int
-nbpf_table_ioctl(nbpf_ioctl_table_t *nbiot, nbpf_tableset_t *tblset)
-{
-	int error;
-
-	switch (nbiot->nct_cmd) {
-	case NBPF_CMD_TABLE_LOOKUP:
-		error = nbpf_table_lookup(tblset, nbiot->nct_tid, nbiot->nct_alen,
-				&nbiot->nct_addr);
-		break;
-	case NBPF_CMD_TABLE_ADD:
-		error = nbpf_table_insert(tblset, nbiot->nct_tid, nbiot->nct_alen,
-				&nbiot->nct_addr, nbiot->nct_mask);
-		break;
-	case NBPF_CMD_TABLE_REMOVE:
-		error = nbpf_table_remove(tblset, nbiot->nct_tid, nbiot->nct_alen,
-				&nbiot->nct_addr, nbiot->nct_mask);
-		break;
-	default:
-		error = EINVAL;
-		break;
-	}
-	return (error);
 }
 
 #ifdef notyet

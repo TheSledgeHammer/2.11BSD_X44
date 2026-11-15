@@ -148,7 +148,8 @@
 #define	M_IPFLOW		101	/* IP flow entries */
 #define M_MSFILTER		102 /* multicast source filter */
 #define M_FUTEX			103 /* futex structures */
-#define	M_TEMP			104	/* misc temporary data buffers */
+#define M_NBPF			104 /* nbpf structures */
+#define	M_TEMP			105	/* misc temporary data buffers */
 #define	M_LAST 			M_TEMP+1 	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {									\
@@ -256,7 +257,8 @@
 	"IP flow",					/* 101 M_IPFLOW */ 		\
 	"msfilter",					/* 102 M_MSFILTER */ 	\
 	"futex",					/* 103 M_FUTEX */ 		\
-	"temp",						/* 104 M_TEMP */ 		\
+	"NBPF",						/* 104 M_NBPF */ 		\
+	"temp",						/* 105 M_TEMP */ 		\
 }
 
 #endif /* _SYS_MALLOCTYPES_H_ */
