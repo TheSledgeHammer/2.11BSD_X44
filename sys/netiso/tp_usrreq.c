@@ -171,11 +171,9 @@ tp_rcvoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *m, int *outflags,
 	int             error = 0;
 	struct mbuf **nn;
 
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_XPD)
 		printf("PRU_RCVOOB, sostate 0x%x\n", so->so_state);
 	ENDDEBUG
-#endif
 
 	/* if you use soreceive */
 	if (m == NULL)
@@ -205,11 +203,9 @@ restart:
 			break;
 
 	if (n == 0) {
-#ifdef ARGO_DEBUG
 		IFDEBUG(D_XPD)
 			printf("RCVOOB: empty queue!\n");
 		ENDDEBUG
-#endif
 		sbunlock(sb);
 		if (so->so_state & SS_NBIO) {
 			return EWOULDBLOCK;
@@ -230,13 +226,11 @@ restart:
 	m->m_data = m->m_dat;
 	m->m_flags |= M_EOR;
 
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_XPD)
 		printf("tp_rcvoob: xpdlen 0x%x\n", m->m_len);
 		dump_mbuf(so->so_rcv.sb_mb, "RCVOOB: Rcv socketbuf");
 		dump_mbuf(sb->sb_mb, "RCVOOB: Xrcv socketbuf");
 	ENDDEBUG
-#endif
 
 	if ((inflags & MSG_PEEK) == 0) {
 		n = *nn;
@@ -288,13 +282,12 @@ tp_sendoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *xdata, int *outf
 	int    len = 0;
 	struct tp_event E;
 
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob:");
 		if (xdata)
 			printf("xdata len 0x%x\n", xdata->m_len);
 	ENDDEBUG
-#endif
+
 	/*
 	 * DO NOT LOCK the Xsnd buffer!!!! You can have at MOST one socket
 	 * buf locked at any time!!! (otherwise you might sleep() in sblock()
@@ -320,13 +313,11 @@ tp_sendoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *xdata, int *outf
 		xdata->m_len = 0;
 		xdata->m_pkthdr.len = 0;
 	}
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob 1:");
 		if (xdata)
 			printf("xdata len 0x%x\n", xdata->m_len);
 	ENDDEBUG
-#endif
 	xmark = xdata;		/* temporary use of variable xmark */
 	while (xmark) {
 		len += xmark->m_len;
@@ -335,14 +326,11 @@ tp_sendoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *xdata, int *outf
 	if (len > TP_MAX_XPD_DATA) {
 		return EMSGSIZE;
 	}
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob 2:");
 		if (xdata)
 			printf("xdata len 0x%x\n", len);
 	ENDDEBUG
-#endif
-
 
 #ifdef TPPT
 	if (tp_traceflags[D_XPD]) {
@@ -352,13 +340,11 @@ tp_sendoob(struct tp_pcb *tpcb, struct socket *so, struct mbuf *xdata, int *outf
 
 	sbappendrecord(sb, xdata);
 
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob len 0x%x\n", len);
 		dump_mbuf(so->so_snd.sb_mb, "XPD request Regular sndbuf:");
 		dump_mbuf(tpcb->tp_Xsnd.sb_mb, "XPD request Xsndbuf:");
 	ENDDEBUG
-#endif
 	return DoEvent(T_XPD_req);
 }
 
@@ -384,13 +370,11 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 	u_long eotsdu = 0;
 	struct tp_event E;
 
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_REQUEST)
 		printf("usrreq(%p,%d,%p,%p,%p)\n", so, req, m, nam, outflags);
 		if (so->so_error)
 			printf("WARNING!!! so->so_error is 0x%x\n", so->so_error);
 	ENDDEBUG
-#endif
 #ifdef TPPT
 	if (tp_traceflags[D_REQUEST]) {
 		tptraceTPCB(TPPTusrreq, "req so m state [", req, so, m,
@@ -431,11 +415,9 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 		error = DoEvent(T_DETACH);
 		if (tpcb->tp_state == TP_CLOSED) {
 			if (tpcb->tp_notdetached) {
-#ifdef ARGO_DEBUG
 				IFDEBUG(D_CONN)
 					printf("PRU_DETACH: not detached\n");
 				ENDDEBUG
-#endif
 				tp_detach(tpcb);
 			}
 			free((caddr_t) tpcb, M_PCB);
@@ -483,34 +465,33 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 				    tpcb->tp_class);
 		}
 #endif
-#ifdef ARGO_DEBUG
+
 		IFDEBUG(D_CONN)
 			printf("PRU_CONNECT: so %p *SHORT_LSUFXP(tpcb) 0x%x lsuflen 0x%x, class 0x%x",
 			       tpcb->tp_sock, *SHORT_LSUFXP(tpcb), tpcb->tp_lsuffixlen,
 			       tpcb->tp_class);
 		ENDDEBUG
-#endif
+
 		if (tpcb->tp_lsuffixlen == 0) {
 			error = tp_pcbbind(tpcb, (struct mbuf *)0,
 			    (struct proc *)0);
 			if (error) {
-#ifdef ARGO_DEBUG
 				IFDEBUG(D_CONN)
 					printf("pcbbind returns error 0x%x\n", error);
 				ENDDEBUG
-#endif
+
 				break;
 			}
 		}
-#ifdef ARGO_DEBUG
+
 		IFDEBUG(D_CONN)
 			printf("isop %p isop->isop_socket offset 12 :\n", tpcb->tp_npcb);
 			dump_buf(tpcb->tp_npcb, 16);
 		ENDDEBUG
-#endif
+
 		if ((error = tp_route_to(nam, tpcb, /* channel */ 0)) != 0)
 			break;
-#ifdef ARGO_DEBUG
+
 		IFDEBUG(D_CONN)
 			printf(
 			       "PRU_CONNECT after tpcb %p so %p npcb %p flags 0x%x\n",
@@ -518,7 +499,7 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 			printf("isop %p isop->isop_socket offset 12 :\n", tpcb->tp_npcb);
 			dump_buf(tpcb->tp_npcb, 16);
 		ENDDEBUG
-#endif
+
 		if (tpcb->tp_fsuffixlen == 0) {
 			/* didn't set peer extended suffix */
 			(tpcb->tp_tpproto->tp_getsufx)(tpcb->tp_npcb,
@@ -555,13 +536,13 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 		break;
 
 	case PRU_ACCEPT:
-		(tpcb->tp_tpproto->tp_getnetaddr) (tpcb->tp_npcb, nam, TP_FOREIGN);
-#ifdef ARGO_DEBUG
+		(tpcb->tp_tpproto->tp_getnetaddr)(tpcb->tp_npcb, nam, TP_FOREIGN);
+
 		IFDEBUG(D_REQUEST)
 			printf("ACCEPT PEERADDDR:");
 			dump_buf(mtod(nam, char *), nam->m_len);
 		ENDDEBUG
-#endif
+
 #ifdef TP_PERF_MEAS
 		if (DOPERF(tpcb)) {
 			u_int           lsufx, fsufx;
@@ -602,13 +583,13 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 				    so->so_rcv.sb_cc, so->so_rcv.sb_hiwat);
 		}
 #endif
-#ifdef ARGO_DEBUG
+
 		IFDEBUG(D_REQUEST)
 			printf("RCVD: cc %ld space %ld hiwat %ld\n",
 			       so->so_rcv.sb_cc, sbspace(&so->so_rcv),
 			       so->so_rcv.sb_hiwat);
 		ENDDEBUG
-#endif
+
 		if (((long) nam) & MSG_OOB)
 			error = DoEvent(T_USR_Xrcvd);
 		else
@@ -681,7 +662,6 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 				       PStat(tpcb, Nb_from_sess), totlen);
 			}
 #endif
-#ifdef ARGO_DEBUG
 			IFDEBUG(D_SYSCALL)
 				printf(
 				       "PRU_SEND: eot %ld before sbappend %p len 0x%x to sb @ %p\n",
@@ -689,24 +669,23 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 				dump_mbuf(m, "m : to be added");
 			ENDDEBUG
-#endif
+
 			tp_packetize(tpcb, m, eotsdu);
-#ifdef ARGO_DEBUG
+
 			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: eot %ld after sbappend %p\n", eotsdu, m);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 			ENDDEBUG
-#endif
+
 			if (tpcb->tp_state == TP_OPEN)
 				error = DoEvent(T_DATA_req);
-#ifdef ARGO_DEBUG
+
 			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: after driver error 0x%x \n", error);
 				printf("so_snd %p cc 0t%ld mbcnt 0t%ld\n",
 				       sb, sb->sb_cc, sb->sb_mbcnt);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb after driver");
 			ENDDEBUG
-#endif
 		}
 		break;
 
@@ -744,13 +723,11 @@ tp_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam, struct m
 		error = EOPNOTSUPP;
 	}
 
-#ifdef ARGO_DEBUG
 	IFDEBUG(D_REQUEST)
 		printf("%s, so %p, tpcb %p, error %d, state %d\n",
 		       "returning from tp_usrreq", so, tpcb, error,
 		       tpcb ? tpcb->tp_state : 0);
 	ENDDEBUG
-#endif
 #ifdef TPPT
 	if (tp_traceflags[D_REQUEST]) {
 		tptraceTPCB(TPPTusrreq, "END req so m state [", req, so, m,

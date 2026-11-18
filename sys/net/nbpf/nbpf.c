@@ -170,36 +170,66 @@ nbpf_detachd(struct nbpf_d *nd, struct bpf_d *d)
 
 /* NBPF set ioctl table from userspace */
 static int
-nbpf_set_table(caddr_t addr)
+nbpf_set_table(nbpf_tableset_t *tblset, nbpf_ioctl_table_t *nbiot)
 {
-	nbpf_ioctl_table_t *nbiot = (nbpf_ioctl_table_t *)addr;
 	nbpf_ioctl_table_t uent;
+	int count = 0;
 
 	if (nbiot != NULL) {
+		if (tblset != NULL) {
+recheck:
+			if (nbpf_table_check(tblset, nbiot->nct_tid, nbiot->nct_type) != 0) {
+				if (count == 0) {
+					/* set to tblsets */
+					nbiot->nct_tid = (*tblset)->t_id;
+					nbiot->nct_type = (*tblset)->t_type;
+					count++;
+					goto recheck;
+				}
+				if (count == 1) {
+					/* set to default */
+					nbiot->nct_tid = NBPF_TABLE_TID;
+					nbiot->nct_type = NBPF_TABLE_TYPE;
+					count++;
+					goto recheck;
+				}
+				goto out;
+			}
+		}
 		return (copyin(nbiot, &uent, sizeof(uent)));
 	}
+out:
 	return (EINVAL);
 }
 
 /* NBPF get ioctl table from userspace */
 static int
-nbpf_get_table(caddr_t addr)
+nbpf_get_table(nbpf_tableset_t *tblset, nbpf_ioctl_table_t *nbiot)
 {
-	nbpf_ioctl_table_t *nbiot = (nbpf_ioctl_table_t *)addr;
 	nbpf_ioctl_table_t uent;
+	int count = 0;
 
 	if (nbiot != NULL) {
+		if (tblset != NULL) {
+			if (nbpf_table_check(tblset, nbiot->nct_tid, nbiot->nct_type) != 0) {
+				goto out;
+			}
+		}
 		return (copyout(&uent, nbiot, sizeof(uent)));
 	}
+out:
 	return (EINVAL);
 }
 
 /* NBPF table controls */
 static int
-nbpf_table_ioctl(struct nbpf_d *nd, nbpf_ioctl_table_t *nbiot)
+nbpf_table_ioctl(struct nbpf_d *nd, nbpf_tableset_t *tblset, nbpf_ioctl_table_t *nbiot)
 {
-	nbpf_tableset_t *tblset = nd->nbd_tableset;
 	int error;
+
+	if ((tblset == NULL) || (nbiot == NULL)) {
+		goto out;
+	}
 
 	switch (nbiot->nct_cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
@@ -215,10 +245,12 @@ nbpf_table_ioctl(struct nbpf_d *nd, nbpf_ioctl_table_t *nbiot)
 				&nbiot->nct_addr, nbiot->nct_mask);
 		break;
 	default:
+out:
 		error = EINVAL;
 		break;
 	}
-	nbpf_table_reload(nd);
+
+	//nbpf_table_reload(nd);
 	return (error);
 }
 
@@ -286,21 +318,21 @@ nbpfioctl(struct nbpf_d *nd, dev_t dev, u_long cmd, caddr_t addr, int flag, stru
 	 * NBPF get ioctl table
 	 */
 	case BIOCGETTBLIO:
-		error = nbpf_get_table(addr);
+		error = nbpf_get_table(nd->nbd_tableset, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	/*
 	 * NBPF set ioctl table
 	 */
 	case BIOCSETTBLIO:
-		error = nbpf_set_table(addr);
+		error = nbpf_set_table(nd->nbd_tableset, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	/*
 	 * NBPF table
 	 */
-	case BIOCTBLCTL:
-		error = nbpf_table_ioctl(nd, (nbpf_ioctl_table_t *)addr);
+	case BIOCTBLCNTL:
+		error = nbpf_table_ioctl(nd, nd->nbd_tableset, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	default:

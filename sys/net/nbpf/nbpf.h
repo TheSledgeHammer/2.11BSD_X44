@@ -200,7 +200,7 @@ struct nbpf_ioctl_table {
 #define BIOCNBFLUSH		_IO('B',104)
 #define BIOCGETTBLIO	_IOR('B',105, struct nbpf_ioctl_table)	/* nbpf get table */
 #define BIOCSETTBLIO	_IOW('B',106, struct nbpf_ioctl_table) 	/* nbpf set table */
-#define BIOCTBLCTL		_IOWR('B',107, struct nbpf_ioctl_table)
+#define BIOCTBLCNTL		_IOWR('B',107, struct nbpf_ioctl_table)
 
 /* Table types. */
 #define	NBPF_TABLE_LPM				1
