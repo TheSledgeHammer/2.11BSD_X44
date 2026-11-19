@@ -48,11 +48,13 @@ struct nbpf_insn {
 	size_t 				sz;
 };
 
+#ifdef _KERNEL
 struct nbpf_insn *nbpf_nc_alloc(int);
 void nbpf_nc_free(struct nbpf_insn *);
 
 int nbpf_filter(nbpf_state_t *, struct nbpf_insn *, nbpf_buf_t *, int);
 int nbpf_validate(struct nbpf_insn *, size_t, int *);
+
 
 /* Error codes. */
 #define	NBPF_ERR_OPCODE		-1	/* Invalid instruction. */
@@ -70,6 +72,7 @@ int nbpf_validate(struct nbpf_insn *, size_t, int *);
 /* Shift to check if CISC-like instruction. */
 #define	NBPF_CISC_SHIFT		7
 #define	NBPF_CISC_OPCODE(insn)	(insn >> NBPF_CISC_SHIFT)
+#endif
 
 /*
  * RISC-like n-code instructions.
@@ -126,7 +129,7 @@ int nbpf_validate(struct nbpf_insn *, size_t, int *);
 #define	NBPF_OPCODE_UDP_PORTS	0xa1
 #define	NBPF_OPCODE_TCP_FLAGS	0xa2
 
-#ifdef NBPF_OPCODES_STRINGS
+#if defined(NBPF_OPCODES_STRINGS)
 
 # define	NBPF_OPERAND_NONE			0
 # define	NBPF_OPERAND_REGISTER		1

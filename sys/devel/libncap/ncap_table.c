@@ -38,12 +38,6 @@
 
 #include "ncap.h"
 
-int
-ncap_strerror(int errnum)
-{
-	return (strerror(errnum));
-}
-
 static int
 ncap_table_set(ncap_t *n, ncap_table_t *t, nbpf_ioctl_table_t *nct)
 {

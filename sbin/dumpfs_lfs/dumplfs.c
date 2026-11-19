@@ -79,10 +79,10 @@ static void	addseg(char *);
 static void	dump_cleaner_info(struct lfs *, void *);
 static void	dump_dinode(union dinode *);
 static void	dump_ifile(int, struct lfs *, int);
-static int	dump_ipage_ifile(int, IFILE *, int);
-static int	dump_ipage_segusage(struct lfs *, int, IFILE *, int);
+static int dump_ipage_ifile(int, IFILE *, int);
+static int dump_ipage_segusage(struct lfs *, int, IFILE *, int);
 static void	dump_segment(int, int, daddr_t, struct lfs *, int);
-static int	dump_sum(int, struct lfs *, SEGSUM *, int, daddr_t);
+static int dump_sum(int, struct lfs *, SEGSUM *, int, daddr_t);
 static void	dump_super(struct lfs *);
 static void	usage(void);
 
@@ -113,7 +113,7 @@ char *special;
 	(void)printf("inum\tstatus\tversion\tdaddr\t\tfreeptr\n")
 #define print_ientry(i, ip) \
 	if (ip->if_daddr == LFS_UNUSED_DADDR) \
-		(void)printf("%d\tFREE\t%d\t \t\t%d\n", \
+		(void)printf("%d\tFREE\t%d\t \t\t%ld\n", \
 		    i, ip->if_version, ip->if_nextfree); \
 	else \
 		(void)printf("%d\tINUSE\t%d\t%8X    \n", \
@@ -221,12 +221,12 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 	}
 	get(fd, addr << daddr_shift, dpage, psize);
 
-	for (dip = dpage + INOPB(lfsp) - 1; dip >= dpage; --dip) {
+	for (dip = (union dinode *)dpage + INOPB(lfsp) - 1; dip >= (union dinode *)dpage; --dip) {
 		if (DIP(dip, inumber) == LFS_IFILE_INUM) {
 			break;
 		}
 	}
-	if (dip < dpage) {
+	if (dip < (union dinode *)dpage) {
 		errx(1, "unable to locate ifile inode");
 	}
 	(void)printf("\nIFILE inode\n");
@@ -249,13 +249,16 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 
 		if (i < (lfsp->lfs_segtabsz + lfsp->lfs_cleansz)) {
 			inum = dump_ipage_segusage(lfsp, inum, ipage, lfsp->lfs_sepb);
-			if (!inum)
-				if (!do_ientries)
+			if (!inum) {
+				if (!do_ientries) {
 					goto e0;
-				else
+				} else {
 					print_iheader;
-		} else
+				}
+			}
+		} else {
 			inum = dump_ipage_ifile(inum, ipage, lfsp->lfs_ifpb);
+		}
 
 	}
 
@@ -274,18 +277,22 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 		if (i < lfsp->lfs_cleansz) {
 			dump_cleaner_info(lfsp, ipage);
 			continue;
-		} else
+		} else {
 			i -= lfsp->lfs_cleansz;
+		}
 
 		if (i < lfsp->lfs_segtabsz) {
 			inum = dump_ipage_segusage(lfsp, inum, ipage, lfsp->lfs_sepb);
-			if (!inum)
-				if (!do_ientries)
+			if (!inum) {
+				if (!do_ientries) {
 					goto e1;
-				else
+				} else {
 					print_iheader;
-		} else
+				}
+			}
+		} else {
 			inum = dump_ipage_ifile(inum, ipage, lfsp->lfs_ifpb);
+		}
 	}
 
 	if (nblocks <= lfsp->lfs_nindir * lfsp->lfs_ifpb)
@@ -307,18 +314,22 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 			if (i < lfsp->lfs_cleansz) {
 				dump_cleaner_info(lfsp, ipage);
 				continue;
-			} else
+			} else {
 				i -= lfsp->lfs_cleansz;
+			}
 
 			if (i < lfsp->lfs_segtabsz) {
 				inum = dump_ipage_segusage(lfsp, inum, ipage, lfsp->lfs_sepb);
-				if (!inum)
-					if (!do_ientries)
+				if (!inum) {
+					if (!do_ientries) {
 						goto e2;
-					else
+					} else {
 						print_iheader;
-			} else
+					}
+				}
+			} else {
 				inum = dump_ipage_ifile(inum, ipage, lfsp->lfs_ifpb);
+			}
 		}
 	}
 e2:
@@ -364,25 +375,25 @@ dump_dinode(union dinode *dip)
 {
 	int i;
 
-	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\t%s%d\n",
+	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\t%s%ld\n",
 		"mode  ", DIP(dip, mode),
 		"nlink ", DIP(dip, nlink),
 		"uid   ", DIP(dip, uid),
 		"gid   ", DIP(dip, gid),
 		"size  ", DIP(dip, size));
 	(void)printf("%s%s%s%s%s%s",
-		"atime ", ctime(&DIP(dip, atime)),
-		"mtime ", ctime(&DIP(dip, mtime)),
-		"ctime ", ctime(&DIP(dip, ctime)));
-	(void)printf("inum  %d\n", DIP(dip, inumber));
+		"atime ", ctime(DIP(dip, atime)),
+		"mtime ", ctime(DIP(dip, mtime)),
+		"ctime ", ctime(DIP(dip, ctime)));
+	(void)printf("inum  %lld\n", DIP(dip, inumber));
 	(void)printf("Direct Addresses\n");
 	for (i = 0; i < NDADDR; i++) {
-		(void)printf("\t0x%X", DIP(dip, db[i]));
+		(void)printf("\t0x%llX", DIP(dip, db[i]));
 		if ((i % 6) == 5)
 			(void)printf("\n");
 	}
 	for (i = 0; i < NIADDR; i++)
-		(void)printf("\t0x%X", DIP(dip, ib[i]));
+		(void)printf("\t0x%llX", DIP(dip, ib[i]));
 	(void)printf("\n");
 }
 
@@ -466,7 +477,7 @@ dump_segment(int fd, int segnum, daddr_t addr, struct lfs *lfsp, int dump_sb)
 	int did_one, nbytes, sb;
 	off_t sum_offset, super_off;
 
-	(void)printf("\nSEGMENT %d (Disk Address 0x%X)\n",
+	(void)printf("\nSEGMENT %ld (Disk Address 0x%lX)\n",
 	    addr >> (lfsp->lfs_segshift - daddr_shift), addr);
 	sum_offset = (addr << (lfsp->lfs_bshift - lfsp->lfs_fsbtodb));
 
@@ -488,7 +499,7 @@ dump_segment(int fd, int segnum, daddr_t addr, struct lfs *lfsp, int dump_sb)
 				} else if (did_one) {
 					break;
 				} else {
-					printf("Segment at 0x%X corrupt\n", addr);
+					printf("Segment at 0x%lX corrupt\n", addr);
 					break;
 				}
 			}
@@ -561,7 +572,7 @@ dump_super(struct lfs *lfsp)
 		"fbmask   ", lfsp->lfs_fbmask,
 		"fbshift  ", lfsp->lfs_fbshift);
 
-	(void)printf("%s%d\t%s%d\t%s0x%X\t%s0x%qx\n",
+	(void)printf("%s%ld\t%s%d\t%s0x%X\t%s0x%qx\n",
 		"sushift  ", lfsp->lfs_sushift,
 		"fsbtodb  ", lfsp->lfs_fsbtodb,
 		"cksum    ", lfsp->lfs_cksum,
@@ -576,7 +587,7 @@ dump_super(struct lfs *lfsp)
 	(void)printf("\n");
 
 	(void)printf("Checkpoint Info\n");
-	(void)printf("%s%d\t%s0x%X\t%s%d\n",
+	(void)printf("%s%ld\t%s0x%lX\t%s%ld\n",
 		"free     ", lfsp->lfs_free,
 		"idaddr   ", lfsp->lfs_idaddr,
 		"ifile    ", lfsp->lfs_ifile);
@@ -592,13 +603,13 @@ dump_super(struct lfs *lfsp)
 		"offset   ", lfsp->lfs_offset);
 	(void)printf("tstamp   %s", ctime((time_t *)&lfsp->lfs_tstamp));
 	(void)printf("\nIn-Memory Information\n");
-	(void)printf("%s%d\t%s0x%X\t%s%d%s%d\t%s%d\n",
+	(void)printf("%s%ld\t%s0x%lX\t%s%ld%s%ld\t%s%ld\n",
 		"seglock  ", lfsp->lfs_seglock,
 		"iocount  ", lfsp->lfs_iocount,
 		"writer   ", lfsp->lfs_writer,
 		"dirops   ", lfsp->lfs_dirops,
 		"doifile  ", lfsp->lfs_doifile);
-	(void)printf("%s%d\t%s%d\t%s0x%X\t%s%d\n",
+	(void)printf("%s%ld\t%s%d\t%s0x%X\t%s%d\n",
 		"nactive  ", lfsp->lfs_nactive,
 		"fmod     ", lfsp->lfs_fmod,
 		"clean    ", lfsp->lfs_clean,

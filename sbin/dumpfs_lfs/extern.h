@@ -33,6 +33,8 @@
  *	@(#)extern.h	8.2 (Berkeley) 4/28/95
  */
 
+extern char *special;
+
 void get(int, off_t, void *, size_t);
 
-extern char *special;
+
