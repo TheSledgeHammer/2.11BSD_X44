@@ -44,7 +44,7 @@
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
 
-#if defined(_KERNEL)
+#ifdef _KERNEL
 #include <sys/queue.h>
 #include <sys/lock.h>
 
@@ -62,6 +62,12 @@ struct file {
 	int					f_iflags;		/* internal flags */
 	int					f_flag;			/* see below */
 	short				f_type;			/* descriptor type */
+#define	DTYPE_VNODE		1	            /* file */
+#define	DTYPE_SOCKET	2	            /* communications endpoint */
+#define	DTYPE_PIPE		3	            /* I don't want to hear it, okay? */
+#define	DTYPE_KQUEUE	4	            /* event queue */
+#define DTYPE_CRYPTO 	5	            /* crypto */
+#define	DTYPE_MISC		6	            /* misc file descriptor type */
 	short				f_count;		/* reference count */
 	short				f_msgcount;		/* references from message queue */
 	int					f_usecount;		/* number active users */
@@ -96,13 +102,6 @@ LIST_HEAD(filelist, file);
 extern struct filelist  filehead;	/* head of list of open files */
 extern int 				maxfiles;	/* kernel limit on number of open files */
 extern int 				nfiles;		/* actual number of open files */
-
-#define	DTYPE_VNODE		1	/* file */
-#define	DTYPE_SOCKET	2	/* communications endpoint */
-#define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
-#define	DTYPE_KQUEUE	4	/* event queue */
-#define DTYPE_CRYPTO 	5	/* crypto */
-#define	DTYPE_MISC		6	/* misc file descriptor type */
 
 /*
  * Access call.
