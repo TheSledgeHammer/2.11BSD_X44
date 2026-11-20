@@ -54,6 +54,7 @@ static char sccsid[] = "@(#)dumplfs.c	8.5 (Berkeley) 5/24/95";
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_cksum.h>
 
 #include <err.h>
 #include <errno.h>
@@ -77,6 +78,7 @@ union dinode {
 
 static void	addseg(char *);
 static void	dump_cleaner_info(struct lfs *, void *);
+static void dump_dinode_time(union dinode *);
 static void	dump_dinode(union dinode *);
 static void	dump_ifile(int, struct lfs *, int);
 static int dump_ipage_ifile(int, IFILE *, int);
@@ -211,7 +213,7 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 	union dinode *dip;
 	caddr_t dpage;
 	daddr_t addr, *addrp, *dindir, *iaddrp, *indir;
-	int block_limit, i, inum, j, nblocks, nsupb, psize;
+	int block_limit, i, inum, j, nblocks, /* nsupb,*/ psize;
 
 	psize = lfsp->lfs_bsize;
 	addr = lfsp->lfs_idaddr;
@@ -239,7 +241,7 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 	/* Get the direct block */
 	if ((ipage = malloc(psize)) == NULL)
 		err(1, NULL);
-	for (inum = 0, addrp = DIP(dip, db), i = 0; i < block_limit; i++, addrp++) {
+	for (inum = 0, addrp = (daddr_t)DIP(dip, db[0]), i = 0; i < block_limit; i++, addrp++) {
 		get(fd, *addrp << daddr_shift, ipage, psize);
 		if (i < lfsp->lfs_cleansz) {
 			dump_cleaner_info(lfsp, ipage);
@@ -371,20 +373,38 @@ dump_ipage_segusage(struct lfs *lfsp, int i, IFILE *pp, int tot)
 }
 
 static void
+dump_dinode_time(union dinode *dip)
+{
+    time_t atim, mtim, ctim;
+
+    atim = (time_t)DIP(dip, atime);
+    mtim = (time_t)DIP(dip, mtime);
+    ctim = (time_t)DIP(dip, ctime);
+
+   	(void)printf("%s%s%s%s%s%s",
+		"atime ", ctime(&atim),
+		"mtime ", ctime(&mtim),
+		"ctime ", ctime(&ctim));
+}
+
+static void
 dump_dinode(union dinode *dip)
 {
 	int i;
 
-	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\t%s%ld\n",
+	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\t%s%lld\n",
 		"mode  ", DIP(dip, mode),
 		"nlink ", DIP(dip, nlink),
 		"uid   ", DIP(dip, uid),
 		"gid   ", DIP(dip, gid),
 		"size  ", DIP(dip, size));
+    dump_dinode_time(dip);
+/*
 	(void)printf("%s%s%s%s%s%s",
-		"atime ", ctime(DIP(dip, atime)),
-		"mtime ", ctime(DIP(dip, mtime)),
-		"ctime ", ctime(DIP(dip, ctime)));
+		"atime ", ctime((time_t)__UNCONST(DIP(dip, atime))),
+		"mtime ", ctime((time_t)__UNCONST(DIP(dip, mtime))),
+		"ctime ", ctime((time_t)__UNCONST(DIP(dip, ctime))));
+*/
 	(void)printf("inum  %lld\n", DIP(dip, inumber));
 	(void)printf("Direct Addresses\n");
 	for (i = 0; i < NDADDR; i++) {
@@ -433,13 +453,13 @@ dump_sum(int fd, struct lfs *lfsp, SEGSUM *sp, int segnum, daddr_t addr)
 	numbytes = 0;
 	for (dp--, i = 0; i < sp->ss_ninos; dp--) {
 		numbytes += lfsp->lfs_bsize;	/* add bytes for inode block */
-		printf("\t0x%X {", *dp);
+		printf("\t0x%lX {", *dp);
 		get(fd, *dp << (lfsp->lfs_bshift - lfsp->lfs_fsbtodb), inop, 
 		    (1 << lfsp->lfs_bshift));
 		for (j = 0; i < sp->ss_ninos && j < INOPB(lfsp); j++, i++) {
 			if (j > 0) 
 				(void)printf(", ");
-			(void)printf("%d", DIP(inop[j], inumber));
+			(void)printf("%lld", DIP(&inop[j], inumber));
 		}
 		(void)printf("}");
 		if (((i/INOPB(lfsp)) % 4) == 3)
@@ -451,9 +471,9 @@ dump_sum(int fd, struct lfs *lfsp, SEGSUM *sp, int segnum, daddr_t addr)
 	for (fp = (FINFO *)(sp + 1), i = 0; i < sp->ss_nfinfo; i++) {
 		(void)printf("    FINFO for inode: %d version %d nblocks %d lastlength %d\n",
 		    fp->fi_ino, fp->fi_version, fp->fi_nblocks, fp->fi_lastlength);
-		dp = &(fp->fi_blocks[0]);
+		dp = (daddr_t *)&fp->fi_blocks[0];
 		for (j = 0; j < fp->fi_nblocks; j++, dp++) {
-			(void)printf("\t%d", *dp);
+			(void)printf("\t%ld", *dp);
 			if ((j % 8) == 7)
 				(void)printf("\n");
 			if (j == fp->fi_nblocks - 1)
@@ -572,7 +592,7 @@ dump_super(struct lfs *lfsp)
 		"fbmask   ", lfsp->lfs_fbmask,
 		"fbshift  ", lfsp->lfs_fbshift);
 
-	(void)printf("%s%ld\t%s%d\t%s0x%X\t%s0x%qx\n",
+	(void)printf("%s%d\t%s%d\t%s0x%X\t%s0x%qx\n",
 		"sushift  ", lfsp->lfs_sushift,
 		"fsbtodb  ", lfsp->lfs_fsbtodb,
 		"cksum    ", lfsp->lfs_cksum,
@@ -587,7 +607,7 @@ dump_super(struct lfs *lfsp)
 	(void)printf("\n");
 
 	(void)printf("Checkpoint Info\n");
-	(void)printf("%s%ld\t%s0x%lX\t%s%ld\n",
+	(void)printf("%s%ld\t%s0x%X\t%s%ld\n",
 		"free     ", lfsp->lfs_free,
 		"idaddr   ", lfsp->lfs_idaddr,
 		"ifile    ", lfsp->lfs_ifile);
