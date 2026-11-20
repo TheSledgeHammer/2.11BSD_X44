@@ -46,10 +46,11 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #endif
 #endif /* not lint */
 
-#include <sys/types.h>
+//#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
@@ -59,10 +60,9 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/unpcb.h>
 #include <sys/sysctl.h>
 #include <sys/filedesc.h>
+
 #define _KERNEL
 #include <sys/file.h>
-#undef _KERNEL
-#define	_KERNEL
 #include <sys/mount.h>
 #undef _KERNEL
 
@@ -84,6 +84,7 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <kvm.h>
 #include <limits.h>
 #include <nlist.h>
@@ -345,29 +346,48 @@ dofiles(struct kinfo_proc *kp)
 	}
 }
 
+#ifndef DTYPE_VNODE
+#define DTYPE_VNODE 1
+#endif
+#ifndef DTYPE_SOCKET
+#define DTYPE_SOCKET 2
+#endif
+#ifndef DTYPE_PIPE
+#define DTYPE_PIPE   3
+#endif
+#ifndef DTYPE_KQUEUE
+#define DTYPE_KQUEUE 4
+#endif
+#ifndef DTYPE_CRYPTO
+#define DTYPE_CRYPTO 5
+#endif
+#ifndef DTYPE_MISC
+#define DTYPE_MISC   6
+#endif
+
 void
 ftrans(struct file *fp, int i)
 {
-	struct file file;
+    struct file files;
 
-	if (!KVM_READ(fp, &file, sizeof(file))) {
+	if (!KVM_READ(fp, &files, sizeof(struct file))) {
 		dprintf("can't read file %d at %p for pid %d\n", i, fp, Pid);
 		return;
 	}
-	switch (file.f_type) {
+	switch (files.f_type) {
 	case DTYPE_VNODE:
-		vtrans((struct vnode *)file.f_data, i, file.f_flag);
+		vtrans((struct vnode *)files.f_data, i, files.f_flag);
 		break;
 	case DTYPE_SOCKET:
 		if (checkfile == 0) {
-			socktrans((struct socket *)file.f_data, i);
+			socktrans((struct socket *)files.f_data, i);
 		}
 		break;
 	case DTYPE_PIPE:
 	case DTYPE_KQUEUE:
 	case DTYPE_CRYPTO:
 	default:
-		dprintf("unknown file type %d for file %d of pid %d\n", file.f_type, i,
+		dprintf("unknown file type %d for file %d of pid %d\n", files.f_type, i,
 				Pid);
 		break;
 	}
