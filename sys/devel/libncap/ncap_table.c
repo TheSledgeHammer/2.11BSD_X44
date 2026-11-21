@@ -101,9 +101,9 @@ ncap_table_cmds(ncap_t *n, ncap_table_t *t, nbpf_ioctl_table_t *nct, int cmd)
     	memset(nct, 0, sizeof(nbpf_ioctl_table_t));
     }
 
+    nct->nct_cmd = t->cmd;
 	switch (t->cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
-		nct->nct_cmd = t->cmd;
 		if ((nct->nct_tid != t->tid) || (nct->nct_type != t->type)
 				|| (nct->nct_alen != t->alen) /*|| (nct->nct_mask != mask) */
 				|| (nct->nct_addr != t->addr)) {
@@ -114,7 +114,10 @@ ncap_table_cmds(ncap_t *n, ncap_table_t *t, nbpf_ioctl_table_t *nct, int cmd)
 	case NBPF_CMD_TABLE_ADD:
 		/* FALLTHROUGH */
 	case NBPF_CMD_TABLE_REMOVE:
-		nct->nct_cmd = t->cmd;
+		/* FALLTHROUGH */
+	case NBPF_CMD_TABLE_CREATE:
+		/* FALLTHROUGH */
+	case NBPF_CMD_TABLE_DESTROY:
 		error = ncap_table_set(n, t, nct);
 		break;
 	default:
@@ -157,6 +160,32 @@ ncap_table_remove(ncap_t *n, ncap_table_t *t)
     int error;
 
     error = ncap_table_cmds(n, t, &nct, NBPF_CMD_TABLE_REMOVE);
+    if (error != 0) {
+        return (error);
+    }
+    return (ncap_table_cntl(n, &nct));
+}
+
+int
+ncap_table_create(ncap_t *n, ncap_table_t *t)
+{
+    nbpf_ioctl_table_t nct;
+    int error;
+
+    error = ncap_table_cmds(n, t, &nct, NBPF_CMD_TABLE_CREATE);
+    if (error != 0) {
+        return (error);
+    }
+    return (ncap_table_cntl(n, &nct));
+}
+
+int
+ncap_table_destroy(ncap_t *n, ncap_table_t *t)
+{
+    nbpf_ioctl_table_t nct;
+    int error;
+
+    error = ncap_table_cmds(n, t, &nct, NBPF_CMD_TABLE_DESTROY);
     if (error != 0) {
         return (error);
     }

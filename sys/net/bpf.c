@@ -1322,8 +1322,11 @@ static void
 bpf_do_filter(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(*cpfn)(void *, const void *, size_t))
 {
 	u_int slen;
+
 #ifdef NBPF
 	int filter_count = 0; /* check if a filter (bpf or nbpf) has already run */
+	int ccount = d->bd_ccount; /* current bpf caught count */
+	int dcount = d->bd_dcount; /* current bpf drop count */
 #endif /* NBPF */
 
 	slen = bpf_filter(d->bd_filter, pkt, pktlen, snaplen);
@@ -1349,6 +1352,17 @@ bpf_do_filter(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(
 		if (filter_count == 0) {
 			if ((d->bd_fbuf == 0) || (d->bd_dcount > 0)) {
 				nbpf_filtncatch(d->bd_nbpf, pkt, pktlen, snaplen, cpfn, &do_wakeup);
+				/* Check NBPF and BPF caught and dropped packet counters to prevent counting the same packet twice */
+				/* check if nbpf caught the packet */
+				if ((d->bd_nbpf->nbd_caught == 1) && (ccount == d->bd_ccount)) {
+					++d->bd_ccount;
+					d->bd_nbpf->nbd_caught = 0;
+				}
+				/* check if nbpf dropped the packet */
+				if ((d->bd_nbpf->nbd_dropped == 1) && (dcount == d->bd_dcount)) {
+					++d->bd_dcount;
+					d->bd_nbpf->nbd_dropped = 0;
+				}
 				if (do_wakeup) {
 					bpf_wakeup(d);
 				}
@@ -1356,6 +1370,17 @@ bpf_do_filter(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen, void *(
 		} else {
 			if ((d->bd_dcount > 0)) {
 				nbpf_filtncatch(d->bd_nbpf, pkt, pktlen, snaplen, cpfn, &do_wakeup);
+				/* Check NBPF and BPF caught and dropped packet counters to prevent counting the same packet twice */
+				/* check if nbpf caught the packet */
+				if ((d->bd_nbpf->nbd_caught == 1) && (ccount == d->bd_ccount)) {
+					++d->bd_ccount;
+					d->bd_nbpf->nbd_caught = 0;
+				}
+				/* check if nbpf dropped the packet */
+				if ((d->bd_nbpf->nbd_dropped == 1) && (dcount == d->bd_dcount)) {
+					++d->bd_dcount;
+					d->bd_nbpf->nbd_dropped = 0;
+				}
 				if (do_wakeup) {
 					bpf_wakeup(d);
 				}

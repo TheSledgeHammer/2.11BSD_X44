@@ -119,13 +119,13 @@ ncap_ncode_add_target(ncap_inf_t *ni, const uint32_t *pc)
 static void
 ncap_ncode_add_vp(ncap_inf_t *ni, char *buf, unsigned idx)
 {
-	npfvar_t *vl = ni->ni_vlist[idx];
+	nbpfvar_t *vl = ni->ni_vlist[idx];
 
 	if (vl == NULL) {
 		vl = npfvar_create(".list");
 		ni->ni_vlist[idx] = vl;
 	}
-	npfvar_t *vp = npfvar_create(".string");
+	nbpfvar_t *vp = npfvar_create(".string");
 	npfvar_add_element(vp, NPFVAR_STRING, buf, strlen(buf) + 1);
 	npfvar_add_elements(vl, vp);
 }
@@ -135,14 +135,22 @@ nbpf_tcpflags2str(char *buf, unsigned tfl)
 {
 	int i = 0;
 
-	if (tfl & TH_FIN)	buf[i++] = 'F';
-	if (tfl & TH_SYN)	buf[i++] = 'S';
-	if (tfl & TH_RST)	buf[i++] = 'R';
-	if (tfl & TH_PUSH)	buf[i++] = 'P';
-	if (tfl & TH_ACK)	buf[i++] = 'A';
-	if (tfl & TH_URG)	buf[i++] = 'U';
-	if (tfl & TH_ECE)	buf[i++] = 'E';
-	if (tfl & TH_CWR)	buf[i++] = 'C';
+	if (tfl & TH_FIN)
+		buf[i++] = 'F';
+	if (tfl & TH_SYN)
+		buf[i++] = 'S';
+	if (tfl & TH_RST)
+		buf[i++] = 'R';
+	if (tfl & TH_PUSH)
+		buf[i++] = 'P';
+	if (tfl & TH_ACK)
+		buf[i++] = 'A';
+	if (tfl & TH_URG)
+		buf[i++] = 'U';
+	if (tfl & TH_ECE)
+		buf[i++] = 'E';
+	if (tfl & TH_CWR)
+		buf[i++] = 'C';
 	buf[i] = '\0';
 }
 
@@ -203,8 +211,8 @@ ncap_ncode_operand(ncap_inf_t *ni, char *buf, size_t bufsiz, uint8_t operand)
 		memcpy(&sin->sin_addr, ni->ni_pc, sizeof(sin->sin_addr));
 		sockaddr_snprintf(buf, bufsiz, "%a", (struct sockaddr *)sin);
 		if (ni) {
-			ncap_ncode_add_vp(ni, buf, ni->ni_srcdst ?
-			    NBPF_SHOW_SRCADDR : NBPF_SHOW_DSTADDR);
+			ncap_ncode_add_vp(ni, buf,
+					ni->ni_srcdst ? NBPF_SHOW_SRCADDR : NBPF_SHOW_DSTADDR);
 		}
 		advance = sizeof(sin->sin_addr) / sizeof(op);
 		break;

@@ -51,7 +51,7 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/vnode.h>
 #include <sys/mount.h>
 
-#define	_KERNEL
+#define _KERNEL
 #include <ufs/ufml/ufml.h>
 #undef _KERNEL
 

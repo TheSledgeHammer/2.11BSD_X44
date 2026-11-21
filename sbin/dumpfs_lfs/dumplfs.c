@@ -210,15 +210,14 @@ static void
 dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 {
 	IFILE *ipage;
-	union dinode *dip;
-	caddr_t dpage;
-	daddr_t addr, *addrp, *dindir, *iaddrp, *indir;
+	union dinode *dip, *dpage;
+	ufs1_daddr_t addr, *addrp, *dindir, *iaddrp, *indir;
 	int block_limit, i, inum, j, nblocks, /* nsupb,*/ psize;
 
 	psize = lfsp->lfs_bsize;
-	addr = lfsp->lfs_idaddr;
+	addr = (ufs2_daddr_t)lfsp->lfs_idaddr;
 
-	if (!(dpage = malloc(psize))) {
+	if (!(dpage = (union dinode *)malloc(psize))) {
 		err(1, NULL);
 	}
 	get(fd, addr << daddr_shift, dpage, psize);
@@ -228,7 +227,7 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 			break;
 		}
 	}
-	if (dip < (union dinode *)dpage) {
+	if (dip < dpage) {
 		errx(1, "unable to locate ifile inode");
 	}
 	(void)printf("\nIFILE inode\n");
@@ -241,7 +240,7 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 	/* Get the direct block */
 	if ((ipage = malloc(psize)) == NULL)
 		err(1, NULL);
-	for (inum = 0, addrp = (daddr_t)DIP(dip, db[0]), i = 0; i < block_limit; i++, addrp++) {
+	for (inum = 0, addrp = (ufs1_daddr_t)DIP(dip, db[0]), i = 0; i < block_limit; i++, addrp++) {
 		get(fd, *addrp << daddr_shift, ipage, psize);
 		if (i < lfsp->lfs_cleansz) {
 			dump_cleaner_info(lfsp, ipage);

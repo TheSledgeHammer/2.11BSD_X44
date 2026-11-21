@@ -154,40 +154,6 @@ nbpf_tableset_insert(nbpf_tableset_t *tblset, nbpf_table_t *t)
 	return (error);
 }
 
-#ifdef notyet
-/*
- * npf_tableset_reload: iterate all tables and if the new table is of the
- * same type and has no items, then we preserve the old one and its entries.
- *
- * => The caller is responsible for providing synchronisation.
- */
-void
-nbpf_tableset_reload(nbpf_tableset_t *ntset, nbpf_tableset_t *otset)
-{
-	for (int i = 0; i < NBPF_TABLE_SLOTS; i++) {
-		nbpf_table_t *t = ntset[i], *ot = otset[i];
-
-		if (t == NULL || ot == NULL) {
-			continue;
-		}
-		if (t->t_nitems || t->t_type != ot->t_type) {
-			continue;
-		}
-
-		/*
-		 * Acquire a reference since the table has to be kept
-		 * in the old tableset.
-		 */
-		atomic_inc_int(&ot->t_refcnt);
-		ntset[i] = ot;
-
-		/* Only reference, never been visible. */
-		t->t_refcnt--;
-		nbpf_table_destroy(t);
-	}
-}
-#endif
-
 /*
  * Few helper routines.
  */
@@ -585,35 +551,39 @@ nbpf_table_lookup(nbpf_tableset_t *tset, u_int tid, const int alen, const nbpf_a
 	return (ent ? 0 : ENOENT);
 }
 
-int
-nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl)
-{
-	nbpf_tableset_t *ts;
-	nbpf_table_t *tb;
-	int error;
-
-	ts = nbpf_tableset_create();
-	if (ts == NULL) {
-		return (ENOMEM);
-	}
-	error = nbpf_table_check(ts, NBPF_TABLE_TID, NBPF_TABLE_TYPE);
-	if (error != 0) {
-		return (error);
-	}
-	tb = nbpf_table_create(NBPF_TABLE_TID, NBPF_TABLE_TYPE);
-	if (tb == NULL) {
-		return (ENOMEM);
-	}
-	error = nbpf_tableset_insert(ts, tb);
-	if (error != 0) {
-		return (error);
-	}
-	*tset = ts;
-	*tbl = tb;
-	return (0);
-}
-
 #ifdef notyet
+
+/*
+ * npf_tableset_reload: iterate all tables and if the new table is of the
+ * same type and has no items, then we preserve the old one and its entries.
+ *
+ * => The caller is responsible for providing synchronisation.
+ */
+void
+nbpf_tableset_reload(nbpf_tableset_t *ntset, nbpf_tableset_t *otset)
+{
+	for (int i = 0; i < NBPF_TABLE_SLOTS; i++) {
+		nbpf_table_t *t = ntset[i], *ot = otset[i];
+
+		if (t == NULL || ot == NULL) {
+			continue;
+		}
+		if (t->t_nitems || t->t_type != ot->t_type) {
+			continue;
+		}
+
+		/*
+		 * Acquire a reference since the table has to be kept
+		 * in the old tableset.
+		 */
+		atomic_inc_int(&ot->t_refcnt);
+		ntset[i] = ot;
+
+		/* Only reference, never been visible. */
+		t->t_refcnt--;
+		nbpf_table_destroy(t);
+	}
+}
 
 static int
 table_ent_copyout(nbpf_tblent_t *ent, nbpf_netmask_t mask, void *ubuf, size_t len, size_t *off)

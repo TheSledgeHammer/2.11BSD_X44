@@ -105,5 +105,7 @@ int ncap_ncode_disassemble(ncap_inf_t *, const void *, size_t);
 int ncap_table_add(ncap_t *, ncap_table_t *);
 int ncap_table_remove(ncap_t *, ncap_table_t *);
 int ncap_table_lookup(ncap_t *, ncap_table_t *);
+int ncap_table_create(ncap_t *, ncap_table_t *);
+int ncap_table_destroy(ncap_t *, ncap_table_t *);
 
 #endif /* _LIBNCAP_NCAP_H_ */

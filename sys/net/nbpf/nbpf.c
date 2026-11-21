@@ -69,6 +69,11 @@ extern int bpf_maxbufsize;
 
 static struct nbpf_d *nbpf_d_alloc(size_t);
 static void nbpf_d_free(struct nbpf_d *);
+static int nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **, u_int, int);
+static void nbpf_destroy_table(nbpf_tableset_t *, nbpf_table_t *);
+static int nbpf_set_table(struct nbpf_d *, nbpf_ioctl_table_t *);
+static int nbpf_get_table(struct nbpf_d *, nbpf_ioctl_table_t *);
+static int nbpf_table_ioctl(struct nbpf_d *, nbpf_ioctl_table_t *);
 static void nbpf_set_d(struct nbpf_d *, nbpf_buf_t *, void *, size_t, size_t);
 static void nbpf_reset_d(struct nbpf_d *);
 static int nbpf_setf(struct nbpf_d *, struct nbpf_program *, int *);
@@ -104,45 +109,15 @@ nbpf_state_init(struct nbpf_d *nd, int layer, int tag)
 }
 
 static void
-nbpf_table_init(struct nbpf_d *nd)
+nbpf_table_init(struct nbpf_d *nd, u_int tid, int type)
 {
-	nbpf_tableset_t *tset;
-	nbpf_table_t *t;
 	int error;
 
-	error = nbpf_mktable(&tset, &t);
+	error = nbpf_mktable(&nd->nbd_tableset, &nd->nbd_table, tid, type);
 	if (error != 0) {
-		nbpf_tableset_destroy(tset);
-		nbpf_table_destroy(t);
+		nbpf_destroy_table(nd->nbd_tableset, nd->nbd_table);
 		return;
 	}
-	nd->nbd_tableset = tset;
-	nd->nbd_table = t;
-}
-
-static void
-nbpf_table_reload(struct nbpf_d *nd)
-{
-	nbpf_tableset_t *tset, *otset;
-	nbpf_table_t *tbl, *otbl;
-	int error;
-
-	otset = nd->nbd_tableset;
-	otbl = nd->nbd_table;
-	error = nbpf_mktable(&tset, &tbl);
-	if (error != 0) {
-		nbpf_tableset_destroy(tset);
-		nbpf_table_destroy(tbl);
-		return;
-	}
-	if (otset != NULL) {
-		nbpf_tableset_destroy(otset);
-	}
-	if (otbl != NULL) {
-		nbpf_table_destroy(otbl);
-	}
-	nd->nbd_tableset = tset;
-	nd->nbd_table = tbl;
 }
 
 void
@@ -153,7 +128,7 @@ nbpf_attachd(struct nbpf_d *nd, struct bpf_d *d)
 	}
 	nd->nbd_bpf = d;
 	nbpf_state_init(nd, NBPC_LAYER4, PACKET_TAG_NONE);
-	nbpf_table_init(nd);
+	nbpf_table_init(nd, NBPF_TABLE_TID, NBPF_TABLE_TYPE);
 }
 
 void
@@ -168,25 +143,57 @@ nbpf_detachd(struct nbpf_d *nd, struct bpf_d *d)
 	}
 }
 
+static int
+nbpf_mktable(nbpf_tableset_t **tset, nbpf_table_t **tbl, u_int tid, int type)
+{
+	nbpf_tableset_t *ts;
+	nbpf_table_t *tb;
+	int error;
+
+	ts = nbpf_tableset_create();
+	if (ts == NULL) {
+		return (ENOMEM);
+	}
+	error = nbpf_table_check(ts, tid, type);
+	if (error != 0) {
+		return (error);
+	}
+	tb = nbpf_table_create(tid, type);
+	if (tb == NULL) {
+		return (ENOMEM);
+	}
+	error = nbpf_tableset_insert(ts, tb);
+	if (error != 0) {
+		return (error);
+	}
+	*tset = ts;
+	*tbl = tb;
+	return (0);
+}
+
+static void
+nbpf_destroy_table(nbpf_tableset_t *tblset, nbpf_table_t *tbl)
+{
+	if (tblset != NULL) {
+		nbpf_tableset_destroy(tblset);
+	}
+	if (tbl != NULL) {
+		nbpf_table_destroy(tbl);
+	}
+}
+
 /* NBPF set ioctl table from userspace */
 static int
-nbpf_set_table(nbpf_tableset_t *tblset, nbpf_ioctl_table_t *nbiot)
+nbpf_set_table(struct nbpf_d *nd, nbpf_ioctl_table_t *nbiot)
 {
 	nbpf_ioctl_table_t uent;
 	int count = 0;
 
 	if (nbiot != NULL) {
-		if (tblset != NULL) {
+		if (nd->nbd_tableset != NULL) {
 recheck:
-			if (nbpf_table_check(tblset, nbiot->nct_tid, nbiot->nct_type) != 0) {
+			if (nbpf_table_check(nd->nbd_tableset, nbiot->nct_tid, nbiot->nct_type) != 0) {
 				if (count == 0) {
-					/* set to tblsets */
-					nbiot->nct_tid = (*tblset)->t_id;
-					nbiot->nct_type = (*tblset)->t_type;
-					count++;
-					goto recheck;
-				}
-				if (count == 1) {
 					/* set to default */
 					nbiot->nct_tid = NBPF_TABLE_TID;
 					nbiot->nct_type = NBPF_TABLE_TYPE;
@@ -204,14 +211,14 @@ out:
 
 /* NBPF get ioctl table from userspace */
 static int
-nbpf_get_table(nbpf_tableset_t *tblset, nbpf_ioctl_table_t *nbiot)
+nbpf_get_table(struct nbpf_d *nd, nbpf_ioctl_table_t *nbiot)
 {
 	nbpf_ioctl_table_t uent;
 	int count = 0;
 
 	if (nbiot != NULL) {
-		if (tblset != NULL) {
-			if (nbpf_table_check(tblset, nbiot->nct_tid, nbiot->nct_type) != 0) {
+		if (nd->nbd_tableset != NULL) {
+			if (nbpf_table_check(nd->nbd_tableset, nbiot->nct_tid, nbiot->nct_type) != 0) {
 				goto out;
 			}
 		}
@@ -223,34 +230,39 @@ out:
 
 /* NBPF table controls */
 static int
-nbpf_table_ioctl(struct nbpf_d *nd, nbpf_tableset_t *tblset, nbpf_ioctl_table_t *nbiot)
+nbpf_table_ioctl(struct nbpf_d *nd, nbpf_ioctl_table_t *nbiot)
 {
 	int error;
 
-	if ((tblset == NULL) || (nbiot == NULL)) {
+	if ((nd == NULL) || (nbiot == NULL)) {
 		goto out;
 	}
 
 	switch (nbiot->nct_cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
-		error = nbpf_table_lookup(tblset, nbiot->nct_tid, nbiot->nct_alen,
+		error = nbpf_table_lookup(nd->nbd_tableset, nbiot->nct_tid, nbiot->nct_alen,
 				&nbiot->nct_addr);
 		break;
 	case NBPF_CMD_TABLE_ADD:
-		error = nbpf_table_insert(tblset, nbiot->nct_tid, nbiot->nct_alen,
+		error = nbpf_table_insert(nd->nbd_tableset, nbiot->nct_tid, nbiot->nct_alen,
 				&nbiot->nct_addr, nbiot->nct_mask);
 		break;
 	case NBPF_CMD_TABLE_REMOVE:
-		error = nbpf_table_remove(tblset, nbiot->nct_tid, nbiot->nct_alen,
+		error = nbpf_table_remove(nd->nbd_tableset, nbiot->nct_tid, nbiot->nct_alen,
 				&nbiot->nct_addr, nbiot->nct_mask);
+		break;
+	case NBPF_CMD_TABLE_CREATE:
+		error = nbpf_mktable(&nd->nbd_tableset, &nd->nbd_table, nbiot->nct_tid, nbiot->nct_type);
+		break;
+	case NBPF_CMD_TABLE_DESTROY:
+		nbpf_destroy_table(nd->nbd_tableset, nd->nbd_table);
+		error = 0;
 		break;
 	default:
 out:
 		error = EINVAL;
 		break;
 	}
-
-	//nbpf_table_reload(nd);
 	return (error);
 }
 
@@ -318,21 +330,21 @@ nbpfioctl(struct nbpf_d *nd, dev_t dev, u_long cmd, caddr_t addr, int flag, stru
 	 * NBPF get ioctl table
 	 */
 	case BIOCGETTBLIO:
-		error = nbpf_get_table(nd->nbd_tableset, (nbpf_ioctl_table_t *)addr);
+		error = nbpf_get_table(nd, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	/*
 	 * NBPF set ioctl table
 	 */
 	case BIOCSETTBLIO:
-		error = nbpf_set_table(nd->nbd_tableset, (nbpf_ioctl_table_t *)addr);
+		error = nbpf_set_table(nd, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	/*
 	 * NBPF table
 	 */
 	case BIOCTBLCNTL:
-		error = nbpf_table_ioctl(nd, nd->nbd_tableset, (nbpf_ioctl_table_t *)addr);
+		error = nbpf_table_ioctl(nd, (nbpf_ioctl_table_t *)addr);
 		break;
 
 	default:
@@ -449,7 +461,7 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	int mflags, error;
 	struct bpf_hdr *hp;
 
-	++nd->nbd_bpf->bd_ccount;
+	nd->nbd_caught = 1;
 
 	mflags = (nd->nbd_statehandler->nbs_info & flags);
 	nptr = nbpf_dataptr(pkt);
@@ -461,7 +473,7 @@ nbpf_catchpacket(struct nbpf_d *nd, u_char *pkt, u_int pktlen, u_int snaplen, in
 	curlen = BPF_WORDALIGN(nd->nbd_bpf->bd_slen);
 	if (curlen + totlen > nd->nbd_nbufsize) {
 		if (nd->nbd_bpf->bd_fbuf == 0) {
-			++nd->nbd_bpf->bd_dcount;
+			nd->nbd_dropped = 1;
 			return;
 		}
 		/* Rotate Buffers */

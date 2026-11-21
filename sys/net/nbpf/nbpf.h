@@ -184,6 +184,8 @@ nbpf_get_tag(const nbpf_state_t *state)
 #define	NBPF_CMD_TABLE_LOOKUP	1
 #define	NBPF_CMD_TABLE_ADD		2
 #define	NBPF_CMD_TABLE_REMOVE	3
+#define	NBPF_CMD_TABLE_CREATE	4
+#define	NBPF_CMD_TABLE_DESTROY	5
 
 struct nbpf_ioctl_table {
 	int					nct_cmd;
@@ -277,7 +279,7 @@ int		nbpf_table_check(const nbpf_tableset_t *, u_int, int);
 int		nbpf_table_insert(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_remove(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *, const nbpf_netmask_t);
 int		nbpf_table_lookup(nbpf_tableset_t *, u_int, const int, const nbpf_addr_t *);
-int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
+//int		nbpf_mktable(nbpf_tableset_t **, nbpf_table_t **);
 
 #endif /* _KERNEL */
 #endif /* _NET_NBPF_H_ */

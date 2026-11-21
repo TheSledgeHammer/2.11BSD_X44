@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 
 #include <fs/msdosfs/denode.h>
 #include <fs/msdosfs/bpb.h>
-#define	_KERNEL
+#define _KERNEL
 #include <fs/msdosfs/msdosfsmount.h>
 #undef _KERNEL
 

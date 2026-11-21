@@ -55,6 +55,9 @@ struct nbpf_d {
 
 	size_t				nbd_nbufsize;		/* nbuf absolute length of buffers */
 
+	int 				nbd_caught;			/* nbpf packet caught */
+	int 				nbd_dropped;		/* nbpf packet dropped */
+
 	/* bpf information: needed by the nbpf */
 	struct bpf_d		*nbd_bpf; 			/* bpf back-pointer */
 #define	nbd_bif			nbd_bpf->bd_bif		/* interface descriptor */
