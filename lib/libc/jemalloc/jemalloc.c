@@ -1236,6 +1236,8 @@ pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, in
 			new_addr = old_addr;
 			goto done;
 		}
+
+check:
 		if (new_size > old_size) {
 			error = munmap((caddr_t)new_addr + old_size, (size_t)new_addr + new_size);
 			if (error != 0) {
@@ -1245,6 +1247,10 @@ pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, in
 			new_size = new_size - old_size;
 			goto done;
 		}
+	}
+
+	if (new_addr != old_addr) {
+		goto check;
 	}
 
 done:
