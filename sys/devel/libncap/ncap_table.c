@@ -104,11 +104,21 @@ ncap_table_cmds(ncap_t *n, ncap_table_t *t, nbpf_ioctl_table_t *nct, int cmd)
     nct->nct_cmd = t->cmd;
 	switch (t->cmd) {
 	case NBPF_CMD_TABLE_LOOKUP:
-		if ((nct->nct_tid != t->tid) || (nct->nct_type != t->type)
-				|| (nct->nct_alen != t->alen) /*|| (nct->nct_mask != mask) */
-				|| (nct->nct_addr != t->addr)) {
+		if ((nct->nct_tid == t->tid)) {
+			if ((nct->nct_type == t->type)) {
+				if ((t->alen == 0) || (t->addr == 0)
+						|| (nct->nct_alen != t->alen)
+						|| (nct->nct_addr != t->addr)) {
+					error = -1;
+					break;
+				}
+			} else {
+				error = -1;
+				break;
+			}
+			error = 0;
+		} else {
 			error = -1;
-			break;
 		}
 		break;
 	case NBPF_CMD_TABLE_ADD:

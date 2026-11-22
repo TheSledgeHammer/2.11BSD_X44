@@ -1231,34 +1231,30 @@ pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, in
 		if (new_size < old_size) {
 			error = munmap((caddr_t)old_addr + new_size, (size_t)old_addr + old_size);
 			if (error != 0) {
-				return (NULL);
+				goto bad;
 			}
 			new_addr = old_addr;
 			goto done;
 		}
-	}
-	if (new_size > old_size) {
-		ret = pages_map_align((caddr_t)new_addr + old_size, new_size - old_size, align);
-		if (ret != NULL) {
-			if (new_addr == old_addr) {
-				error = munmap((caddr_t)new_addr + old_size, (size_t)new_addr + new_size);
-			} else {
-				error = munmap((caddr_t)new_addr + old_size, (size_t)new_addr + new_size);
-			}
+		if (new_size > old_size) {
+			error = munmap((caddr_t)new_addr + old_size, (size_t)new_addr + new_size);
 			if (error != 0) {
-				return (NULL);
+				goto bad;
 			}
-			return (ret);
+			new_addr = new_addr + old_size;
+			new_size = new_size - old_size;
+			goto done;
 		}
-		return (NULL);
 	}
 
 done:
-	ret = pages_map_align(new_addr, new_size, align);
-	if (ret != NULL) {
-		return (ret);
-	}
-	return (NULL);
+    ret = pages_map_align(new_addr, new_size, align);
+    if (ret != NULL) {
+        return (ret);
+    }
+
+bad:
+    return (NULL);
 }
 
 static void

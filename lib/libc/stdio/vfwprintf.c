@@ -162,14 +162,14 @@ __sbprintf(FILE *fp, locale_t locale, const wchar_t *fmt, va_list ap)
 {
 	int ret;
 	FILE fake;
-    struct __sfileext fakeext;
+	struct __sfileext fakeext;
 	unsigned char buf[BUFSIZ];
 
 	_DIAGASSERT(fp != NULL);
 	_DIAGASSERT(fmt != NULL);
 
-    _FILEEXT_SETUP(&fake, &fakeext);
-    memset(WCIO_GET(&fake), 0, sizeof(struct wchar_io_data));
+	_FILEEXT_SETUP(&fake, &fakeext);
+	memset(WCIO_GET(&fake), 0, sizeof(struct wchar_io_data));
 
 	/* copy the important variables */
 	fake._flags = fp->_flags & ~__SNBF;

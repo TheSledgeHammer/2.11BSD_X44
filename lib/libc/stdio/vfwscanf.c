@@ -79,7 +79,7 @@ ccltable(wchar_t *tab, const wchar_t **start, const wchar_t **end, locale_t loca
 {
 	int i, len;
 
-    len = 0;
+	len = 0;
 	for (i = 0; i < CCLTABMAXLEN; i++) {
 		if (tab[wctob_l(i, locale)]) {
 			len++;
@@ -134,7 +134,7 @@ do { \
 int
 vfwscanf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 {
-    const wchar_t *fmt;
+	const wchar_t *fmt;
 	wint_t c;		        /* character from format, or conversion */
 	size_t width;	    	/* field width, or 0 */
 	wchar_t *p;	        	/* points into all kinds of strings */
@@ -169,7 +169,7 @@ vfwscanf_l_unlocked(FILE *fp, locale_t locale, const wchar_t *fmt0, va_list ap)
 	nconversions = 0;
 	nread = 0;
 	base = 0;		/* XXX just to keep gcc happy */
-    cclcompl = 0;
+	cclcompl = 0;
 	mbp = NULL;
 	p = NULL;
 	for (;;) {
@@ -412,7 +412,7 @@ literal:
 					p = va_arg(ap, wchar_t *);
 				}
 				n = 0;
-                wi = fgetmbrune(fp);
+				wi = fgetmbrune(fp);
 				while (wi != WEOF && width-- != 0) {
 					if (!(flags & SUPPRESS)) {
 						*p++ = (wchar_t)wi;
