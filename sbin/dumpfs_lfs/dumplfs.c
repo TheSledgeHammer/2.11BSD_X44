@@ -211,7 +211,7 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 {
 	IFILE *ipage;
 	union dinode *dip, *dpage;
-	ufs1_daddr_t addr, *addrp, *dindir, *iaddrp, *indir;
+	ufs2_daddr_t addr, *addrp, *dindir, *iaddrp, *indir;
 	int block_limit, i, inum, j, nblocks, /* nsupb,*/ psize;
 
 	psize = lfsp->lfs_bsize;
@@ -240,7 +240,12 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 	/* Get the direct block */
 	if ((ipage = malloc(psize)) == NULL)
 		err(1, NULL);
-	for (inum = 0, addrp = (ufs1_daddr_t)DIP(dip, db[0]), i = 0; i < block_limit; i++, addrp++) {
+	if (is_ufs2) {
+    	addrp = dip->dp2.di_db;
+    } else {
+        addrp = (ufs2_daddr_t *)dip->dp1.di_db;     
+    }
+	for (inum = 0/*, addrp = (ufs1_daddr_t)DIP(dip, db[0])*/, i = 0; i < block_limit; i++, addrp++) {
 		get(fd, *addrp << daddr_shift, ipage, psize);
 		if (i < lfsp->lfs_cleansz) {
 			dump_cleaner_info(lfsp, ipage);
