@@ -241,10 +241,10 @@ dump_ifile(int fd, struct lfs *lfsp, int do_ientries)
 	if ((ipage = malloc(psize)) == NULL)
 		err(1, NULL);
 	if (is_ufs2) {
-    	addrp = dip->dp2.di_db;
-    } else {
-        addrp = (ufs2_daddr_t *)dip->dp1.di_db;     
-    }
+		addrp = dip->dp2.di_db;
+	} else {
+		addrp = (ufs2_daddr_t *)dip->dp1.di_db;
+	}
 	for (inum = 0/*, addrp = (ufs1_daddr_t)DIP(dip, db[0])*/, i = 0; i < block_limit; i++, addrp++) {
 		get(fd, *addrp << daddr_shift, ipage, psize);
 		if (i < lfsp->lfs_cleansz) {

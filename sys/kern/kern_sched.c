@@ -63,7 +63,7 @@ sched_init(p)
 {
 	register struct sched *sc;
 
-	MALLOC(sc, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
+	MALLOC(sc, struct sched *, sizeof(struct sched), M_SCHED, M_WAITOK);
 
 	p->p_sched = sc;
 	sched_edf_init(sc->sc_edf, p);
@@ -76,7 +76,7 @@ sched_edf_init(edf, p)
 	struct proc *p;
 {
 	if (edf == NULL) {
-		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_SCHED, M_WAITOK);
+		MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf), M_SCHED, M_WAITOK);
 	}
 
 	edf->edf_cpticks = p->p_cpticks;
@@ -93,7 +93,7 @@ sched_cfs_init(cfs, p)
 	struct proc *p;
 {
 	if (cfs == NULL) {
-		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_SCHED, M_WAITOK);
+		MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs), M_SCHED, M_WAITOK);
 	}
 
 	RB_INIT(&cfs->cfs_parent);
@@ -218,7 +218,7 @@ sched_factor_compute(sf, utilization, demand, workload)
 	u_char workload;
 {
 	if (sf == NULL) {
-		MALLOC(sf, struct sched_factor *, sizeof(struct sched_factor *), M_SCHED, M_WAITOK);
+		MALLOC(sf, struct sched_factor *, sizeof(struct sched_factor), M_SCHED, M_WAITOK);
 	}
 
 	/* factors utilization rate and weight */

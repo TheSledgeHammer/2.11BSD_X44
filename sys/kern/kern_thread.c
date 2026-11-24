@@ -1075,9 +1075,30 @@ loop:
 		TAILQ_INSERT_HEAD(tqs, tp, td_link);
 	}
 	pri = n;
+
+	/*
+	 * Pick a new current thread and record its start time.
+	 *
+	 * TODO:
+	 * 1) Find new thread on runqueue
+	 * 2) Check new thread != current thread else panic
+	 * 3) Check if new thread state == run and is ready else steal/idle
+	 * 4) remove current thread from runqueue
+	 * 5) set new thread state to run
+	 * 6) add new thread to runqueue
+	 * 7) set current thread to new thread.
+	 *
+	 * Idle:
+	 * 4) try thread stealing else panic
+	 */
 }
 
-/* allocate uthread */
+/*
+ * allocate uthread:
+ *
+ * Notes:
+ * - the variables set by uthread_alloc are meant to be overridden as needed.
+ */
 struct uthread *
 uthread_alloc(td)
 	struct thread *td;
@@ -1105,7 +1126,12 @@ uthread_free(td, utd)
 	}
 }
 
-/* return uthread overseer */
+/*
+ * return uthread overseer
+ *
+ * sets thread utd to the thread overseer.
+ * returns thread overseer if not empty.
+ */
 struct thread *
 uthread_overseer(utd)
 	struct uthread *utd;

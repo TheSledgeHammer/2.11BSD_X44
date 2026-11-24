@@ -1221,8 +1221,9 @@ static void *
 pages_remap(void *old_addr, size_t old_size, void *new_addr, size_t new_size, int align)
 {
 	void *ret;
-	int error;
+	int error, checked;
 
+	checked = 0;
 	if ((new_addr == old_addr) && (align == 0 || (old_addr && (align - 1)) == 0)) {
 		if (new_size == old_size) {
 			new_addr = old_addr;
@@ -1249,7 +1250,8 @@ check:
 		}
 	}
 
-	if (new_addr != old_addr) {
+	if ((checked == 0) && (new_addr != old_addr)) {
+		checked = 1;
 		goto check;
 	}
 
