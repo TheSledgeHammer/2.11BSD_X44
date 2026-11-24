@@ -34,7 +34,7 @@
 #ifndef _FSTAT_H_
 #define _FSTAT_H_
 
-struct  filestat {
+struct filestat {
 	long	fsid;
 	ino_t	fileid;
 	mode_t	mode;
@@ -46,7 +46,7 @@ struct  filestat {
  * a kvm_read that returns true if everything is read
  */
 #define KVM_READ(kaddr, paddr, len) \
-	(kvm_read(kd, (u_long)(kaddr), (void *)(paddr), (len)) == (len))
+	((size_t)kvm_read(kd, (u_long)(kaddr), (char *)(paddr), (size_t)(len)) == (size_t)(len))
 
 extern kvm_t *kd;
 extern int vflg;

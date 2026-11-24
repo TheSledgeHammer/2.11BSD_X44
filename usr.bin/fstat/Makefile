@@ -11,7 +11,7 @@ LDADD=	-lkvm
 BINGRP=	kmem
 BINMODE=2555
 
-#CPPFLAGS+= -I${NETBSDSRCDIR}/sys
+CPPFLAGS+= -I${NETBSDSRCDIR}/sys
 
 .if (${USE_INET6} != "no")
 CPPFLAGS+=-DINET6
@@ -19,5 +19,7 @@ CPPFLAGS+=-DINET6
 
 LDADD+=-lutil
 DPADD+=${LIBUTIL}
+
+COPTS.fstat.c+= ${GCC_NO_FORMAT_OVERFLOW}
 
 .include <bsd.prog.mk>

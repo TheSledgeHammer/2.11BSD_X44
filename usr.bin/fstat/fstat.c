@@ -46,25 +46,26 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #endif
 #endif /* not lint */
 
-//#include <sys/types.h>
+#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/queue.h>
 #include <sys/proc.h>
-#include <sys/user.h>
 #include <sys/stat.h>
 #include <sys/vnode.h>
+//#include <sys/mpx.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/domain.h>
-#include <sys/protosw.h>
+//#include <sys/protosw.h>
 #include <sys/unpcb.h>
-#include <sys/sysctl.h>
-#include <sys/filedesc.h>
-
+//#include <sys/sysctl.h>
+//#include <sys/filedesc.h>
 #define _KERNEL
 #include <sys/file.h>
-#include <sys/mount.h>
 #undef _KERNEL
+#include <sys/mount.h>
+#include <sys/user.h>
 
 #include <net/route.h>
 #include <netinet/in.h>
@@ -84,6 +85,7 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 
 #include <ctype.h>
 #include <errno.h>
+#include <err.h>
 #include <fcntl.h>
 #include <kvm.h>
 #include <limits.h>
@@ -94,7 +96,6 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <err.h>
 #include <util.h>
 
 #include "fstat.h"
@@ -134,6 +135,25 @@ kvm_t *kd;
 struct file **ofiles;	/* buffer of pointers to file structures */
 int maxfiles;
 
+#ifndef DTYPE_VNODE
+#define DTYPE_VNODE 1
+#endif
+#ifndef DTYPE_SOCKET
+#define DTYPE_SOCKET 2
+#endif
+#ifndef DTYPE_PIPE
+#define DTYPE_PIPE   3
+#endif
+#ifndef DTYPE_KQUEUE
+#define DTYPE_KQUEUE 4
+#endif
+#ifndef DTYPE_CRYPTO
+#define DTYPE_CRYPTO 5
+#endif
+#ifndef DTYPE_MISC
+#define DTYPE_MISC   6
+#endif
+
 #define ALLOC_OFILES(d)	\
 	if ((d) > maxfiles) { \
 		free(ofiles); \
@@ -145,14 +165,15 @@ int maxfiles;
 		maxfiles = (d); \
 	}
 
-void dofiles(struct kinfo_proc *);
-void vtrans(struct vnode *, int, int);
-void ftrans(struct file *, int);
-char *getmnton(struct mount *);
-void socktrans(struct socket *, int);
-void getinetproto(int);
-int	getfname(const char *);
-void usage(void);
+static void dofiles(struct kinfo_proc *);
+static void vtrans(struct vnode *, int, int);
+static void ftrans_vp(struct file *, int, int);
+//static void ftrans(struct file *, int);
+static char *getmnton(struct mount *);
+static void socktrans(struct socket *, int);
+static void getinetproto(int);
+static int	getfname(const char *);
+static void usage(void);
 
 int
 main(int argc, char **argv)
@@ -290,10 +311,11 @@ main(int argc, char **argv)
 /*
  * print open files attributed to this process
  */
-void
+static void
 dofiles(struct kinfo_proc *kp)
 {
 	int i;
+    struct file file;
 	struct filedesc0 filed0;
 #define	filed	filed0.fd_fd
 	struct proc *p = &kp->kp_proc;
@@ -324,7 +346,7 @@ dofiles(struct kinfo_proc *kp)
 	 * ktrace vnode, if one
 	 */
 	if (p->p_tracep)
-		ftrans(p->p_tracep, TRACE);
+		ftrans_vp(p->p_tracep, TRACE, FREAD|FWRITE);
 	/*
 	 * open files
 	 */
@@ -342,58 +364,67 @@ dofiles(struct kinfo_proc *kp)
 	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
-		ftrans(ofiles[i], i);
+		if (!KVM_READ(ofiles[i], &file, sizeof(struct file))) {
+            dprintf("can't read file %d at %p for pid %d\n", i, ofiles[i], Pid);
+            continue;
+        }
+	    switch (file.f_type) {
+	    case DTYPE_VNODE:
+		    vtrans((struct vnode *)file.f_data, i, file.f_flag);
+		    break;
+	    case DTYPE_SOCKET:
+		    if (checkfile == 0) {
+			    socktrans((struct socket *)file.f_data, i);
+		    }
+    		break;
+	    case DTYPE_PIPE:
+	    case DTYPE_KQUEUE:
+	    case DTYPE_CRYPTO:
+	    default:
+		    dprintf("unknown file type %d for file %d of pid %d\n", file.f_type, i,
+				Pid);
+		    break;
+	    }
 	}
 }
 
-#ifndef DTYPE_VNODE
-#define DTYPE_VNODE 1
-#endif
-#ifndef DTYPE_SOCKET
-#define DTYPE_SOCKET 2
-#endif
-#ifndef DTYPE_PIPE
-#define DTYPE_PIPE   3
-#endif
-#ifndef DTYPE_KQUEUE
-#define DTYPE_KQUEUE 4
-#endif
-#ifndef DTYPE_CRYPTO
-#define DTYPE_CRYPTO 5
-#endif
-#ifndef DTYPE_MISC
-#define DTYPE_MISC   6
-#endif
-
-void
-ftrans(struct file *fp, int i)
+static void
+ftrans_vp(struct file *fp, int i, int flag)
 {
-    struct file files;
+    vtrans((struct vnode *)fp->f_data, i, flag);
+}
 
-	if (!KVM_READ(fp, &files, sizeof(struct file))) {
+#ifdef notyet
+static void
+ftrans(struct file *fp, int i)
+{   
+    struct file file;
+
+	if (!KVM_READ(fp, &file, sizeof(struct file))) {
 		dprintf("can't read file %d at %p for pid %d\n", i, fp, Pid);
 		return;
 	}
-	switch (files.f_type) {
+	switch (file.f_type) {
 	case DTYPE_VNODE:
-		vtrans((struct vnode *)files.f_data, i, files.f_flag);
+		vtrans((struct vnode *)file.f_data, i, file.f_flag);
 		break;
 	case DTYPE_SOCKET:
 		if (checkfile == 0) {
-			socktrans((struct socket *)files.f_data, i);
+			socktrans((struct socket *)file.f_data, i);
 		}
 		break;
 	case DTYPE_PIPE:
 	case DTYPE_KQUEUE:
 	case DTYPE_CRYPTO:
 	default:
-		dprintf("unknown file type %d for file %d of pid %d\n", files.f_type, i,
+		dprintf("unknown file type %d for file %d of pid %d\n", file.f_type, i,
 				Pid);
 		break;
 	}
 }
+#endif
 
-void
+static void
 vtrans(struct vnode *vp, int i, int flag)
 {
 	struct vnode vn;
@@ -515,7 +546,7 @@ vtrans(struct vnode *vp, int i, int flag)
 	putchar('\n');
 }
 
-char *
+static char *
 getmnton(struct mount *m)
 {
 	static struct mount mount;
@@ -617,7 +648,7 @@ inet6_addrstr(char *buf, size_t len, const struct in6_addr *a, uint16_t p)
 }
 #endif
 
-void
+static void
 socktrans(struct socket *sock, int i)
 {
 	static const char *stypename[] = {
@@ -783,7 +814,7 @@ bad:
  * getinetproto --
  *	print name of protocol number
  */
-void
+static void
 getinetproto(int number)
 {
 	const char *cp;
@@ -826,7 +857,7 @@ getinetproto(int number)
 	printf(" %s", cp);
 }
 
-int
+static int
 getfname(const char *filename)
 {
 	struct stat statbuf;
@@ -884,7 +915,7 @@ getftype(enum vtype v_type)
 	return (ftype);
 }
 
-void
+static void
 usage(void)
 {
 	(void)fprintf(stderr,
