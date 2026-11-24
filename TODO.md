@@ -44,8 +44,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## lib:
 - libc:
 	- softfloat: add to libc
-	- stdio: improve support
- 		- wide characters.
 
 ## libexec:
 - add:
@@ -135,8 +133,10 @@ A General todo list. Don't hesitate to add to this list. :)
 	- HTBC: 
 		- Redo: implements only the blockchain and caching.
 		- Logging/Journal functions are filesystem dependent
-	- Overlays: pmap's and map improvements
-	- Threads: add workqueues and threadpools into kernel
+ - Puffs: finish implementing.
+	- OVL: finish implementing Overlays for use in vm.
+	- Threads:
+ - Tasks: Need ensure threads work properly before implementing.
 
 ## dev:
 - usb (Disabled): Has several compiler errors.
@@ -149,7 +149,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- ACPI: To implement
 
 ## fs:
-- add UDF support
+- add UDF, HPFS and NTFS support
 
 ## lib:
 - libsa:
@@ -162,13 +162,16 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## miscfs:
 - NFS: Update Me, I'm not working yet!!
+- Puffs: see devel above
 
-## net / net80211 / netinet / netinet6 / netipsec / netkey / netns :
-- netinet:
-	- add: in_msf.c/.h
-- netinet6:
-	- update: ip6_input.c, ip6_mroute.c, ip6_output.c, in6_src.c, icmp6.c
-	- add: in6_msf.c/.h, mldv2.c
+## net / netccitt / net80211 / netinet / netinet6 / netipsec / netiso / netkey / netns:
+
+- netccitt:
+ - add: xot support
+
+- netiso:
+	- update: tp_driver.c 
+ - add: NLSP and TLSP support.
 		
 ## ufs:
 - implement Extended Attributes
