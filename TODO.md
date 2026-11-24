@@ -128,15 +128,15 @@ A General todo list. Don't hesitate to add to this list. :)
 - Code planned for future integration
 - update copyright headers
 - See devel folder: README.md
-	- AdvVM: 
+- AdvVM: 
 		- add a device mapper, use NetBSD's dm as reference.
-	- HTBC: 
+- HTBC: 
 		- Redo: implements only the blockchain and caching.
 		- Logging/Journal functions are filesystem dependent
- - Puffs: finish implementing.
-	- OVL: finish implementing Overlays for use in vm.
-	- Threads:
- - Tasks: Need ensure threads work properly before implementing.
+- Puffs: finish implementing.
+- OVL: finish implementing Overlays for use in vm.
+- Threads:
+- Tasks: Need ensure threads work properly before implementing.
 
 ## dev:
 - usb (Disabled): Has several compiler errors.
