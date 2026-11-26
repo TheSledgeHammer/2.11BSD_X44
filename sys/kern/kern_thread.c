@@ -207,7 +207,7 @@ thread_reparent(from, to, td)
 		return;
 	}
 
-	if (td->td_stat != (SZOMB | SRUN)) {
+	if ((td->td_stat != SZOMB) && (td->td_stat != SRUN)) {
 		thread_remove(from, td);
 		td->td_procp = to;
 		td->td_flag = 0;
@@ -230,7 +230,7 @@ thread_steal(to, td)
 
 	LIST_FOREACH(from->p_threado, from->p_allthread, td_sibling) {
 		if ((from != to) && (from->p_threado == td) && (td->td_ptid == from->p_pid)) {
-			if ((from->p_stat == SZOMB) && (to->p_stat != (SZOMB | SRUN))) {
+			if ((from->p_stat == SZOMB) && ((to->p_stat != SZOMB) && (to->p_stat != SRUN))) {
 				thread_reparent(from, to, td);
 				td->td_flag &= ~TD_STEALABLE;
 			}
@@ -247,7 +247,11 @@ thread_alloc(p, stack)
 
 	td = (struct thread *)malloc(sizeof(struct thread), M_THREAD, M_NOWAIT);
 	td->td_procp = p;
-	td->td_stack = (struct thread *)td;
+	td->td_stack = malloc(stack, M_THREAD, M_NOWAIT);
+	if (td->td_stack == NULL) {
+		free(td, M_THREAD);
+		return (NULL);
+	}
 	td->td_stacksize = stack;
 	td->td_stat = SIDL;
 	td->td_flag = 0;
@@ -275,6 +279,9 @@ thread_free(p, td)
 	if (td != NULL) {
 		if ((p->p_threado == td) && (td->td_procp == p)) {
 			uthread_free(td, td->td_uthread);
+			if (td->td_stack != NULL) {
+				free(td->td_stack, M_THREAD);
+			}
 			free(td, M_THREAD);
 		}
 	}
@@ -733,13 +740,13 @@ thread_exit(ecode, all)
 	td->td_stat = SZOMB;
 	thread_remove(p, td);
 	if ((p->p_stat == SZOMB) && ((td->td_flag & TD_STEALABLE) != 0)) {
-		thread_psignal(td->td_procp, SIGTHD, all);
+		thread_psignal(td->td_procp, td, SIGTHD, all);
 		wakeup((caddr_t)td->td_procp);
 		thread_free(p, td);
 		return;
 	}
 
-	thread_psignal(td->td_procp, SIGTHD, all);
+	thread_psignal(td->td_procp, td, SIGTHD, all);
 	wakeup((caddr_t)td->td_procp);
 
 	p->p_curthread = NULL;
@@ -897,8 +904,8 @@ thread_wakeup(p, chan)
 
 	qt = p->p_threadsq;
 restart:
-	if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
-		for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
+	for (tq = TAILQ_FIRST(qt); tq != NULL; td = tq) {
+		if ((td->td_procp == p) && (td->td_ptid == p->p_pid)) {
 			if (td->td_stat != SSLEEP && td->td_stat != SSTOP) {
 				panic("thread_wakeup");
 			}
@@ -976,15 +983,16 @@ thread_signal_all(p, sig)
  * all: 0 = all threads, 1 = single thread
  */
 void
-thread_psignal(p, sig, all)
+thread_psignal(p, td, sig, all)
 	struct proc *p;
+	struct thread *td;
 	int sig, all;
 {
 	if ((p->p_flag & P_SINTR) != 0) {
 		switch (p->p_stat) {
 		case SSLEEP:
 			if (!all) {
-				thread_signal(p, sig);
+				thread_signal(p, td, sig);
 			} else if (all){
 				thread_signal_all(p, sig);
 			}
@@ -992,7 +1000,7 @@ thread_psignal(p, sig, all)
 
 		case SSTOP:
 			if (!all) {
-				thread_signal(p, sig);
+				thread_signal(p, td, sig);
 			} else if (all){
 				thread_signal_all(p, sig);
 			}
@@ -1109,7 +1117,7 @@ uthread_alloc(td)
 	utd->utd_thread = td;
 	utd->utd_threado = u.u_threado;
 	utd->utd_addr = &u;
-	u.u_uthread = utd;
+	//u.u_uthread = utd;
 	return (utd);
 }
 

@@ -87,7 +87,7 @@ struct	proc {
     pid_t				p_ppid;			/* process id of parent */
 
     /* Thread Structure: */
-    union {
+    struct {
     	struct threadlist 	*allthread;	/* list of all threads */
     	struct threadhd	 	*threadrq; 	/* Linked list of running threads. */
     	struct threadhd		*threadsq;	/* Linked list of sleeping threads. */

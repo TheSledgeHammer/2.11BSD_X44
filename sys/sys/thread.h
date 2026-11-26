@@ -119,7 +119,7 @@ extern struct lock_holder 	thread_loholder;
 #define	TIDHSZ							16
 #define	TIDHASH(tid)					(&tidhashtbl[(tid) & tidhash & (TIDHSZ * ((tid) + tidhash) - 1)])
 extern 	LIST_HEAD(tidhashhead, thread) 	*tidhashtbl;
-extern u_long 	tidhash;
+extern u_long tidhash;
 
 extern int nthread, maxthread;					/* Current and max number of threads. */
 extern int ppnthreadmax;						/* max number of threads per proc (hits stack limit) */
@@ -158,7 +158,7 @@ void thread_schedcpu(struct proc *);
 int newthread1(struct proc **, struct thread **, char *, size_t, bool_t);
 int newthread(struct thread **, char *, size_t, bool_t);
 void thread_exit(int, int);
-void thread_psignal(struct proc *, int, int);
+void thread_psignal(struct proc *, struct thread *, int, int);
 void thread_idle_check(struct proc *);
 void thread_swtch(struct proc *);
 

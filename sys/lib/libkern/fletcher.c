@@ -48,15 +48,15 @@
 uint16_t
 fletcher16(const uint8_t *buf, size_t len)
 {
-    uint16_t c0, c1;
-    size_t first, last;
-    size_t i;
-    const size_t duration = 256;
+	uint16_t c0, c1;
+	size_t first, last;
+	size_t i;
+	const size_t duration = 256;
 
-    c0 = 0;
-    c1 = 0;
-    last = 0;
-    i = 0;
+	c0 = 0;
+	c1 = 0;
+	last = 0;
+	i = 0;
 
 	while (i < len) {
 		first = last;
@@ -80,15 +80,15 @@ fletcher16(const uint8_t *buf, size_t len)
 uint32_t
 fletcher32(const uint8_t *buf, size_t len)
 {
-    uint32_t c0, c1;
-    size_t first, last;
-    size_t i;
-    const size_t duration = 65536;
+	uint32_t c0, c1;
+	size_t first, last;
+	size_t i;
+	const size_t duration = 65536;
 
-    c0 = 0;
-    c1 = 0;
-    last = 0;
-    i = 0;
+	c0 = 0;
+	c1 = 0;
+	last = 0;
+	i = 0;
 
 	while (i < len) {
 		first = last;
@@ -124,15 +124,15 @@ fletcher32(const uint8_t *buf, size_t len)
 uint64_t
 fletcher64(const uint8_t *buf, size_t len)
 {
-    uint64_t c0, c1;
-    size_t first, last;
-    size_t i;
-    const size_t duration = 4294967296;
+	uint64_t c0, c1;
+	size_t first, last;
+	size_t i;
+	const size_t duration = 4294967296;
 
-    c0 = 0;
-    c1 = 0;
-    last = 0;
-    i = 0;
+	c0 = 0;
+	c1 = 0;
+	last = 0;
+	i = 0;
 
 	while (i < len) {
 		first = last;
@@ -146,7 +146,7 @@ fletcher64(const uint8_t *buf, size_t len)
 				word = ((uint32_t)buf[i + 1] << 16 | (uint32_t)buf[i]);
 #endif
 			} else {
-				word = (uint32_t)buf[i];
+				word = (uint32_t) buf[i];
 			}
 			c0 = (c0 + word);
 			c1 = (c1 + c0);

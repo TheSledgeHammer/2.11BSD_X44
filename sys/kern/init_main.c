@@ -199,6 +199,7 @@ main(framep)
 	procinit(p);
 
 	/* Initialize thread structures. */
+	thread0.td_stacksize = THREAD_STACK;
 	threadinit(p, td);
 
 	/*
