@@ -51,11 +51,9 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/vnode.h>
 #include <sys/mount.h>
 
-#define	_KERNEL
 #include <fs/isofs/cd9660/iso.h>
-#include <fs/isofs/cd9660/cd9660_extern.h>
+//#include <fs/isofs/cd9660/cd9660_extern.h>
 #include <fs/isofs/cd9660/cd9660_node.h>
-#undef _KERNEL
 
 #include <kvm.h>
 #include <err.h>

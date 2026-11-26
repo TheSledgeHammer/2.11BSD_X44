@@ -167,8 +167,11 @@ int maxfiles;
 
 static void dofiles(struct kinfo_proc *);
 static void vtrans(struct vnode *, int, int);
+#ifdef FTRANS_VP
 static void ftrans_vp(struct file *, int, int);
-//static void ftrans(struct file *, int);
+#else
+static void ftrans(struct file *, int);
+#endif
 static char *getmnton(struct mount *);
 static void socktrans(struct socket *, int);
 static void getinetproto(int);
@@ -315,7 +318,9 @@ static void
 dofiles(struct kinfo_proc *kp)
 {
 	int i;
+#ifdef FTRANS_VP
     struct file file;
+#endif
 	struct filedesc0 filed0;
 #define	filed	filed0.fd_fd
 	struct proc *p = &kp->kp_proc;
@@ -346,7 +351,12 @@ dofiles(struct kinfo_proc *kp)
 	 * ktrace vnode, if one
 	 */
 	if (p->p_tracep)
+#ifdef FTRANS_VP
 		ftrans_vp(p->p_tracep, TRACE, FREAD|FWRITE);
+#else
+        ftrans(p->p_tracep, TRACE);
+#endif
+        
 	/*
 	 * open files
 	 */
@@ -364,6 +374,7 @@ dofiles(struct kinfo_proc *kp)
 	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
+#ifdef FTRANS_VP
 		if (!KVM_READ(ofiles[i], &file, sizeof(struct file))) {
             dprintf("can't read file %d at %p for pid %d\n", i, ofiles[i], Pid);
             continue;
@@ -385,8 +396,13 @@ dofiles(struct kinfo_proc *kp)
 				Pid);
 		    break;
 	    }
+#else
+        ftrans(ofiles[i], i);
+#endif
 	}
 }
+
+#ifdef FTRANS_VP
 
 static void
 ftrans_vp(struct file *fp, int i, int flag)
@@ -394,7 +410,8 @@ ftrans_vp(struct file *fp, int i, int flag)
     vtrans((struct vnode *)fp->f_data, i, flag);
 }
 
-#ifdef notyet
+#else
+
 static void
 ftrans(struct file *fp, int i)
 {   
@@ -422,6 +439,7 @@ ftrans(struct file *fp, int i)
 		break;
 	}
 }
+
 #endif
 
 static void

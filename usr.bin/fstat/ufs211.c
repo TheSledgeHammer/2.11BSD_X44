@@ -65,7 +65,7 @@ ufs211_filestat(struct vnode *vp, struct filestat *fsp)
 	struct ufs211_mount ufsmount;
 
 	if (!KVM_READ(UFS211_VTOI(vp), &inode, sizeof(inode))) {
-		dprintf(stderr, "can't read ufs211_inode at %x for pid %d\n", UFS211_VTOI(vp), Pid);
+		dprintf("can't read ufs211_inode at %x for pid %d\n", UFS211_VTOI(vp), Pid);
 		return (0);
 	}
 

@@ -72,7 +72,7 @@ ufs_filestat(struct vnode *vp, struct filestat *fsp)
 	} dip;
 
 	if (!KVM_READ(VTOI(vp), &inode, sizeof (inode))) {
-		dprintf(stderr, "can't read inode at %x for pid %d\n",
+		dprintf("can't read inode at %p for pid %d\n",
 			VTOI(vp), Pid);
 		return (0);
 	}

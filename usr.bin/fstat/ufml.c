@@ -80,8 +80,6 @@ ufml_filestat(struct vnode *vp, struct filestat *fsp)
 		return (0);
 	}
 
-	if (vn == NULL) {
-		fsp->fsid = mount.mnt_stat.f_fsid.val[0];
-	}
+	fsp->fsid = mount.mnt_stat.f_fsid.val[0];
 	return (1);
 }

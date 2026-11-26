@@ -68,8 +68,7 @@ nfs_filestat(struct vnode *vp, struct filestat *fsp)
 	struct nfsnode nfsnode;
 
 	if (!KVM_READ(VTONFS(vp), &nfsnode, sizeof (nfsnode))) {
-		dprintf(stderr, "can't read nfsnode at %x for pid %d\n",
-			VTONFS(vp), Pid);
+		dprintf("can't read nfsnode at %p for pid %d\n", VTONFS(vp), Pid);
 		return (0);
 	}
 
