@@ -69,6 +69,7 @@ __KERNEL_RCSID(0, "$NetBSD: msdosfs_vfsops.c,v 1.13.2.2 2004/06/27 13:53:13 he E
 
 #include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
 
+#define NETEXPORT
 #include <fs/msdosfs/bpb.h>
 #include <fs/msdosfs/bootsect.h>
 #include <fs/msdosfs/direntry.h>
