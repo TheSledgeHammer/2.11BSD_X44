@@ -891,7 +891,7 @@ getchunksize(void)
 	 * sectors by asserting that both are power of two numbers and the
 	 * chunksize is greater than MAXBPS.
 	 */
-	static_assert(powerof2(MAXBPS), "MAXBPS is not power of 2");
+	assert(powerof2(MAXBPS));
 	assert(powerof2(chunksize));
 	assert(chunksize > MAXBPS);
 
@@ -944,8 +944,9 @@ getdiskinfo(int fd, const char *fname, const char *dtype, int oflag, struct bpb 
     off_t hs = 0;
 #ifndef MAKEFS
     off_t ms;
+#ifdef __FreeBSD__
     struct fd_type type;
-
+#endif
 	lp = NULL;
 
 	/* If the user specified a disk type, try to use that */
@@ -959,13 +960,16 @@ getdiskinfo(int fd, const char *fname, const char *dtype, int oflag, struct bpb 
 			/* create a fake geometry for a file image */
 			compute_geometry_from_file(fd, fname, &dlp);
 			lp = &dlp;
-		} else if (ioctl(fd, FD_GTYPE, &type) != -1) {
+		} 
+#ifdef __FreeBSD__
+            else if (ioctl(fd, FD_GTYPE, &type) != -1) {
 			dlp.d_secsize = 128 << type.secsize;
 			dlp.d_nsectors = type.sectrac;
 			dlp.d_ntracks = type.heads;
 			dlp.d_secperunit = ms / dlp.d_secsize;
 			lp = &dlp;
 		}
+#endif
 	}
 
 	/* Maybe it's a fixed drive */
@@ -977,14 +981,21 @@ getdiskinfo(int fd, const char *fname, const char *dtype, int oflag, struct bpb 
 			err(1, "cannot get sector size");
 
 		dlp.d_secperunit = ms / dlp.d_secsize;
-
+#ifdef __FreeBSD__
 		if (bpb->bpbSecPerTrack == 0
 				&& ioctl(fd, DIOCGFWSECTORS, &dlp.d_nsectors) == -1) {
+#else
+        if (bpb->bpbSecPerTrack == 0) {
+#endif
 			warn("cannot get number of sectors per track");
 			dlp.d_nsectors = 63;
 		}
+#ifdef __FreeBSD__
 		if (bpb->bpbHeads == 0
 				&& ioctl(fd, DIOCGFWHEADS, &dlp.d_ntracks) == -1) {
+#else
+        if (bpb->bpbHeads == 0) {
+#endif
 			warn("cannot get number of heads");
 			if (dlp.d_secperunit <= 63 * 1 * 1024)
 				dlp.d_ntracks = 1;
@@ -993,7 +1004,6 @@ getdiskinfo(int fd, const char *fname, const char *dtype, int oflag, struct bpb 
 			else
 				dlp.d_ntracks = 255;
 		}
-
 		hs = (ms / dlp.d_secsize) - dlp.d_secperunit;
 		lp = &dlp;
 	}

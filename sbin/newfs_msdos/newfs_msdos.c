@@ -39,9 +39,9 @@ __RCSID("$NetBSD: newfs_msdos.c,v 1.14.2.2 2004/09/23 02:44:44 jmc Exp $");
 
 #include <sys/types.h>
 #include <sys/param.h>
-#ifdef __FreeBSD__
+//#ifdef __FreeBSD__
 #include <sys/diskslice.h>
-#endif
+//#endif
 #include <sys/disklabel.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -58,9 +58,9 @@ __RCSID("$NetBSD: newfs_msdos.c,v 1.14.2.2 2004/09/23 02:44:44 jmc Exp $");
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#ifdef __NetBSD__
+//#ifdef __NetBSD__
 #include <util.h>
-#endif
+//#endif
 
 #define MAXU16	  0xffff	/* maximum unsigned 16-bit quantity */
 #define BPN	  4		/* bits per nibble */
@@ -610,7 +610,7 @@ main(int argc, char *argv[])
 			if (opt_B && x < bss) {
 				if ((n = read(fd1, img, bpb.bps)) == -1)
 					err(1, "%s", bname);
-				if (n != bpb.bps)
+				if (n != (ssize_t)bpb.bps)
 					errx(1, "%s: can't read sector %u", bname, x);
 			} else
 				memset(img, 0, bpb.bps);
@@ -691,7 +691,7 @@ main(int argc, char *argv[])
 			}
 			if ((n = write(fd, img, bpb.bps)) == -1)
 				err(1, "%s", fname);
-			if (n != bpb.bps)
+			if (n != (ssize_t)bpb.bps)
 				errx(1, "%s: can't write sector %u", fname, lsn);
 		}
 	}
