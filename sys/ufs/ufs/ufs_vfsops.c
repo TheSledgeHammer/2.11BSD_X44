@@ -47,6 +47,7 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
+#define NETEXPORT
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufsmount.h>

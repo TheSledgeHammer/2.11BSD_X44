@@ -89,7 +89,9 @@ struct ufsmount {
 	time_t						um_btime[MAXQUOTAS];	/* block quota time limit */
 	time_t						um_itime[MAXQUOTAS];	/* inode quota time limit */
 	char						um_qflags[MAXQUOTAS];	/* quota specific flags */
+#ifdef NETEXPORT
 	struct netexport			um_export;				/* export information */
+#endif
 	int64_t						um_savedmaxfilesize;	/* XXX - limit maxfilesize */
 
 //	TAILQ_HEAD(inodelst, inode) um_snapshots; 			/* list of active snapshots */
