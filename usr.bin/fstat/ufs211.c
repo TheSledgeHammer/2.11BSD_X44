@@ -51,8 +51,11 @@ static char sccsid[] = "@(#)fstat.c	8.3 (Berkeley) 5/2/95";
 #include <sys/vnode.h>
 #include <sys/mount.h>
 
+#include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
+#define _KERNEL
 #include <ufs/ufs211/ufs211_mount.h>
+#undef _KERNEL
 
 #include <kvm.h>
 #include <err.h>
@@ -65,7 +68,7 @@ ufs211_filestat(struct vnode *vp, struct filestat *fsp)
 	struct ufs211_mount ufsmount;
 
 	if (!KVM_READ(UFS211_VTOI(vp), &inode, sizeof(inode))) {
-		dprintf("can't read ufs211_inode at %x for pid %d\n", UFS211_VTOI(vp), Pid);
+		dprintf("can't read ufs211_inode at %p for pid %d\n", UFS211_VTOI(vp), Pid);
 		return (0);
 	}
 
