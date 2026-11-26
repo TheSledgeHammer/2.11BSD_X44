@@ -104,6 +104,7 @@ struct iso_node {
 
 #define VTOI(vp) ((struct iso_node *)(vp)->v_data)
 #define ITOV(ip) ((ip)->i_vnode)
+
 #ifdef _KERNEL
 /*
  * Prototypes for ISOFS vnode operations
