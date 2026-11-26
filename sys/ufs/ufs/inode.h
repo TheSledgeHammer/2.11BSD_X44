@@ -171,13 +171,13 @@ struct inode {
 
 #ifdef _KERNEL
 
-static inline bool_t
+static inline int
 I_IS_UFS1(const struct inode *ip)
 {
 	return ((ip->i_flag & IN_UFS2) == 0);
 }
 
-static inline bool_t
+static inline int
 I_IS_UFS2(const struct inode *ip)
 {
 	return ((ip->i_flag & IN_UFS2) != 0);
