@@ -128,7 +128,9 @@ struct msdosfsmount {
 	u_int 				pm_curfat;	/* current fat for FAT32 (0 otherwise) */
 	u_int	 			*pm_inusemap;	/* ptr to bitmap of in-use clusters */
 	u_int 				pm_flags;		/* see below */
+#ifdef NETEXPORT
 	struct netexport 	pm_export;	/* export information */
+#endif
 };
 
 /* Byte offset in FAT on filesystem pmp, cluster cn */
