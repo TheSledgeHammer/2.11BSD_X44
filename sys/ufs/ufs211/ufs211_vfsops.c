@@ -45,8 +45,8 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
+#define NETEXPORT
 #include <ufs/ufs211/ufs211_dir.h>
-
 #include <ufs/ufs211/ufs211_quota.h>
 #include <ufs/ufs211/ufs211_inode.h>
 #include <ufs/ufs211/ufs211_fs.h>

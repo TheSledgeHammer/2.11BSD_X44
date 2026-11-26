@@ -61,7 +61,9 @@ struct ufs211_mount {
 	time_t					m_bwarn[MAXQUOTAS];				/* block quota time limit */
 	time_t					m_iwarn[MAXQUOTAS];				/* inode quota time limit */
 	char					m_qflags[MAXQUOTAS];			/* quota specific flags */
+#ifdef NETEXPORT
 	struct netexport		m_export;						/* export information */
+#endif
 };
 
 /*
